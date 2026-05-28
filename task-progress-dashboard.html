@@ -1,0 +1,1421 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Дашборд прогресса задач</title>
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./vendor/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #667085;
+      --line: #d9dee8;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --green: #16a34a;
+      --amber: #d97706;
+      --red: #dc2626;
+      --shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 290px 1fr;
+    }
+
+    aside {
+      background: #111827;
+      color: #f9fafb;
+      padding: 24px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    main {
+      padding: 26px;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.2;
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    h3 {
+      font-size: 15px;
+      margin: 0 0 14px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .brand {
+      margin-bottom: 22px;
+    }
+
+    .brand p {
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .upload {
+      border: 1px dashed rgba(255, 255, 255, 0.36);
+      border-radius: 8px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      margin-bottom: 18px;
+    }
+
+    .upload label {
+      display: block;
+      font-size: 13px;
+      color: #d1d5db;
+      margin-bottom: 10px;
+    }
+
+    input[type="file"],
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--text);
+      padding: 10px 11px;
+      font-size: 14px;
+    }
+
+    input[type="file"] {
+      color: #e5e7eb;
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .filters {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .filters label {
+      display: block;
+      color: #cbd5e1;
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .tabs {
+      display: grid;
+      gap: 7px;
+    }
+
+    .tab-button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 7px;
+      padding: 10px 11px;
+      color: #e5e7eb;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .tab-button:hover,
+    .tab-button.active {
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .tab-button span:last-child {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .status {
+      min-width: 230px;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .cards {
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+    }
+
+    .charts {
+      grid-template-columns: 1fr;
+      margin-top: 16px;
+    }
+
+    .panel,
+    .metric,
+    .task-card {
+      background: var(--panel);
+      border: 1px solid rgba(217, 222, 232, 0.8);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .sheet-data {
+      margin-top: 16px;
+    }
+
+    .sheet-data summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .sheet-data summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .sheet-data h3 {
+      margin: 0;
+    }
+
+    .sheet-data-toggle {
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .sheet-data .open-label,
+    .sheet-data[open] .closed-label {
+      display: none;
+    }
+
+    .sheet-data[open] .open-label {
+      display: inline;
+    }
+
+    .sheet-data-body {
+      margin-top: 16px;
+    }
+
+    .metric {
+      padding: 16px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .metric .hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .task-list {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 16px;
+    }
+
+    .task-card {
+      padding: 15px;
+    }
+
+    .task-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .task-card strong {
+      overflow-wrap: anywhere;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      background: #e0ecff;
+      color: #1d4ed8;
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin: 10px 0 8px;
+    }
+
+    .progress div {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--primary);
+      width: 0;
+    }
+
+    .mini {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 14px;
+    }
+
+    .mini b {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      margin-top: 3px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 520px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 940px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td.text-cell {
+      min-width: 260px;
+      max-width: 520px;
+      white-space: normal;
+      line-height: 1.35;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 1;
+      color: #475467;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .empty {
+      min-height: 62vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 30px;
+    }
+
+    .empty div {
+      max-width: 540px;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-height: 360px;
+    }
+
+    .error {
+      color: #fecaca;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+      }
+
+      .cards,
+      .charts {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      main {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <h1>Прогресс задач</h1>
+      </div>
+
+      <div class="upload">
+        <label for="fileInput">Excel-файл</label>
+        <input id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.csv">
+        <div id="errorBox" class="error" hidden></div>
+      </div>
+
+      <div class="filters">
+        <div>
+          <label for="quarterFilter">Квартал</label>
+          <select id="quarterFilter" disabled>
+            <option value="all">Все кварталы</option>
+          </select>
+        </div>
+      </div>
+
+      <nav id="tabs" class="tabs" aria-label="Вкладки задач"></nav>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Все задачи</h2>
+          <p id="pageSubtitle">Сводная вкладка появится после загрузки файла.</p>
+        </div>
+        <div id="statusBox" class="status">Файл пока не загружен.</div>
+      </div>
+
+      <section id="content" class="content">
+        <div class="empty">
+          <div>
+            <h2>Загрузите Excel-файл</h2>
+            <p>Ожидаемые колонки находятся в A3:I3: Квартал, Неделя, Начало недели, Конец недели, Квартальный план, Годовой план, Квартальный прогресс, Годовой прогресс, Выполнено. Значения начинаются с 4 строки.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const REQUIRED_COLUMNS = {
+      quarter: ["квартал", "quarter"],
+      week: ["неделя", "week"],
+      weekStart: ["начало недели", "start"],
+      weekEnd: ["конец недели", "end"],
+      quarterPlan: ["квартальный план", "план", "quarter plan", "plan"],
+      yearPlan: ["годовой план", "year plan", "annual plan"],
+      quarterProgress: ["квартальный прогресс", "прогресс", "quarter progress", "progress"],
+      yearProgress: ["годовой прогресс", "year progress", "annual progress"],
+      done: ["выполнено", "done", "completed", "fact"]
+    };
+
+    const COLUMN_LABELS = {
+      quarter: "Квартал",
+      week: "Неделя",
+      weekStart: "Начало недели",
+      weekEnd: "Конец недели",
+      quarterPlan: "Квартальный план",
+      yearPlan: "Годовой план",
+      quarterProgress: "Квартальный прогресс",
+      yearProgress: "Годовой прогресс",
+      done: "Выполнено"
+    };
+
+    const state = {
+      tasks: [],
+      activeTab: "overview",
+      quarter: "all",
+      charts: []
+    };
+
+    const fileInput = document.getElementById("fileInput");
+    const quarterFilter = document.getElementById("quarterFilter");
+    const tabs = document.getElementById("tabs");
+    const content = document.getElementById("content");
+    const pageTitle = document.getElementById("pageTitle");
+    const pageSubtitle = document.getElementById("pageSubtitle");
+    const statusBox = document.getElementById("statusBox");
+    const errorBox = document.getElementById("errorBox");
+
+    fileInput.addEventListener("change", handleFile);
+    quarterFilter.addEventListener("change", () => {
+      state.quarter = quarterFilter.value;
+      render();
+    });
+
+    const axisLabelTooltipPlugin = {
+      id: "axisLabelTooltip",
+      afterEvent(chart, args) {
+        const pluginOptions = chart.options.plugins?.axisLabelTooltip;
+        if (!pluginOptions?.enabled) return;
+
+        const event = args.event;
+        if (!event) return;
+
+        if (event.type === "mouseout") {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        if (event.type !== "mousemove") return;
+
+        const xScale = chart.scales.x;
+        const chartArea = chart.chartArea;
+        if (!xScale || !chartArea || !xScale.ticks?.length) return;
+
+        const labelTop = chartArea.bottom;
+        const labelBottom = Math.max(xScale.bottom, labelTop) + 16;
+        const inLabelArea = event.y >= labelTop && event.y <= labelBottom;
+        const inScaleWidth = event.x >= xScale.left && event.x <= xScale.right;
+
+        if (!inLabelArea || !inScaleWidth) {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        const tickCount = xScale.ticks.length;
+        const slotWidth = tickCount > 1
+          ? Math.abs(xScale.getPixelForTick(1) - xScale.getPixelForTick(0))
+          : xScale.width;
+        const maxDistance = Math.max(18, slotWidth / 2);
+
+        let nearestIndex = -1;
+        let nearestDistance = Number.POSITIVE_INFINITY;
+        for (let index = 0; index < tickCount; index += 1) {
+          const distance = Math.abs(event.x - xScale.getPixelForTick(index));
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = index;
+          }
+        }
+
+        if (nearestIndex < 0 || nearestDistance > maxDistance) {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        if (chart.$axisLabelTooltipIndex === nearestIndex) return;
+
+        const activeElements = chart.data.datasets
+          .map((dataset, datasetIndex) => {
+            const value = dataset.data?.[nearestIndex];
+            return value === null || value === undefined ? null : { datasetIndex, index: nearestIndex };
+          })
+          .filter(Boolean);
+
+        if (!activeElements.length) {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        chart.$axisLabelTooltipIndex = nearestIndex;
+        chart.setActiveElements(activeElements);
+        chart.tooltip?.setActiveElements(activeElements, {
+          x: xScale.getPixelForTick(nearestIndex),
+          y: chartArea.bottom
+        });
+        chart.update("none");
+      }
+    };
+
+    function clearAxisLabelTooltip(chart) {
+      if (chart.$axisLabelTooltipIndex === undefined) return;
+      chart.$axisLabelTooltipIndex = undefined;
+      chart.setActiveElements([]);
+      chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
+      chart.update("none");
+    }
+
+    if (typeof Chart !== "undefined" && Chart.register) {
+      Chart.register(axisLabelTooltipPlugin);
+    }
+
+    function normalizeHeader(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+    }
+
+    function cleanNumber(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      const text = String(value)
+        .replace("%", "")
+        .replace(/\s+/g, "")
+        .replace(",", ".")
+        .trim();
+      const number = Number.parseFloat(text);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function isNumericLike(value) {
+      if (typeof value === "number") return Number.isFinite(value);
+      if (value === null || value === undefined || value === "") return false;
+      const text = String(value).replace("%", "").replace(/\s+/g, "").replace(",", ".").trim();
+      return text !== "" && Number.isFinite(Number.parseFloat(text));
+    }
+
+    function cleanPercent(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      if (typeof value === "number") {
+        const raw = value <= 1 && value >= 0 ? value * 100 : value;
+        return Math.max(raw, 0);
+      }
+      return Math.max(cleanNumber(value), 0);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(cleanNumber(value));
+    }
+
+    function formatPercent(value) {
+      return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(cleanPercent(value))}%`;
+    }
+
+    function parseDate(value) {
+      if (!value) return "";
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value.toLocaleDateString("ru-RU");
+      }
+      if (typeof value === "number") {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (parsed) {
+          const date = new Date(parsed.y, parsed.m - 1, parsed.d);
+          return date.toLocaleDateString("ru-RU");
+        }
+      }
+      return String(value);
+    }
+
+    function pickColumn(headers, aliases) {
+      return headers.find(header => aliases.some(alias => normalizeHeader(header).includes(alias)));
+    }
+
+    function rawCell(row, header, options = {}) {
+      if (!header) return "";
+      if (options.raw && row.__raw && Object.prototype.hasOwnProperty.call(row.__raw, header)) {
+        return row.__raw[header];
+      }
+      return row[header];
+    }
+
+    function textCell(row, header) {
+      const value = rawCell(row, header);
+      return value === null || value === undefined ? "" : String(value).trim();
+    }
+
+    function inferQuarterByWeek(week) {
+      const weekNumber = cleanNumber(week);
+      if (weekNumber >= 1 && weekNumber <= 13) return "Q1";
+      if (weekNumber >= 14 && weekNumber <= 26) return "Q2";
+      if (weekNumber >= 27 && weekNumber <= 39) return "Q3";
+      if (weekNumber >= 40 && weekNumber <= 52) return "Q4";
+      return "";
+    }
+
+    function normalizeQuarterValue(value) {
+      const text = String(value || "").trim();
+      if (!text) return "";
+
+      const compact = text.replace(/\s+/g, "").toUpperCase();
+      const qMatch = compact.match(/^Q([1-4])$/);
+      if (qMatch) return `Q${qMatch[1]}`;
+
+      const numberMatch = compact.match(/^([1-4])$/);
+      if (numberMatch) return `Q${numberMatch[1]}`;
+
+      return "";
+    }
+
+    function readAnalysisRows(worksheet) {
+      if (!worksheet["!ref"]) return [];
+
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      range.s.r = 2;
+      range.s.c = 0;
+      range.e.c = 8;
+
+      if (range.e.r < range.s.r) return [];
+
+      const table = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        range,
+        defval: "",
+        raw: false
+      });
+      const rawTable = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        range,
+        defval: "",
+        raw: true
+      });
+
+      const headers = (table[0] || []).slice(0, 9).map((header, index) => {
+        return String(header || `Колонка ${index + 1}`).trim();
+      });
+
+      return table.slice(1).map((row, rowIndex) => {
+        const record = {};
+        const rawRow = rawTable[rowIndex + 1] || [];
+        record.__raw = {};
+        headers.forEach((header, index) => {
+          record[header] = row[index] ?? "";
+          record.__raw[header] = rawRow[index] ?? "";
+        });
+        return record;
+      });
+    }
+
+    function mapRows(rows) {
+      if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS) };
+
+      const headers = Object.keys(rows[0]);
+      const columnMap = {};
+      let lastQuarter = "";
+
+      Object.entries(REQUIRED_COLUMNS).forEach(([key, aliases]) => {
+        columnMap[key] = pickColumn(headers, aliases);
+      });
+
+      const hasSimplePlan = columnMap.quarterPlan && normalizeHeader(columnMap.quarterPlan) === "план";
+      const hasSimpleProgress = columnMap.quarterProgress && normalizeHeader(columnMap.quarterProgress) === "прогресс";
+
+      const missing = Object.entries(columnMap)
+        .filter(([key, header]) => {
+          if (header) return false;
+          if (key === "yearPlan" && hasSimplePlan) return false;
+          if (key === "yearProgress" && hasSimpleProgress) return false;
+          return true;
+        })
+        .map(([key]) => COLUMN_LABELS[key]);
+
+      const hasWeekColumn = Boolean(columnMap.week);
+
+      let data = rows.map((row, index) => {
+        const explicitQuarter = normalizeQuarterValue(textCell(row, columnMap.quarter));
+        const rawWeek = rawCell(row, columnMap.week);
+        const week = rawWeek || (hasWeekColumn ? "" : index + 1);
+        const inferredQuarter = inferQuarterByWeek(week);
+        const quarter = explicitQuarter || inferredQuarter || lastQuarter;
+        if (quarter) lastQuarter = quarter;
+
+        const quarterPlanRaw = rawCell(row, columnMap.quarterPlan, { raw: true });
+        const yearPlanRaw = rawCell(row, columnMap.yearPlan, { raw: true });
+        const quarterProgressRaw = rawCell(row, columnMap.quarterProgress);
+        const yearProgressRaw = rawCell(row, columnMap.yearProgress);
+        const doneRaw = rawCell(row, columnMap.done, { raw: true });
+
+        const mappedRow = {
+          index: index + 1,
+          quarter,
+          week,
+          weekStart: parseDate(rawCell(row, columnMap.weekStart)),
+          weekEnd: parseDate(rawCell(row, columnMap.weekEnd)),
+          quarterPlan: cleanNumber(quarterPlanRaw),
+          yearPlan: cleanNumber(yearPlanRaw),
+          quarterProgress: cleanPercent(quarterProgressRaw),
+          yearProgress: cleanPercent(yearProgressRaw),
+          done: cleanNumber(doneRaw),
+          planText: isNumericLike(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
+          progressText: isNumericLike(quarterProgressRaw) ? "" : textCell(row, columnMap.quarterProgress),
+          hasNumericQuarterPlan: isNumericLike(quarterPlanRaw),
+          hasNumericYearPlan: isNumericLike(yearPlanRaw),
+          hasNumericQuarterProgress: isNumericLike(quarterProgressRaw),
+          hasNumericYearProgress: isNumericLike(yearProgressRaw),
+          hasDone: isNumericLike(doneRaw)
+        };
+        const meaningfulValues = [
+          rawCell(row, columnMap.week),
+          mappedRow.weekStart,
+          mappedRow.weekEnd,
+          quarterPlanRaw,
+          yearPlanRaw,
+          quarterProgressRaw,
+          yearProgressRaw,
+          doneRaw
+        ];
+        return meaningfulValues.some(value => value !== "" && value !== 0) ? mappedRow : null;
+      }).filter(Boolean);
+
+      if (data.length && !data.some(row => row.hasNumericQuarterProgress)) {
+        const totalPlanItems = data.filter(row => row.planText).length || data.filter(row => row.hasDone).length;
+        data = data.map(row => {
+          const currentDone = row.hasDone ? cleanNumber(row.done) : 0;
+          const derived = totalPlanItems > 0 ? Math.max((currentDone / totalPlanItems) * 100, 0) : 0;
+          return {
+            ...row,
+            quarterProgress: derived,
+            yearProgress: row.hasNumericYearProgress ? row.yearProgress : derived
+          };
+        });
+      }
+
+      return { data, missing };
+    }
+
+    async function handleFile(event) {
+      const file = event.target.files[0];
+      hideError();
+      if (!file) return;
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+        const tasks = workbook.SheetNames.map(sheetName => {
+          const worksheet = workbook.Sheets[sheetName];
+          const rows = readAnalysisRows(worksheet);
+          const mapped = mapRows(rows);
+          return {
+            id: slugify(sheetName),
+            name: sheetName,
+            rows: mapped.data,
+            missing: mapped.missing
+          };
+        }).filter(task => task.rows.length);
+
+        if (!tasks.length) {
+          throw new Error("В файле не найдено листов с данными для построения диаграмм.");
+        }
+
+        state.tasks = tasks;
+        state.activeTab = "overview";
+        state.quarter = "all";
+        buildQuarterFilter();
+        buildTabs();
+        render();
+      } catch (error) {
+        showError(error.message || "Не удалось прочитать файл.");
+      }
+    }
+
+    function slugify(value) {
+      return String(value)
+        .toLowerCase()
+        .replace(/[^a-zа-я0-9]+/gi, "-")
+        .replace(/^-|-$/g, "") || `task-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function buildQuarterFilter() {
+      const quarters = [...new Set(state.tasks.flatMap(task => task.rows.map(row => String(row.quarter).trim()).filter(Boolean)))];
+      quarters.sort((a, b) => a.localeCompare(b, "ru", { numeric: true }));
+
+      quarterFilter.innerHTML = `<option value="all">Все кварталы</option>` + quarters
+        .map(quarter => `<option value="${escapeHtml(quarter)}">${escapeHtml(quarter)}</option>`)
+        .join("");
+      quarterFilter.disabled = quarters.length === 0;
+      quarterFilter.value = "all";
+    }
+
+    function buildTabs() {
+      tabs.innerHTML = "";
+      const overview = createTabButton("overview", "Все задачи");
+      tabs.appendChild(overview);
+
+      state.tasks.forEach(task => {
+        tabs.appendChild(createTabButton(task.id, task.name));
+      });
+    }
+
+    function createTabButton(id, label, count) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tab-button";
+      button.dataset.tab = id;
+      button.innerHTML = `<span>${escapeHtml(label)}</span>${count === undefined ? "" : `<span>${count}</span>`}`;
+      button.addEventListener("click", () => {
+        state.activeTab = id;
+        render();
+      });
+      return button;
+    }
+
+    function filteredRows(task) {
+      if (state.quarter === "all") return task.rows;
+      return task.rows.filter(row => String(row.quarter).trim() === state.quarter);
+    }
+
+    function summarizeRows(rows) {
+      const rowsWithDone = rows.filter(row => row.hasDone);
+      const activeRows = rowsWithDone.length ? rowsWithDone : rows;
+      const lastDoneRow = [...rowsWithDone].pop();
+      const done = lastDoneRow ? cleanNumber(lastDoneRow.done) : 0;
+      const numericQuarterPlans = rows.filter(row => row.hasNumericQuarterPlan).map(row => cleanNumber(row.quarterPlan));
+      const numericYearPlans = rows.filter(row => row.hasNumericYearPlan).map(row => cleanNumber(row.yearPlan));
+      const textPlans = rows.filter(row => row.planText);
+      const numericQuarterProgressRows = activeRows.filter(row => row.hasNumericQuarterProgress);
+      const numericYearProgressRows = activeRows.filter(row => row.hasNumericYearProgress);
+
+      const quarterPlan = numericQuarterPlans.length ? Math.max(...numericQuarterPlans, 0) : textPlans.length;
+      const yearPlan = numericYearPlans.length ? Math.max(...numericYearPlans, 0) : quarterPlan;
+      const lastQuarterProgress = [...numericQuarterProgressRows].pop();
+      const lastYearProgress = [...numericYearProgressRows].pop();
+      const derivedProgress = quarterPlan > 0 ? Math.max((done / quarterPlan) * 100, 0) : 0;
+      const quarterProgress = lastQuarterProgress ? lastQuarterProgress.quarterProgress : derivedProgress;
+      const yearProgress = lastYearProgress ? lastYearProgress.yearProgress : quarterProgress;
+
+      return { done, quarterPlan, yearPlan, quarterProgress, yearProgress, rowsCount: rows.length };
+    }
+
+    function taskSummary(task) {
+      return summarizeRows(filteredRows(task));
+    }
+
+    function activeQuarterText() {
+      return state.quarter === "all" ? "все кварталы" : state.quarter;
+    }
+
+    function activeQuarterBadge() {
+      return state.quarter === "all" ? "Все кварталы" : `Квартал: ${state.quarter}`;
+    }
+
+    function activePeriodDescription() {
+      return state.quarter === "all"
+        ? "Показаны данные по всем кварталам."
+        : `Показаны только данные за ${state.quarter}.`;
+    }
+
+    function quarterProgressLabel(prefix = "") {
+      const label = state.quarter === "all"
+        ? `${prefix ? `${prefix} ` : ""}квартальный прогресс`
+        : `${prefix ? `${prefix} ` : ""}прогресс за ${state.quarter}`;
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    function lastDoneHint() {
+      return state.quarter === "all"
+        ? "Последняя строка с выполнением"
+        : `Последняя строка с выполнением за ${state.quarter}`;
+    }
+
+    function doneMetricHint() {
+      return state.quarter === "all"
+        ? "Последнее фактическое значение по всем кварталам"
+        : `Последнее фактическое значение за ${state.quarter}`;
+    }
+
+    function totalDoneMetricHint() {
+      return state.quarter === "all"
+        ? "Сумма последних фактических значений по задачам"
+        : `Сумма последних фактических значений по задачам за ${state.quarter}`;
+    }
+
+    function render() {
+      destroyCharts();
+      markActiveTab();
+
+      if (!state.tasks.length) return;
+
+      const quarterText = activeQuarterText();
+      const activeTask = state.activeTab === "overview"
+        ? null
+        : state.tasks.find(item => item.id === state.activeTab);
+      const taskText = activeTask ? activeTask.name : "Все задачи";
+      statusBox.textContent = `Задача: ${taskText}. Период: ${quarterText}.`;
+
+      if (state.activeTab === "overview") {
+        renderOverview();
+        return;
+      }
+
+      const task = state.tasks.find(item => item.id === state.activeTab) || state.tasks[0];
+      renderTask(task);
+    }
+
+    function markActiveTab() {
+      [...tabs.querySelectorAll(".tab-button")].forEach(button => {
+        button.classList.toggle("active", button.dataset.tab === state.activeTab);
+      });
+    }
+
+    function renderOverview() {
+      const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
+      const activeRows = summaries.flatMap(item => filteredRows(item.task));
+      const total = summarizeRows(activeRows);
+      total.done = summaries.reduce((sum, item) => sum + cleanNumber(item.summary.done), 0);
+      const averageQuarterProgress = average(summaries.map(item => item.summary.quarterProgress));
+      const averageYearProgress = average(summaries.map(item => item.summary.yearProgress));
+
+      pageTitle.textContent = "Все задачи";
+      pageSubtitle.textContent = activePeriodDescription();
+
+      content.innerHTML = `
+        <div class="grid cards">
+          ${metric("Задач", state.tasks.length, "Количество листов с данными")}
+          ${metric("Выполнено", formatNumber(total.done), totalDoneMetricHint())}
+          ${metric(quarterProgressLabel("Средний"), formatPercent(averageQuarterProgress), lastDoneHint())}
+          ${metric("Средний годовой прогресс", formatPercent(averageYearProgress), lastDoneHint())}
+        </div>
+
+        <div class="grid charts">
+          <section class="panel">
+            <h3>Прогресс по задачам</h3>
+            <canvas id="overviewProgressChart"></canvas>
+          </section>
+          <section class="panel">
+            <h3>Выполнено и план по задачам</h3>
+            <canvas id="overviewDoneChart"></canvas>
+          </section>
+        </div>
+
+        <div class="grid task-list">
+          ${summaries.map(({ task, summary }) => taskCard(task, summary)).join("")}
+        </div>
+      `;
+
+      makeBarChart("overviewProgressChart", {
+        labels: summaries.map(item => item.task.name),
+        datasets: [
+          {
+            label: `${quarterProgressLabel()}, %`,
+            data: summaries.map(item => item.summary.quarterProgress),
+            backgroundColor: "#2563eb"
+          },
+          {
+            label: "Годовой прогресс, %",
+            data: summaries.map(item => item.summary.yearProgress),
+            backgroundColor: "#16a34a"
+          }
+        ]
+      }, true, true);
+
+      const overviewYearPlanValues = summaries.map(item => {
+        const hasYearPlan = filteredRows(item.task).some(row => row.hasNumericYearPlan);
+        return hasYearPlan ? item.summary.yearPlan : null;
+      });
+      const overviewDoneDatasets = [
+        {
+          label: "Выполнено",
+          data: summaries.map(item => item.summary.done),
+          backgroundColor: "#d97706"
+        },
+        {
+          label: "Квартальный план",
+          data: summaries.map(item => item.summary.quarterPlan),
+          backgroundColor: "#2563eb"
+        }
+      ];
+
+      if (hasPlottableValues(overviewYearPlanValues)) {
+        overviewDoneDatasets.push({
+          label: "Годовой план",
+          data: overviewYearPlanValues,
+          backgroundColor: "#16a34a"
+        });
+      }
+
+      makeBarChart("overviewDoneChart", {
+        labels: summaries.map(item => item.task.name),
+        datasets: overviewDoneDatasets
+      }, false, true);
+    }
+
+    function renderTask(task) {
+      const rows = filteredRows(task);
+      const summary = summarizeRows(rows);
+      const missingText = task.missing.length
+        ? `Не найдены колонки: ${task.missing.join(", ")}.`
+        : "Все ожидаемые колонки найдены.";
+
+      pageTitle.textContent = task.name;
+      pageSubtitle.textContent = `${missingText} ${activePeriodDescription()}`;
+
+      content.innerHTML = `
+        <div class="grid cards">
+          ${metric("Выполнено", formatNumber(summary.done), doneMetricHint())}
+          ${metric("Квартальный план", formatNumber(summary.quarterPlan), "Максимальное значение в строках")}
+          ${metric(quarterProgressLabel(), formatPercent(summary.quarterProgress), lastDoneHint())}
+          ${metric("Годовой прогресс", formatPercent(summary.yearProgress), lastDoneHint())}
+        </div>
+
+        <div class="grid charts">
+          <section class="panel">
+            <h3>Динамика прогресса</h3>
+            <canvas id="taskProgressChart"></canvas>
+          </section>
+          <section class="panel">
+            <h3>Выполнено и план по неделям</h3>
+            <canvas id="taskDoneChart"></canvas>
+          </section>
+        </div>
+
+        <details class="panel sheet-data">
+          <summary>
+            <h3>Данные листа</h3>
+            <span class="sheet-data-toggle">
+              <span class="closed-label">Развернуть</span>
+              <span class="open-label">Свернуть</span>
+            </span>
+          </summary>
+          <div class="sheet-data-body">
+            ${rows.length ? table(rows) : `<p>Нет строк для выбранного квартала.</p>`}
+          </div>
+        </details>
+      `;
+
+      makeLineChart("taskProgressChart", {
+        labels: rows.map(row => `Неделя ${row.week}`),
+        datasets: [
+          {
+            label: `${quarterProgressLabel()}, %`,
+            data: rows.map(row => row.quarterProgress),
+            yAxisID: "y",
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.12)",
+            tension: 0.25,
+            fill: true
+          },
+          {
+            label: "Годовой прогресс, %",
+            data: rows.map(row => row.yearProgress),
+            yAxisID: "y",
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22, 163, 74, 0.1)",
+            tension: 0.25,
+            fill: true
+          },
+          {
+            label: "Выполнено",
+            data: rows.map(row => row.hasDone ? row.done : null),
+            yAxisID: "yDone",
+            borderColor: "#d97706",
+            backgroundColor: "#d97706",
+            tension: 0.25,
+            fill: false,
+            spanGaps: true
+          }
+        ]
+      }, true);
+
+      const quarterPlanValues = rows.map(rowQuarterPlanValue);
+      const yearPlanValues = rows.map(rowYearPlanValue);
+      const doneDatasets = [{
+        label: "Выполнено",
+        data: rows.map(row => row.hasDone ? row.done : null),
+        backgroundColor: "#d97706"
+      }];
+
+      if (hasPlottableValues(quarterPlanValues)) {
+        doneDatasets.push({
+          label: "Квартальный план",
+          data: quarterPlanValues,
+          backgroundColor: "#2563eb"
+        });
+      }
+
+      if (hasPlottableValues(yearPlanValues)) {
+        doneDatasets.push({
+          label: "Годовой план",
+          data: yearPlanValues,
+          backgroundColor: "#16a34a"
+        });
+      }
+
+      makeBarChart("taskDoneChart", {
+        labels: rows.map(row => `Неделя ${row.week}`),
+        datasets: doneDatasets
+      }, false);
+    }
+
+    function metric(label, value, hint) {
+      return `
+        <div class="metric">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+          <div class="hint">${escapeHtml(hint)}</div>
+        </div>
+      `;
+    }
+
+    function taskCard(task, summary) {
+      const progress = clamp(summary.quarterProgress, 0, 100);
+      const progressLabel = quarterProgressLabel();
+      return `
+        <article class="task-card">
+          <header>
+            <strong>${escapeHtml(task.name)}</strong>
+            <span class="badge">${escapeHtml(activeQuarterBadge())}</span>
+          </header>
+          <p>${escapeHtml(progressLabel)}: ${formatPercent(summary.quarterProgress)}</p>
+          <div class="progress" aria-label="${escapeHtml(progressLabel)}">
+            <div style="width:${progress}%"></div>
+          </div>
+          <div class="mini">
+            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
+            <span>Кв. план<b>${formatNumber(summary.quarterPlan)}</b></span>
+            <span>Год. план<b>${formatNumber(summary.yearPlan)}</b></span>
+          </div>
+        </article>
+      `;
+    }
+
+    function table(rows) {
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                ${Object.values(COLUMN_LABELS).map(label => `<th>${escapeHtml(label)}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.quarter)}</td>
+                  <td>${escapeHtml(row.week)}</td>
+                  <td>${escapeHtml(row.weekStart)}</td>
+                  <td>${escapeHtml(row.weekEnd)}</td>
+                  <td class="${row.planText ? "text-cell" : ""}">${escapeHtml(row.planText || formatNumber(row.quarterPlan))}</td>
+                  <td>${row.hasNumericYearPlan ? formatNumber(row.yearPlan) : ""}</td>
+                  <td class="${row.progressText ? "text-cell" : ""}">${escapeHtml(row.progressText || formatPercent(row.quarterProgress))}</td>
+                  <td>${row.hasNumericYearProgress ? formatPercent(row.yearProgress) : ""}</td>
+                  <td>${formatNumber(row.done)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function average(values) {
+      const valid = values.map(cleanNumber).filter(value => Number.isFinite(value));
+      if (!valid.length) return 0;
+      return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+    }
+
+    function hasPlottableValues(values) {
+      return values.some(value => value !== null && value !== undefined && cleanNumber(value) !== 0);
+    }
+
+    function rowQuarterPlanValue(row) {
+      if (row.hasNumericQuarterPlan) return row.quarterPlan;
+      if (row.planText) return 1;
+      return null;
+    }
+
+    function rowYearPlanValue(row) {
+      return row.hasNumericYearPlan ? row.yearPlan : null;
+    }
+
+    function wrapChartLabel(label, maxLineLength = 18, maxLines = 3) {
+      const words = String(label ?? "").trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return "";
+
+      const lines = [];
+      words.forEach(word => {
+        const lastLine = lines[lines.length - 1] || "";
+        const candidate = lastLine ? `${lastLine} ${word}` : word;
+
+        if (!lines.length) {
+          lines.push(word);
+        } else if (candidate.length <= maxLineLength) {
+          lines[lines.length - 1] = candidate;
+        } else if (lines.length < maxLines) {
+          lines.push(word);
+        } else {
+          lines[maxLines - 1] = `${lines[maxLines - 1]} ${word}`;
+        }
+      });
+
+      if (lines.length > maxLines) {
+        lines.length = maxLines;
+      }
+
+      const lastIndex = lines.length - 1;
+      if (lines[lastIndex].length > maxLineLength) {
+        lines[lastIndex] = `${lines[lastIndex].slice(0, maxLineLength - 1).trim()}…`;
+      }
+
+      return lines;
+    }
+
+    function chartOptions(percentScale, showDoneScale = false, wrapLabels = false) {
+      const scales = {
+        x: {
+          ticks: {
+            color: "#667085",
+            maxRotation: wrapLabels ? 0 : 35,
+            minRotation: 0,
+            ...(wrapLabels ? {
+              autoSkip: false,
+              font: { size: 11 },
+              padding: 8,
+              callback: function(value) {
+                return wrapChartLabel(this.getLabelForValue(value));
+              }
+            } : {})
+          },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          suggestedMax: percentScale ? 100 : undefined,
+          ticks: {
+            color: "#667085",
+            callback: value => percentScale ? `${value}%` : value
+          },
+          grid: { color: "rgba(217, 222, 232, 0.7)" }
+        }
+      };
+
+      if (showDoneScale) {
+        scales.yDone = {
+          beginAtZero: true,
+          position: "right",
+          ticks: {
+            color: "#d97706",
+            callback: value => formatNumber(value)
+          },
+          grid: { drawOnChartArea: false }
+        };
+      }
+
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          axisLabelTooltip: { enabled: wrapLabels },
+          legend: { position: "bottom" },
+          tooltip: {
+            callbacks: {
+              label: context => {
+                const value = context.parsed.y ?? context.parsed;
+                const label = String(context.dataset.label || "").replace(/,\s*%$/, "");
+                if (context.dataset.yAxisID === "yDone") {
+                  return `${label}: ${formatNumber(value)}`;
+                }
+                return percentScale
+                  ? `${label}: ${formatPercent(value)}`
+                  : `${label}: ${formatNumber(value)}`;
+              }
+            }
+          }
+        },
+        scales
+      };
+    }
+
+    function makeBarChart(id, data, percentScale, wrapLabels = false) {
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      state.charts.push(new Chart(ctx, {
+        type: "bar",
+        data,
+        options: chartOptions(percentScale, false, wrapLabels)
+      }));
+    }
+
+    function makeLineChart(id, data, showDoneScale = false) {
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      state.charts.push(new Chart(ctx, {
+        type: "line",
+        data,
+        options: chartOptions(true, showDoneScale)
+      }));
+    }
+
+    function destroyCharts() {
+      state.charts.forEach(chart => chart.destroy());
+      state.charts = [];
+    }
+
+    function showError(message) {
+      errorBox.hidden = false;
+      errorBox.textContent = message;
+      statusBox.textContent = "Ошибка чтения файла.";
+    }
+
+    function hideError() {
+      errorBox.hidden = true;
+      errorBox.textContent = "";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
