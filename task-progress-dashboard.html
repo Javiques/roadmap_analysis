@@ -262,12 +262,6 @@
       line-height: 1;
     }
 
-    .metric .hint {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
     .task-list {
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       margin-top: 16px;
@@ -590,6 +584,28 @@
       }
     };
 
+    const weekAxisLabelsPlugin = {
+      id: "weekAxisLabels",
+      afterDraw(chart, args, options) {
+        if (!options?.enabled) return;
+
+        const xScale = chart.scales.x;
+        if (!xScale) return;
+
+        const ctx = chart.ctx;
+        const y = Math.min(xScale.bottom + 14, chart.height - 4);
+        ctx.save();
+        ctx.fillStyle = "#111827";
+        ctx.font = "600 11px Inter, Segoe UI, Roboto, Arial, sans-serif";
+        ctx.textBaseline = "bottom";
+        ctx.textAlign = "left";
+        ctx.fillText("Неделя", xScale.left, y);
+        ctx.textAlign = "right";
+        ctx.fillText("Неделя", xScale.right, y);
+        ctx.restore();
+      }
+    };
+
     function clearAxisLabelTooltip(chart) {
       if (chart.$axisLabelTooltipIndex === undefined) return;
       chart.$axisLabelTooltipIndex = undefined;
@@ -599,7 +615,7 @@
     }
 
     if (typeof Chart !== "undefined" && Chart.register) {
-      Chart.register(axisLabelTooltipPlugin);
+      Chart.register(axisLabelTooltipPlugin, weekAxisLabelsPlugin);
     }
 
     function normalizeHeader(value) {
@@ -629,12 +645,11 @@
     }
 
     function cleanPercent(value) {
-      if (value === null || value === undefined || value === "") return 0;
+      if (value === null || value === undefined || value === "") return null;
       if (typeof value === "number") {
-        const raw = value <= 1 && value >= 0 ? value * 100 : value;
-        return Math.max(raw, 0);
+        return value <= 1 && value >= -1 ? value * 100 : value;
       }
-      return Math.max(cleanNumber(value), 0);
+      return cleanNumber(value);
     }
 
     function clamp(value, min, max) {
@@ -646,7 +661,8 @@
     }
 
     function formatPercent(value) {
-      return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(cleanPercent(value))}%`;
+      if (value === null || value === undefined || value === "") return "";
+      return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(cleanNumber(value))}%`;
     }
 
     function extractYear(value) {
@@ -715,11 +731,12 @@
       if (!text) return "";
 
       const compact = text.replace(/\s+/g, "").toUpperCase();
-      const qMatch = compact.match(/^Q([1-4])(20\d{2})?$/);
-      if (qMatch) return formatQuarter(`Q${qMatch[1]}`, qMatch[2] || fallbackYear);
+      const normalizeYear = year => year && year.length === 2 ? `20${year}` : year;
+      const qMatch = compact.match(/^Q([1-4])(?:[,.\/-]?((?:20)?\d{2}))?$/);
+      if (qMatch) return formatQuarter(`Q${qMatch[1]}`, normalizeYear(qMatch[2]) || fallbackYear);
 
-      const numberMatch = compact.match(/^([1-4])(20\d{2})?$/);
-      if (numberMatch) return formatQuarter(`Q${numberMatch[1]}`, numberMatch[2] || fallbackYear);
+      const numberMatch = compact.match(/^([1-4])(?:[,.\/-]?((?:20)?\d{2}))?$/);
+      if (numberMatch) return formatQuarter(`Q${numberMatch[1]}`, normalizeYear(numberMatch[2]) || fallbackYear);
 
       return "";
     }
@@ -773,6 +790,9 @@
       Object.entries(REQUIRED_COLUMNS).forEach(([key, aliases]) => {
         columnMap[key] = pickColumn(headers, aliases);
       });
+      const hasExplicitQuarters = rows.some(row => {
+        return normalizeQuarterValue(textCell(row, columnMap.quarter)) !== "";
+      });
 
       const hasSimplePlan = columnMap.quarterPlan && normalizeHeader(columnMap.quarterPlan) === "план";
       const hasSimpleProgress = columnMap.quarterProgress && normalizeHeader(columnMap.quarterProgress) === "прогресс";
@@ -798,7 +818,8 @@
         const rawWeek = rawCell(row, columnMap.week);
         const week = rawWeek || (hasWeekColumn ? "" : index + 1);
         const inferredQuarter = inferQuarterByWeek(week, rowYear);
-        const quarter = explicitQuarter || inferredQuarter || lastQuarter;
+        const quarter = explicitQuarter
+          || (hasExplicitQuarters && lastQuarter ? lastQuarter : inferredQuarter || lastQuarter);
         if (quarter) lastQuarter = quarter;
 
         const quarterPlanRaw = rawCell(row, columnMap.quarterPlan, { raw: true });
@@ -1001,24 +1022,6 @@
       return label.charAt(0).toUpperCase() + label.slice(1);
     }
 
-    function lastDoneHint() {
-      return state.quarter === "all"
-        ? "Последняя строка с выполнением"
-        : `Последняя строка с выполнением за ${state.quarter}`;
-    }
-
-    function doneMetricHint() {
-      return state.quarter === "all"
-        ? "Последнее фактическое значение по всем кварталам"
-        : `Последнее фактическое значение за ${state.quarter}`;
-    }
-
-    function totalDoneMetricHint() {
-      return state.quarter === "all"
-        ? "Сумма последних фактических значений по задачам"
-        : `Сумма последних фактических значений по задачам за ${state.quarter}`;
-    }
-
     function render() {
       destroyCharts();
       markActiveTab();
@@ -1052,8 +1055,6 @@
       const activeRows = summaries.flatMap(item => filteredRows(item.task));
       const total = summarizeRows(activeRows);
       total.done = summaries.reduce((sum, item) => sum + cleanNumber(item.summary.done), 0);
-      const averageQuarterProgress = average(summaries.map(item => item.summary.quarterProgress));
-      const averageYearProgress = average(summaries.map(item => item.summary.yearProgress));
       const showYearProgress = state.quarter === "all";
       const showYearPlan = state.quarter === "all";
       const overviewYearPlanValues = showYearPlan
@@ -1103,10 +1104,8 @@
 
       content.innerHTML = `
         <div class="grid cards">
-          ${metric("Задач", state.tasks.length, "Количество листов с данными")}
-          ${metric("Выполнено", formatNumber(total.done), totalDoneMetricHint())}
-          ${metric(quarterProgressLabel("Средний"), formatPercent(averageQuarterProgress), lastDoneHint())}
-          ${showYearProgress ? metric("Средний годовой прогресс", formatPercent(averageYearProgress), lastDoneHint()) : ""}
+          ${metric("Задач", state.tasks.length)}
+          ${metric("Выполнено", formatNumber(total.done))}
         </div>
 
         <div class="grid charts">
@@ -1140,34 +1139,37 @@
       const rows = filteredRows(task);
       const summary = summarizeRows(rows);
       const showYearProgress = state.quarter === "all";
-      const progressDatasets = [
-        {
-          label: `${quarterProgressLabel()}, %`,
-          data: rows.map(row => row.quarterProgress),
-          yAxisID: "y",
-          borderColor: "#2563eb",
-          backgroundColor: "rgba(37, 99, 235, 0.12)",
-          tension: 0.25,
-          fill: true
-        }
-      ];
+      const quarterPlanValues = rows.map(rowQuarterPlanValue);
+      const progressDatasets = showYearProgress ? quarterProgressDatasets(rows) : [];
 
       if (showYearProgress) {
         progressDatasets.push({
           label: "Годовой прогресс, %",
-          data: rows.map(row => row.yearProgress),
+          data: rows.map(row => row.hasNumericYearProgress ? row.yearProgress : null),
           yAxisID: "y",
           borderColor: "#16a34a",
           backgroundColor: "rgba(22, 163, 74, 0.1)",
           tension: 0.25,
           fill: true
         });
+      } else if (hasPlottableValues(quarterPlanValues)) {
+        progressDatasets.push({
+          label: "Квартальный план",
+          data: quarterPlanValues,
+          yAxisID: "y",
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.12)",
+          pointBackgroundColor: "#2563eb",
+          tension: 0.25,
+          fill: false,
+          spanGaps: false
+        });
       }
 
       progressDatasets.push({
         label: "Выполнено",
         data: rows.map(row => row.hasDone ? row.done : null),
-        yAxisID: "yDone",
+        yAxisID: showYearProgress ? "yDone" : "y",
         borderColor: "#d97706",
         backgroundColor: "rgba(217, 119, 6, 0.14)",
         pointBackgroundColor: "#d97706",
@@ -1184,10 +1186,10 @@
 
       content.innerHTML = `
         <div class="grid cards">
-          ${metric("Выполнено", formatNumber(summary.done), doneMetricHint())}
-          ${metric("Квартальный план", formatNumber(summary.quarterPlan), "Максимальное значение в строках")}
-          ${metric(quarterProgressLabel(), formatPercent(summary.quarterProgress), lastDoneHint())}
-          ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress), lastDoneHint()) : ""}
+          ${metric("Выполнено", formatNumber(summary.done))}
+          ${metric("Квартальный план", formatNumber(summary.quarterPlan))}
+          ${metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
+          ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : ""}
         </div>
 
         <div class="grid charts">
@@ -1216,11 +1218,10 @@
       `;
 
       makeLineChart("taskProgressChart", {
-        labels: rows.map(row => `Неделя ${row.week}`),
+        labels: rows.map(row => String(row.week)),
         datasets: progressDatasets
-      }, true);
+      }, showYearProgress, showYearProgress);
 
-      const quarterPlanValues = rows.map(rowQuarterPlanValue);
       const showYearPlan = state.quarter === "all";
       const yearPlanValues = showYearPlan ? rows.map(rowYearPlanValue) : [];
       const doneDatasets = [{
@@ -1246,31 +1247,53 @@
       }
 
       makeBarChart("taskDoneChart", {
-        labels: rows.map(row => `Неделя ${row.week}`),
+        labels: rows.map(row => String(row.week)),
         datasets: doneDatasets
-      }, false);
+      }, false, false, true);
     }
 
-    function metric(label, value, hint) {
+    function quarterProgressDatasets(rows) {
+      return [{
+        label: `${quarterProgressLabel()}, %`,
+        data: rows.map(row => row.hasNumericQuarterProgress ? row.quarterProgress : null),
+        yAxisID: "y",
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37, 99, 235, 0.12)",
+        tension: 0.25,
+        fill: false,
+        spanGaps: false,
+        segment: {
+          borderColor: context => {
+            if (state.quarter !== "all") return undefined;
+            const previous = rows[context.p0DataIndex];
+            const current = rows[context.p1DataIndex];
+            return previous?.quarter !== current?.quarter ? "rgba(37, 99, 235, 0)" : undefined;
+          }
+        }
+      }];
+    }
+
+    function metric(label, value) {
       return `
         <div class="metric">
           <div class="label">${escapeHtml(label)}</div>
           <div class="value">${escapeHtml(value)}</div>
-          <div class="hint">${escapeHtml(hint)}</div>
         </div>
       `;
     }
 
     function taskCard(task, summary) {
-      const progress = clamp(summary.quarterProgress, 0, 100);
-      const progressLabel = quarterProgressLabel();
+      const showYearProgress = state.quarter === "all";
+      const progressValue = showYearProgress ? summary.yearProgress : summary.quarterProgress;
+      const progress = clamp(progressValue, 0, 100);
+      const progressLabel = showYearProgress ? "Годовой прогресс" : quarterProgressLabel();
       return `
         <article class="task-card">
           <header>
             <strong>${escapeHtml(task.name)}</strong>
-            <span class="badge">${escapeHtml(activeQuarterBadge())}</span>
+            ${state.quarter === "all" ? "" : `<span class="badge">${escapeHtml(activeQuarterBadge())}</span>`}
           </header>
-          <p>${escapeHtml(progressLabel)}: ${formatPercent(summary.quarterProgress)}</p>
+          <p>${escapeHtml(progressLabel)}: ${formatPercent(progressValue)}</p>
           <div class="progress" aria-label="${escapeHtml(progressLabel)}">
             <div style="width:${progress}%"></div>
           </div>
@@ -1301,9 +1324,9 @@
                   <td>${escapeHtml(row.weekEnd)}</td>
                   <td class="${row.planText ? "text-cell" : ""}">${escapeHtml(row.planText || formatNumber(row.quarterPlan))}</td>
                   <td>${row.hasNumericYearPlan ? formatNumber(row.yearPlan) : ""}</td>
-                  <td class="${row.progressText ? "text-cell" : ""}">${escapeHtml(row.progressText || formatPercent(row.quarterProgress))}</td>
+                  <td class="${row.progressText ? "text-cell" : ""}">${escapeHtml(row.progressText || (row.hasNumericQuarterProgress ? formatPercent(row.quarterProgress) : ""))}</td>
                   <td>${row.hasNumericYearProgress ? formatPercent(row.yearProgress) : ""}</td>
-                  <td>${formatNumber(row.done)}</td>
+                  <td>${row.hasDone ? formatNumber(row.done) : ""}</td>
                 </tr>
               `).join("")}
             </tbody>
@@ -1364,13 +1387,18 @@
       return lines;
     }
 
-    function chartOptions(percentScale, showDoneScale = false, wrapLabels = false) {
+    function chartOptions(percentScale, showDoneScale = false, wrapLabels = false, weekAxis = false) {
       const scales = {
         x: {
           ticks: {
             color: "#667085",
-            maxRotation: wrapLabels ? 0 : 35,
+            maxRotation: wrapLabels || weekAxis ? 0 : 35,
             minRotation: 0,
+            ...(weekAxis ? {
+              autoSkip: false,
+              font: { size: 10 },
+              padding: 6
+            } : {}),
             ...(wrapLabels ? {
               autoSkip: false,
               font: { size: 11 },
@@ -1408,8 +1436,14 @@
       return {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            bottom: weekAxis ? 16 : 0
+          }
+        },
         plugins: {
           axisLabelTooltip: { enabled: wrapLabels },
+          weekAxisLabels: { enabled: weekAxis },
           legend: { position: "bottom" },
           tooltip: {
             callbacks: {
@@ -1430,23 +1464,24 @@
       };
     }
 
-    function makeBarChart(id, data, percentScale, wrapLabels = false) {
+    function makeBarChart(id, data, percentScale, wrapLabels = false, weekAxis = false) {
       const ctx = document.getElementById(id);
       if (!ctx) return;
       state.charts.push(new Chart(ctx, {
         type: "bar",
         data,
-        options: chartOptions(percentScale, false, wrapLabels)
+        options: chartOptions(percentScale, false, wrapLabels, weekAxis)
       }));
     }
 
-    function makeLineChart(id, data, showDoneScale = false) {
+    function makeLineChart(id, data, percentScale = false, showDoneScale = false) {
       const ctx = document.getElementById(id);
       if (!ctx) return;
+      const options = chartOptions(percentScale, showDoneScale, false, true);
       state.charts.push(new Chart(ctx, {
         type: "line",
         data,
-        options: chartOptions(true, showDoneScale)
+        options
       }));
     }
 
