@@ -87,16 +87,16 @@
     .upload {
       border: 1px dashed rgba(255, 255, 255, 0.36);
       border-radius: 8px;
-      padding: 16px;
+      padding: 10px;
       background: rgba(255, 255, 255, 0.06);
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
-    .upload label {
+    .upload-title {
       display: block;
-      font-size: 13px;
+      font-size: 12px;
       color: #d1d5db;
-      margin-bottom: 10px;
+      margin-bottom: 7px;
     }
 
     input[type="file"],
@@ -114,6 +114,31 @@
       color: #e5e7eb;
       background: transparent;
       border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .file-picker-button {
+      display: block;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 7px;
+      padding: 7px 10px;
+      color: #e5e7eb;
+      background: transparent;
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .file-picker-button:hover {
+      background: rgba(255, 255, 255, 0.11);
     }
 
     .filters {
@@ -190,6 +215,10 @@
     .charts {
       grid-template-columns: 1fr;
       margin-top: 16px;
+    }
+
+    .quarter-charts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .panel,
@@ -271,6 +300,11 @@
       padding: 15px;
     }
 
+    .task-card.complete {
+      border-color: rgba(22, 163, 74, 0.8);
+      box-shadow: 0 10px 24px rgba(22, 163, 74, 0.12);
+    }
+
     .task-card header {
       display: flex;
       justify-content: space-between;
@@ -292,6 +326,11 @@
       color: #1d4ed8;
     }
 
+    .badge.complete {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
     .progress {
       height: 10px;
       border-radius: 999px;
@@ -305,6 +344,10 @@
       border-radius: inherit;
       background: var(--primary);
       width: 0;
+    }
+
+    .task-card.complete .progress div {
+      background: var(--green);
     }
 
     .mini {
@@ -403,7 +446,8 @@
       }
 
       .cards,
-      .charts {
+      .charts,
+      .quarter-charts {
         grid-template-columns: 1fr;
       }
 
@@ -425,8 +469,9 @@
       </div>
 
       <div class="upload">
-        <label for="fileInput">Excel-файл</label>
-        <input id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.csv">
+        <span class="upload-title">Excel-файл</span>
+        <label class="file-picker-button" for="fileInput">Выбрать файл</label>
+        <input id="fileInput" class="file-input" type="file" accept=".xlsx,.xls,.xlsm,.csv">
         <div id="errorBox" class="error" hidden></div>
       </div>
 
@@ -493,6 +538,8 @@
       quarter: "all",
       charts: []
     };
+
+    const BASE_QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 
     const fileInput = document.getElementById("fileInput");
     const quarterFilter = document.getElementById("quarterFilter");
@@ -993,8 +1040,10 @@
       const derivedProgress = quarterPlan > 0 ? Math.max((done / quarterPlan) * 100, 0) : 0;
       const quarterProgress = lastQuarterProgress ? lastQuarterProgress.quarterProgress : derivedProgress;
       const yearProgress = lastYearProgress ? lastYearProgress.yearProgress : quarterProgress;
+      const isComplete = (yearProgress >= 100)
+        || (yearPlan > 0 && done >= yearPlan);
 
-      return { done, quarterPlan, yearPlan, quarterProgress, yearProgress, rowsCount: rows.length };
+      return { done, quarterPlan, yearPlan, quarterProgress, yearProgress, isComplete, rowsCount: rows.length };
     }
 
     function taskSummary(task) {
@@ -1052,9 +1101,6 @@
 
     function renderOverview() {
       const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
-      const activeRows = summaries.flatMap(item => filteredRows(item.task));
-      const total = summarizeRows(activeRows);
-      total.done = summaries.reduce((sum, item) => sum + cleanNumber(item.summary.done), 0);
       const showYearProgress = state.quarter === "all";
       const showYearPlan = state.quarter === "all";
       const overviewYearPlanValues = showYearPlan
@@ -1080,11 +1126,6 @@
       }
       const overviewDoneDatasets = [
         {
-          label: "Выполнено",
-          data: summaries.map(item => item.summary.done),
-          backgroundColor: "#d97706"
-        },
-        {
           label: "Квартальный план",
           data: summaries.map(item => item.summary.quarterPlan),
           backgroundColor: "#2563eb"
@@ -1099,13 +1140,18 @@
         });
       }
 
+      overviewDoneDatasets.push({
+        label: "Выполнено",
+        data: summaries.map(item => item.summary.done),
+        backgroundColor: "#d97706"
+      });
+
       pageTitle.textContent = "Все задачи";
       pageSubtitle.textContent = activePeriodDescription();
 
       content.innerHTML = `
-        <div class="grid cards">
-          ${metric("Задач", state.tasks.length)}
-          ${metric("Выполнено", formatNumber(total.done))}
+        <div class="grid task-list">
+          ${summaries.map(({ task, summary }) => taskCard(task, summary)).join("")}
         </div>
 
         <div class="grid charts">
@@ -1117,10 +1163,6 @@
             <h3>Выполнено и план по задачам</h3>
             <canvas id="overviewDoneChart"></canvas>
           </section>
-        </div>
-
-        <div class="grid task-list">
-          ${summaries.map(({ task, summary }) => taskCard(task, summary)).join("")}
         </div>
       `;
 
@@ -1140,18 +1182,23 @@
       const summary = summarizeRows(rows);
       const showYearProgress = state.quarter === "all";
       const quarterPlanValues = rows.map(rowQuarterPlanValue);
-      const progressDatasets = showYearProgress ? quarterProgressDatasets(rows) : [];
+      const yearPlanValues = showYearProgress ? rows.map(rowYearPlanValue) : [];
+      const progressDatasets = [];
 
       if (showYearProgress) {
-        progressDatasets.push({
-          label: "Годовой прогресс, %",
-          data: rows.map(row => row.hasNumericYearProgress ? row.yearProgress : null),
-          yAxisID: "y",
-          borderColor: "#16a34a",
-          backgroundColor: "rgba(22, 163, 74, 0.1)",
-          tension: 0.25,
-          fill: true
-        });
+        if (hasPlottableValues(yearPlanValues)) {
+          progressDatasets.push({
+            label: "Годовой план",
+            data: yearPlanValues,
+            yAxisID: "y",
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22, 163, 74, 0.1)",
+            pointBackgroundColor: "#16a34a",
+            tension: 0.25,
+            fill: false,
+            spanGaps: false
+          });
+        }
       } else if (hasPlottableValues(quarterPlanValues)) {
         progressDatasets.push({
           label: "Квартальный план",
@@ -1169,7 +1216,7 @@
       progressDatasets.push({
         label: "Выполнено",
         data: rows.map(row => row.hasDone ? row.done : null),
-        yAxisID: showYearProgress ? "yDone" : "y",
+        yAxisID: "y",
         borderColor: "#d97706",
         backgroundColor: "rgba(217, 119, 6, 0.14)",
         pointBackgroundColor: "#d97706",
@@ -1179,17 +1226,34 @@
       });
       const missingText = task.missing.length
         ? `Не найдены колонки: ${task.missing.join(", ")}.`
-        : "Все ожидаемые колонки найдены.";
+        : "";
 
       pageTitle.textContent = task.name;
-      pageSubtitle.textContent = `${missingText} ${activePeriodDescription()}`;
+      pageSubtitle.textContent = [missingText, activePeriodDescription()].filter(Boolean).join(" ");
+
+      const doneChartsMarkup = showYearProgress
+        ? `
+        <div class="grid charts quarter-charts">
+          ${BASE_QUARTERS.map(quarter => `
+            <section class="panel">
+              <h3>${quarter}: выполнено и план</h3>
+              <canvas id="${doneChartId(quarter)}"></canvas>
+            </section>
+          `).join("")}
+        </div>`
+        : `
+        <div class="grid charts">
+          <section class="panel">
+            <h3>Выполнено и план по неделям</h3>
+            <canvas id="taskDoneChart"></canvas>
+          </section>
+        </div>`;
 
       content.innerHTML = `
         <div class="grid cards">
           ${metric("Выполнено", formatNumber(summary.done))}
-          ${metric("Квартальный план", formatNumber(summary.quarterPlan))}
-          ${metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
-          ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : ""}
+          ${showYearProgress ? metric("Годовой план", formatNumber(summary.yearPlan)) : metric("Квартальный план", formatNumber(summary.quarterPlan))}
+          ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
         </div>
 
         <div class="grid charts">
@@ -1197,11 +1261,9 @@
             <h3>Динамика прогресса</h3>
             <canvas id="taskProgressChart"></canvas>
           </section>
-          <section class="panel">
-            <h3>Выполнено и план по неделям</h3>
-            <canvas id="taskDoneChart"></canvas>
-          </section>
         </div>
+
+        ${doneChartsMarkup}
 
         <details class="panel sheet-data">
           <summary>
@@ -1220,57 +1282,21 @@
       makeLineChart("taskProgressChart", {
         labels: rows.map(row => String(row.week)),
         datasets: progressDatasets
-      }, showYearProgress, showYearProgress);
+      });
 
-      const showYearPlan = state.quarter === "all";
-      const yearPlanValues = showYearPlan ? rows.map(rowYearPlanValue) : [];
-      const doneDatasets = [{
-        label: "Выполнено",
-        data: rows.map(row => row.hasDone ? row.done : null),
-        backgroundColor: "#d97706"
-      }];
-
-      if (hasPlottableValues(quarterPlanValues)) {
-        doneDatasets.push({
-          label: "Квартальный план",
-          data: quarterPlanValues,
-          backgroundColor: "#2563eb"
+      if (showYearProgress) {
+        rowsByBaseQuarter(rows).forEach(({ quarter, rows: quarterRows }) => {
+          makeBarChart(doneChartId(quarter), {
+            labels: quarterRows.map(row => String(row.week)),
+            datasets: donePlanDatasets(quarterRows, true)
+          }, false, false, true);
         });
+      } else {
+        makeBarChart("taskDoneChart", {
+          labels: rows.map(row => String(row.week)),
+          datasets: donePlanDatasets(rows, false)
+        }, false, false, true);
       }
-
-      if (showYearPlan && hasPlottableValues(yearPlanValues)) {
-        doneDatasets.push({
-          label: "Годовой план",
-          data: yearPlanValues,
-          backgroundColor: "#16a34a"
-        });
-      }
-
-      makeBarChart("taskDoneChart", {
-        labels: rows.map(row => String(row.week)),
-        datasets: doneDatasets
-      }, false, false, true);
-    }
-
-    function quarterProgressDatasets(rows) {
-      return [{
-        label: `${quarterProgressLabel()}, %`,
-        data: rows.map(row => row.hasNumericQuarterProgress ? row.quarterProgress : null),
-        yAxisID: "y",
-        borderColor: "#2563eb",
-        backgroundColor: "rgba(37, 99, 235, 0.12)",
-        tension: 0.25,
-        fill: false,
-        spanGaps: false,
-        segment: {
-          borderColor: context => {
-            if (state.quarter !== "all") return undefined;
-            const previous = rows[context.p0DataIndex];
-            const current = rows[context.p1DataIndex];
-            return previous?.quarter !== current?.quarter ? "rgba(37, 99, 235, 0)" : undefined;
-          }
-        }
-      }];
     }
 
     function metric(label, value) {
@@ -1287,20 +1313,31 @@
       const progressValue = showYearProgress ? summary.yearProgress : summary.quarterProgress;
       const progress = clamp(progressValue, 0, 100);
       const progressLabel = showYearProgress ? "Годовой прогресс" : quarterProgressLabel();
+      const completionBadge = summary.isComplete ? `<span class="badge complete">Выполнено</span>` : "";
+      const periodBadge = state.quarter === "all" ? "" : `<span class="badge">${escapeHtml(activeQuarterBadge())}</span>`;
+      const remaining = Math.max(cleanNumber(summary.yearPlan) - cleanNumber(summary.done), 0);
+      const miniMetrics = showYearProgress
+        ? `
+            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
+            <span>Год. план<b>${formatNumber(summary.yearPlan)}</b></span>
+            <span>Осталось<b>${formatNumber(remaining)}</b></span>
+          `
+        : `
+            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
+            <span>Кв. план<b>${formatNumber(summary.quarterPlan)}</b></span>
+          `;
       return `
-        <article class="task-card">
+        <article class="task-card${summary.isComplete ? " complete" : ""}">
           <header>
             <strong>${escapeHtml(task.name)}</strong>
-            ${state.quarter === "all" ? "" : `<span class="badge">${escapeHtml(activeQuarterBadge())}</span>`}
+            ${completionBadge || periodBadge}
           </header>
           <p>${escapeHtml(progressLabel)}: ${formatPercent(progressValue)}</p>
           <div class="progress" aria-label="${escapeHtml(progressLabel)}">
             <div style="width:${progress}%"></div>
           </div>
           <div class="mini">
-            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
-            <span>Кв. план<b>${formatNumber(summary.quarterPlan)}</b></span>
-            ${state.quarter === "all" ? `<span>Год. план<b>${formatNumber(summary.yearPlan)}</b></span>` : ""}
+            ${miniMetrics}
           </div>
         </article>
       `;
@@ -1343,6 +1380,52 @@
 
     function hasPlottableValues(values) {
       return values.some(value => value !== null && value !== undefined && cleanNumber(value) !== 0);
+    }
+
+    function baseQuarterValue(quarter) {
+      const match = String(quarter || "").trim().match(/^Q([1-4])\b/i);
+      return match ? `Q${match[1]}` : "";
+    }
+
+    function doneChartId(quarter) {
+      return `taskDoneChart-${quarter}`;
+    }
+
+    function rowsByBaseQuarter(rows) {
+      return BASE_QUARTERS.map(quarter => ({
+        quarter,
+        rows: rows.filter(row => baseQuarterValue(row.quarter) === quarter)
+      }));
+    }
+
+    function donePlanDatasets(rows, includeYearPlan = false) {
+      const quarterPlanValues = rows.map(rowQuarterPlanValue);
+      const yearPlanValues = includeYearPlan ? rows.map(rowYearPlanValue) : [];
+      const datasets = [];
+
+      if (hasPlottableValues(quarterPlanValues)) {
+        datasets.push({
+          label: "Квартальный план",
+          data: quarterPlanValues,
+          backgroundColor: "#2563eb"
+        });
+      }
+
+      if (includeYearPlan && hasPlottableValues(yearPlanValues)) {
+        datasets.push({
+          label: "Годовой план",
+          data: yearPlanValues,
+          backgroundColor: "#16a34a"
+        });
+      }
+
+      datasets.push({
+        label: "Выполнено",
+        data: rows.map(row => row.hasDone ? row.done : null),
+        backgroundColor: "#d97706"
+      });
+
+      return datasets;
     }
 
     function rowQuarterPlanValue(row) {
