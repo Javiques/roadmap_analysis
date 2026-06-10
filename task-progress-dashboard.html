@@ -291,18 +291,109 @@
       line-height: 1;
     }
 
+    .metric .note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .metric.status-behind .value {
+      color: #c2410c;
+    }
+
+    .metric.status-on-track .value {
+      color: #15803d;
+    }
+
+    .metric.status-ahead .value {
+      color: #1d4ed8;
+    }
+
+    .metric.status-complete .value {
+      color: #15803d;
+    }
+
     .task-list {
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       margin-top: 16px;
     }
 
     .task-card {
-      padding: 15px;
+      position: relative;
+      overflow: hidden;
+      padding: 0;
     }
 
     .task-card.complete {
       border-color: rgba(22, 163, 74, 0.8);
       box-shadow: 0 10px 24px rgba(22, 163, 74, 0.12);
+    }
+
+    .task-card.status-behind:not(.complete) {
+      border-color: rgba(234, 88, 12, 0.55);
+      box-shadow: 0 10px 24px rgba(234, 88, 12, 0.1);
+    }
+
+    .task-card.status-on-track:not(.complete) {
+      border-color: rgba(22, 163, 74, 0.45);
+    }
+
+    .task-card.status-ahead:not(.complete) {
+      border-color: rgba(37, 99, 235, 0.45);
+    }
+
+    .task-card.has-description {
+      cursor: pointer;
+      perspective: 1000px;
+    }
+
+    .task-card-inner {
+      min-height: 100%;
+      transition: transform 0.45s ease;
+      transform-style: preserve-3d;
+    }
+
+    .task-card.flipped .task-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .task-card-face {
+      min-height: 170px;
+      padding: 15px;
+      backface-visibility: hidden;
+    }
+
+    .task-card-back {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      transform: rotateY(180deg);
+      background: var(--panel);
+    }
+
+    .task-card-back p {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .task-card-hint {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 12px;
+    }
+
+    .task-owner {
+      color: var(--muted);
+      font-size: 12px;
+      margin: -4px 0 10px;
+    }
+
+    .task-owner b {
+      color: var(--text);
+      font-weight: 650;
     }
 
     .task-card header {
@@ -317,6 +408,14 @@
       overflow-wrap: anywhere;
     }
 
+    .task-card-badges {
+      display: flex;
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
     .badge {
       flex: 0 0 auto;
       border-radius: 999px;
@@ -329,6 +428,52 @@
     .badge.complete {
       background: #dcfce7;
       color: #15803d;
+    }
+
+    .badge.status-behind {
+      background: #ffedd5;
+      color: #c2410c;
+    }
+
+    .badge.status-on-track {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge.status-ahead {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge.status-no-data {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .badge.status-dot {
+      width: 14px;
+      height: 14px;
+      padding: 0;
+      font-size: 0;
+      line-height: 0;
+      border: 1px solid #111827;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+    }
+
+    .badge.status-dot.status-behind {
+      background: #ea580c;
+    }
+
+    .badge.status-dot.status-on-track {
+      background: #16a34a;
+    }
+
+    .badge.status-dot.status-ahead {
+      background: #2563eb;
+    }
+
+    .badge.status-dot.status-no-data {
+      background: #6b7280;
     }
 
     .progress {
@@ -350,6 +495,22 @@
       background: var(--green);
     }
 
+    .task-card.status-behind:not(.complete) .progress div {
+      background: #ea580c;
+    }
+
+    .task-card.status-on-track:not(.complete) .progress div {
+      background: #16a34a;
+    }
+
+    .task-card.status-ahead:not(.complete) .progress div {
+      background: #2563eb;
+    }
+
+    .task-card.status-no-data:not(.complete) .progress div {
+      background: #6b7280;
+    }
+
     .mini {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -364,6 +525,32 @@
       color: var(--text);
       font-size: 15px;
       margin-top: 3px;
+    }
+
+    .task-status-line {
+      font-size: 12px;
+      font-weight: 700;
+      margin: 10px 0 0;
+    }
+
+    .task-status-line.status-behind {
+      color: #c2410c;
+    }
+
+    .task-status-line.status-on-track {
+      color: #15803d;
+    }
+
+    .task-status-line.status-ahead {
+      color: #1d4ed8;
+    }
+
+    .task-status-line.status-complete {
+      color: #15803d;
+    }
+
+    .task-status-line.status-no-data {
+      color: var(--muted);
     }
 
     .table-wrap {
@@ -827,6 +1014,26 @@
       });
     }
 
+    function readTaskDescription(worksheet) {
+      if (!worksheet["!ref"]) return "";
+
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      const values = [];
+      for (let col = range.s.c; col <= range.e.c; col += 1) {
+        const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: col })];
+        const value = cell?.w ?? cell?.v ?? "";
+        const text = String(value).trim();
+        if (text) values.push(text);
+      }
+      return values.join(" ").trim();
+    }
+
+    function readTaskOwner(worksheet) {
+      const cell = worksheet["A2"];
+      const value = cell?.w ?? cell?.v ?? "";
+      return String(value).trim();
+    }
+
     function mapRows(rows) {
       if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS) };
 
@@ -938,6 +1145,8 @@
           return {
             id: slugify(sheetName),
             name: sheetName,
+            description: readTaskDescription(worksheet),
+            owner: readTaskOwner(worksheet),
             rows: mapped.data,
             missing: mapped.missing
           };
@@ -1027,6 +1236,9 @@
       const activeRows = rowsWithDone.length ? rowsWithDone : rows;
       const lastDoneRow = [...rowsWithDone].pop();
       const done = lastDoneRow ? cleanNumber(lastDoneRow.done) : 0;
+      const quarterDoneSeries = quarterDoneValues(rows);
+      const lastQuarterDone = [...quarterDoneSeries].reverse().find(value => value !== null && value !== undefined);
+      const quarterDone = lastQuarterDone === undefined ? done : lastQuarterDone;
       const numericQuarterPlans = rows.filter(row => row.hasNumericQuarterPlan).map(row => cleanNumber(row.quarterPlan));
       const numericYearPlans = rows.filter(row => row.hasNumericYearPlan).map(row => cleanNumber(row.yearPlan));
       const textPlans = rows.filter(row => row.planText);
@@ -1037,13 +1249,98 @@
       const yearPlan = numericYearPlans.length ? Math.max(...numericYearPlans, 0) : quarterPlan;
       const lastQuarterProgress = [...numericQuarterProgressRows].pop();
       const lastYearProgress = [...numericYearProgressRows].pop();
-      const derivedProgress = quarterPlan > 0 ? Math.max((done / quarterPlan) * 100, 0) : 0;
+      const progressDone = state.quarter === "all" ? done : quarterDone;
+      const derivedProgress = quarterPlan > 0 ? Math.max((progressDone / quarterPlan) * 100, 0) : 0;
       const quarterProgress = lastQuarterProgress ? lastQuarterProgress.quarterProgress : derivedProgress;
       const yearProgress = lastYearProgress ? lastYearProgress.yearProgress : quarterProgress;
       const isComplete = (yearProgress >= 100)
         || (yearPlan > 0 && done >= yearPlan);
+      const displayDone = state.quarter === "all" ? done : quarterDone;
+      const remaining = state.quarter === "all"
+        ? Math.max(yearPlan - done, 0)
+        : Math.max(quarterPlan - quarterDone, 0);
+      const planStatus = buildPlanStatus(rows, lastDoneRow, displayDone);
 
-      return { done, quarterPlan, yearPlan, quarterProgress, yearProgress, isComplete, rowsCount: rows.length };
+      return { done, quarterDone, displayDone, remaining, quarterPlan, yearPlan, quarterProgress, yearProgress, isComplete, planStatus, rowsCount: rows.length };
+    }
+
+    function buildPlanStatus(rows, lastDoneRow, factValue) {
+      if (!rows.length || !lastDoneRow) {
+        return {
+          key: "no-data",
+          label: "Нет данных",
+          detail: "Нет заполненного выполнения для сравнения с планом.",
+          delta: null,
+          fact: factValue,
+          plan: null
+        };
+      }
+
+      const useYearPlan = state.quarter === "all";
+      const hasPlan = useYearPlan
+        ? lastDoneRow.hasNumericYearPlan
+        : lastDoneRow.hasNumericQuarterPlan;
+      const planValue = hasPlan
+        ? cleanNumber(useYearPlan ? rowYearPlanValue(lastDoneRow) : rowQuarterPlanValue(lastDoneRow))
+        : null;
+
+      if (planValue === null) {
+        return {
+          key: "no-data",
+          label: "Нет данных",
+          detail: "Нет планового значения на текущую неделю.",
+          delta: null,
+          fact: factValue,
+          plan: null
+        };
+      }
+
+      const fact = cleanNumber(factValue);
+      const delta = fact - planValue;
+      const absDelta = Math.abs(delta);
+
+      if (absDelta < 0.000001) {
+        return {
+          key: "on-track",
+          label: "Идем по плану",
+          detail: `План на сейчас: ${formatNumber(planValue)}.`,
+          delta,
+          fact,
+          plan: planValue
+        };
+      }
+
+      if (delta > 0) {
+        return {
+          key: "ahead",
+          label: "Перевыполняем",
+          detail: `Опережение плана: ${formatNumber(absDelta)}.`,
+          delta,
+          fact,
+          plan: planValue
+        };
+      }
+
+      return {
+        key: "behind",
+        label: "Отстаем",
+        detail: `Отставание от плана: ${formatNumber(absDelta)}.`,
+        delta,
+        fact,
+        plan: planValue
+      };
+    }
+
+    function displayStatus(summary) {
+      if (summary.isComplete) {
+        return {
+          key: "complete",
+          label: "Выполнено",
+          detail: "План закрыт полностью."
+        };
+      }
+
+      return summary.planStatus;
     }
 
     function taskSummary(task) {
@@ -1109,7 +1406,7 @@
             return hasYearPlan ? item.summary.yearPlan : null;
           })
         : [];
-      const overviewProgressDatasets = [
+      const overviewProgressDatasets = showYearProgress ? [] : [
         {
           label: `${quarterProgressLabel()}, %`,
           data: summaries.map(item => item.summary.quarterProgress),
@@ -1117,20 +1414,15 @@
         }
       ];
 
-      if (showYearProgress) {
-        overviewProgressDatasets.push({
-          label: "Годовой прогресс, %",
-          data: summaries.map(item => item.summary.yearProgress),
-          backgroundColor: "#16a34a"
-        });
-      }
-      const overviewDoneDatasets = [
-        {
+      const overviewDoneDatasets = [];
+
+      if (!showYearPlan) {
+        overviewDoneDatasets.push({
           label: "Квартальный план",
           data: summaries.map(item => item.summary.quarterPlan),
           backgroundColor: "#2563eb"
-        }
-      ];
+        });
+      }
 
       if (showYearPlan && hasPlottableValues(overviewYearPlanValues)) {
         overviewDoneDatasets.push({
@@ -1141,8 +1433,8 @@
       }
 
       overviewDoneDatasets.push({
-        label: "Выполнено",
-        data: summaries.map(item => item.summary.done),
+        label: showYearPlan ? "Выполнено" : "Выполнено за квартал",
+        data: summaries.map(item => showYearPlan ? item.summary.done : item.summary.displayDone),
         backgroundColor: "#d97706"
       });
 
@@ -1155,21 +1447,26 @@
         </div>
 
         <div class="grid charts">
-          <section class="panel">
-            <h3>Прогресс по задачам</h3>
-            <canvas id="overviewProgressChart"></canvas>
-          </section>
+          ${showYearProgress ? "" : `
+            <section class="panel">
+              <h3>Прогресс по задачам</h3>
+              <canvas id="overviewProgressChart"></canvas>
+            </section>
+          `}
           <section class="panel">
             <h3>Выполнено и план по задачам</h3>
             <canvas id="overviewDoneChart"></canvas>
           </section>
         </div>
       `;
+      setupFlipCards();
 
-      makeBarChart("overviewProgressChart", {
-        labels: summaries.map(item => item.task.name),
-        datasets: overviewProgressDatasets
-      }, true, true);
+      if (!showYearProgress) {
+        makeBarChart("overviewProgressChart", {
+          labels: summaries.map(item => item.task.name),
+          datasets: overviewProgressDatasets
+        }, true, true);
+      }
 
       makeBarChart("overviewDoneChart", {
         labels: summaries.map(item => item.task.name),
@@ -1180,6 +1477,7 @@
     function renderTask(task) {
       const rows = filteredRows(task);
       const summary = summarizeRows(rows);
+      const status = displayStatus(summary);
       const showYearProgress = state.quarter === "all";
       const quarterPlanValues = rows.map(rowQuarterPlanValue);
       const yearPlanValues = showYearProgress ? rows.map(rowYearPlanValue) : [];
@@ -1214,8 +1512,8 @@
       }
 
       progressDatasets.push({
-        label: "Выполнено",
-        data: rows.map(row => row.hasDone ? row.done : null),
+        label: showYearProgress ? "Выполнено" : "Выполнено за квартал",
+        data: showYearProgress ? rows.map(row => row.hasDone ? row.done : null) : quarterDoneValues(rows),
         yAxisID: "y",
         borderColor: "#d97706",
         backgroundColor: "rgba(217, 119, 6, 0.14)",
@@ -1251,7 +1549,8 @@
 
       content.innerHTML = `
         <div class="grid cards">
-          ${metric("Выполнено", formatNumber(summary.done))}
+          ${metric("Статус плана", status.label, status.detail, `status-${status.key}`)}
+          ${metric(showYearProgress ? "Выполнено" : "Выполнено за квартал", formatNumber(summary.displayDone))}
           ${showYearProgress ? metric("Годовой план", formatNumber(summary.yearPlan)) : metric("Квартальный план", formatNumber(summary.quarterPlan))}
           ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
         </div>
@@ -1299,45 +1598,85 @@
       }
     }
 
-    function metric(label, value) {
+    function metric(label, value, note = "", className = "") {
       return `
-        <div class="metric">
+        <div class="metric ${escapeHtml(className)}">
           <div class="label">${escapeHtml(label)}</div>
           <div class="value">${escapeHtml(value)}</div>
+          ${note ? `<div class="note">${escapeHtml(note)}</div>` : ""}
         </div>
       `;
     }
 
+    function setupFlipCards() {
+      content.querySelectorAll("[data-flip-card]").forEach(card => {
+        const toggle = () => {
+          const flipped = card.classList.toggle("flipped");
+          card.setAttribute("aria-label", flipped ? "Показать показатели задачи" : "Показать описание задачи");
+        };
+        card.addEventListener("click", toggle);
+        card.addEventListener("keydown", event => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          toggle();
+        });
+      });
+    }
+
     function taskCard(task, summary) {
       const showYearProgress = state.quarter === "all";
+      const status = displayStatus(summary);
       const progressValue = showYearProgress ? summary.yearProgress : summary.quarterProgress;
       const progress = clamp(progressValue, 0, 100);
       const progressLabel = showYearProgress ? "Годовой прогресс" : quarterProgressLabel();
       const completionBadge = summary.isComplete ? `<span class="badge complete">Выполнено</span>` : "";
       const periodBadge = state.quarter === "all" ? "" : `<span class="badge">${escapeHtml(activeQuarterBadge())}</span>`;
-      const remaining = Math.max(cleanNumber(summary.yearPlan) - cleanNumber(summary.done), 0);
+      const planStatusBadge = summary.isComplete
+        ? ""
+        : `<span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}" aria-label="${escapeHtml(status.label)}"></span>`;
+      const cardBadges = `<span class="task-card-badges">${completionBadge}${planStatusBadge}${periodBadge}</span>`;
       const miniMetrics = showYearProgress
         ? `
             <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
             <span>Год. план<b>${formatNumber(summary.yearPlan)}</b></span>
-            <span>Осталось<b>${formatNumber(remaining)}</b></span>
+            <span>Осталось<b>${formatNumber(summary.remaining)}</b></span>
           `
         : `
-            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
+            <span>За квартал<b>${formatNumber(summary.displayDone)}</b></span>
             <span>Кв. план<b>${formatNumber(summary.quarterPlan)}</b></span>
+            <span>Осталось<b>${formatNumber(summary.remaining)}</b></span>
           `;
+      const hasDescription = Boolean(task.description);
+      const description = hasDescription ? task.description : "";
+      const ownerMarkup = task.owner ? `<p class="task-owner">Ответственный: <b>${escapeHtml(task.owner)}</b></p>` : "";
       return `
-        <article class="task-card${summary.isComplete ? " complete" : ""}">
-          <header>
-            <strong>${escapeHtml(task.name)}</strong>
-            ${completionBadge || periodBadge}
-          </header>
-          <p>${escapeHtml(progressLabel)}: ${formatPercent(progressValue)}</p>
-          <div class="progress" aria-label="${escapeHtml(progressLabel)}">
-            <div style="width:${progress}%"></div>
-          </div>
-          <div class="mini">
-            ${miniMetrics}
+        <article
+          class="task-card status-${escapeHtml(status.key)}${summary.isComplete ? " complete" : ""}${hasDescription ? " has-description" : ""}"
+          ${hasDescription ? `data-flip-card tabindex="0" role="button" aria-label="Показать описание задачи ${escapeHtml(task.name)}"` : ""}
+        >
+          <div class="task-card-inner">
+            <div class="task-card-face task-card-front">
+              <header>
+                <strong>${escapeHtml(task.name)}</strong>
+                ${cardBadges}
+              </header>
+              ${ownerMarkup}
+              <p>${escapeHtml(progressLabel)}: ${formatPercent(progressValue)}</p>
+              <div class="progress" aria-label="${escapeHtml(progressLabel)}">
+                <div style="width:${progress}%"></div>
+              </div>
+              <p class="task-status-line status-${escapeHtml(status.key)}">${escapeHtml(status.detail)}</p>
+              <div class="mini">
+                ${miniMetrics}
+              </div>
+              ${hasDescription ? `<span class="task-card-hint">Нажмите, чтобы открыть описание</span>` : ""}
+            </div>
+            ${hasDescription ? `
+              <div class="task-card-face task-card-back">
+                <p>${escapeHtml(description)}</p>
+                <span class="task-card-hint">Нажмите, чтобы вернуться</span>
+              </div>
+            ` : ""}
           </div>
         </article>
       `;
@@ -1401,6 +1740,9 @@
     function donePlanDatasets(rows, includeYearPlan = false) {
       const quarterPlanValues = rows.map(rowQuarterPlanValue);
       const yearPlanValues = includeYearPlan ? rows.map(rowYearPlanValue) : [];
+      const doneValues = includeYearPlan || state.quarter !== "all"
+        ? quarterDoneValues(rows)
+        : rows.map(row => row.hasDone ? row.done : null);
       const datasets = [];
 
       if (hasPlottableValues(quarterPlanValues)) {
@@ -1420,12 +1762,35 @@
       }
 
       datasets.push({
-        label: "Выполнено",
-        data: rows.map(row => row.hasDone ? row.done : null),
+        label: includeYearPlan || state.quarter !== "all" ? "Выполнено за квартал" : "Выполнено",
+        data: doneValues,
         backgroundColor: "#d97706"
       });
 
       return datasets;
+    }
+
+    function quarterDoneValues(rows) {
+      const baseline = inferQuarterBaseline(rows);
+      return rows.map(row => row.hasDone ? Math.max(cleanNumber(row.done) - baseline, 0) : null);
+    }
+
+    function inferQuarterBaseline(rows) {
+      const progressRow = rows.find(row =>
+        row.hasDone
+        && row.hasNumericQuarterProgress
+        && row.hasNumericQuarterPlan
+      );
+
+      if (progressRow) {
+        const done = cleanNumber(progressRow.done);
+        const progress = cleanNumber(progressRow.quarterProgress) / 100;
+        const plan = cleanNumber(progressRow.quarterPlan);
+        return Math.max(done - progress * plan, 0);
+      }
+
+      const firstDoneRow = rows.find(row => row.hasDone);
+      return firstDoneRow ? cleanNumber(firstDoneRow.done) : 0;
     }
 
     function rowQuarterPlanValue(row) {
