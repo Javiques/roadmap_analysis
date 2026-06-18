@@ -141,6 +141,43 @@
       background: rgba(255, 255, 255, 0.11);
     }
 
+    .tool-actions {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .sidebar-action {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 7px;
+      padding: 9px 10px;
+      color: #e5e7eb;
+      background: rgba(255, 255, 255, 0.07);
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .sidebar-action:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .sidebar-action.primary {
+      border-color: rgba(37, 99, 235, 0.75);
+      background: var(--primary);
+    }
+
+    .sidebar-action.primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+    }
+
+    .sidebar-action:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
     .filters {
       display: grid;
       gap: 12px;
@@ -622,6 +659,135 @@
       margin-top: 10px;
     }
 
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .modal[hidden] {
+      display: none;
+    }
+
+    .modal-panel {
+      width: min(920px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      background: var(--panel);
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    }
+
+    .modal-header,
+    .modal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      justify-content: flex-end;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-close {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 26px;
+      line-height: 1;
+      padding: 0 4px;
+    }
+
+    .roadmap-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-field label {
+      color: #344054;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--text);
+      padding: 10px 11px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .form-field textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .form-help {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px 14px;
+      background: #ffffff;
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .button:hover {
+      background: #f8fafc;
+    }
+
+    .button.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .button.primary:hover {
+      background: var(--primary-dark);
+    }
+
     @media (max-width: 980px) {
       .app {
         grid-template-columns: 1fr;
@@ -645,6 +811,10 @@
       main {
         padding: 18px;
       }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -660,6 +830,11 @@
         <label class="file-picker-button" for="fileInput">Выбрать файл</label>
         <input id="fileInput" class="file-input" type="file" accept=".xlsx,.xls,.xlsm,.csv">
         <div id="errorBox" class="error" hidden></div>
+      </div>
+
+      <div class="tool-actions">
+        <button id="newRoadmapButton" class="sidebar-action primary" type="button">Новая дорожная карта</button>
+        <button id="exportWorkbookButton" class="sidebar-action" type="button" disabled>Скачать Excel</button>
       </div>
 
       <div class="filters">
@@ -687,11 +862,77 @@
         <div class="empty">
           <div>
             <h2>Загрузите Excel-файл</h2>
-            <p>Ожидаемые колонки находятся в A3:I3: Квартал, Неделя, Начало недели, Конец недели, Квартальный план, Годовой план, Квартальный прогресс, Годовой прогресс, Выполнено. Значения начинаются с 4 строки.</p>
+            <p>Ожидаемые колонки находятся в A3:J3: Квартал, Неделя, Начало недели, Конец недели, Квартальный план, Годовой план, Квартальный прогресс, Годовой прогресс, Выполнено, Комментарий. Значения начинаются с 4 строки.</p>
           </div>
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="roadmapModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="roadmapModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="roadmapModalTitle">Новая дорожная карта</h2>
+          <p>Создайте задачу в дашборде и скачайте обновленный Excel.</p>
+        </div>
+        <button id="closeRoadmapModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <form id="roadmapForm" class="roadmap-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="roadmapName">Название листа</label>
+              <input id="roadmapName" name="name" required maxlength="31" placeholder="Новая задача">
+            </div>
+            <div class="form-field">
+              <label for="roadmapOwner">Ответственный</label>
+              <input id="roadmapOwner" name="owner" placeholder="Фамилия И. О.">
+            </div>
+            <div class="form-field">
+              <label for="roadmapType">Тип карты</label>
+              <select id="roadmapType" name="type">
+                <option value="quantitative">Количественная</option>
+                <option value="stage">Этапная</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="roadmapYear">Год</label>
+              <input id="roadmapYear" name="year" type="number" min="2020" max="2035" value="2026" required>
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ1">План Q1</label>
+              <input id="roadmapQ1" name="q1" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ2">План Q2</label>
+              <input id="roadmapQ2" name="q2" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ3">План Q3</label>
+              <input id="roadmapQ3" name="q3" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ4">План Q4</label>
+              <input id="roadmapQ4" name="q4" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="form-field full">
+              <label for="roadmapDescription">Описание задачи</label>
+              <textarea id="roadmapDescription" name="description" placeholder="Цель и ожидаемый результат"></textarea>
+            </div>
+            <div class="form-field full">
+              <label for="roadmapStages">Этапы или комментарии по неделям</label>
+              <textarea id="roadmapStages" name="stages" placeholder="Каждая строка попадет в ближайшую неделю как комментарий/этап"></textarea>
+              <div class="form-help">Для количественной карты строки попадут в колонку «Комментарий». Для этапной карты - в колонку «План».</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelRoadmapButton" class="button" type="button">Отмена</button>
+          <button class="button primary" type="submit">Создать</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -704,7 +945,8 @@
       yearPlan: ["годовой план", "year plan", "annual plan"],
       quarterProgress: ["квартальный прогресс", "прогресс", "quarter progress", "progress"],
       yearProgress: ["годовой прогресс", "year progress", "annual progress"],
-      done: ["выполнено", "done", "completed", "fact"]
+      done: ["выполнено", "done", "completed", "fact"],
+      comment: ["комментарий", "comment", "note"]
     };
 
     const COLUMN_LABELS = {
@@ -716,14 +958,18 @@
       yearPlan: "Годовой план",
       quarterProgress: "Квартальный прогресс",
       yearProgress: "Годовой прогресс",
-      done: "Выполнено"
+      done: "Выполнено",
+      comment: "Комментарий"
     };
 
     const state = {
       tasks: [],
       activeTab: "overview",
       quarter: "all",
-      charts: []
+      charts: [],
+      workbook: null,
+      fileName: "",
+      createdTasks: []
     };
 
     const BASE_QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
@@ -736,12 +982,26 @@
     const pageSubtitle = document.getElementById("pageSubtitle");
     const statusBox = document.getElementById("statusBox");
     const errorBox = document.getElementById("errorBox");
+    const newRoadmapButton = document.getElementById("newRoadmapButton");
+    const exportWorkbookButton = document.getElementById("exportWorkbookButton");
+    const roadmapModal = document.getElementById("roadmapModal");
+    const roadmapForm = document.getElementById("roadmapForm");
+    const closeRoadmapModal = document.getElementById("closeRoadmapModal");
+    const cancelRoadmapButton = document.getElementById("cancelRoadmapButton");
 
     fileInput.addEventListener("change", handleFile);
     quarterFilter.addEventListener("change", () => {
       state.quarter = quarterFilter.value;
       render();
     });
+    newRoadmapButton.addEventListener("click", openRoadmapModal);
+    exportWorkbookButton.addEventListener("click", exportWorkbook);
+    closeRoadmapModal.addEventListener("click", closeRoadmapModalWindow);
+    cancelRoadmapButton.addEventListener("click", closeRoadmapModalWindow);
+    roadmapModal.addEventListener("click", event => {
+      if (event.target === roadmapModal) closeRoadmapModalWindow();
+    });
+    roadmapForm.addEventListener("submit", handleRoadmapSubmit);
 
     const axisLabelTooltipPlugin = {
       id: "axisLabelTooltip",
@@ -981,7 +1241,7 @@
       const range = XLSX.utils.decode_range(worksheet["!ref"]);
       range.s.r = 2;
       range.s.c = 0;
-      range.e.c = 8;
+      range.e.c = 9;
 
       if (range.e.r < range.s.r) return [];
 
@@ -998,7 +1258,7 @@
         raw: true
       });
 
-      const headers = (table[0] || []).slice(0, 9).map((header, index) => {
+      const headers = (table[0] || []).slice(0, 10).map((header, index) => {
         return String(header || `Колонка ${index + 1}`).trim();
       });
 
@@ -1056,6 +1316,7 @@
           if (header) return false;
           if (key === "yearPlan" && hasSimplePlan) return false;
           if (key === "yearProgress" && hasSimpleProgress) return false;
+          if (key === "comment") return false;
           return true;
         })
         .map(([key]) => COLUMN_LABELS[key]);
@@ -1081,6 +1342,7 @@
         const quarterProgressRaw = rawCell(row, columnMap.quarterProgress);
         const yearProgressRaw = rawCell(row, columnMap.yearProgress);
         const doneRaw = rawCell(row, columnMap.done, { raw: true });
+        const commentRaw = rawCell(row, columnMap.comment);
 
         const mappedRow = {
           index: index + 1,
@@ -1095,6 +1357,7 @@
           done: cleanNumber(doneRaw),
           planText: isNumericLike(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
           progressText: isNumericLike(quarterProgressRaw) ? "" : textCell(row, columnMap.quarterProgress),
+          comment: textCell(row, columnMap.comment),
           hasNumericQuarterPlan: isNumericLike(quarterPlanRaw),
           hasNumericYearPlan: isNumericLike(yearPlanRaw),
           hasNumericQuarterProgress: isNumericLike(quarterProgressRaw),
@@ -1109,7 +1372,8 @@
           yearPlanRaw,
           quarterProgressRaw,
           yearProgressRaw,
-          doneRaw
+          doneRaw,
+          commentRaw
         ];
         return meaningfulValues.some(value => value !== "" && value !== 0) ? mappedRow : null;
       }).filter(Boolean);
@@ -1157,10 +1421,14 @@
         }
 
         state.tasks = tasks;
+        state.workbook = workbook;
+        state.fileName = file.name;
+        state.createdTasks = [];
         state.activeTab = "overview";
         state.quarter = "all";
         buildQuarterFilter();
         buildTabs();
+        updateExportButton();
         render();
       } catch (error) {
         showError(error.message || "Не удалось прочитать файл.");
@@ -1201,6 +1469,245 @@
       return (left.year - right.year)
         || (left.quarter - right.quarter)
         || left.label.localeCompare(right.label, "ru", { numeric: true });
+    }
+
+    function openRoadmapModal() {
+      roadmapForm.reset();
+      document.getElementById("roadmapYear").value = new Date().getFullYear();
+      roadmapModal.hidden = false;
+      document.getElementById("roadmapName").focus();
+    }
+
+    function closeRoadmapModalWindow() {
+      roadmapModal.hidden = true;
+    }
+
+    function handleRoadmapSubmit(event) {
+      event.preventDefault();
+      hideError();
+
+      const formData = new FormData(roadmapForm);
+      const draft = {
+        name: uniqueSheetName(formData.get("name")),
+        owner: String(formData.get("owner") || "").trim(),
+        description: String(formData.get("description") || "").trim(),
+        type: formData.get("type") === "stage" ? "stage" : "quantitative",
+        year: clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035),
+        plans: {
+          Q1: Math.max(cleanNumber(formData.get("q1")), 0),
+          Q2: Math.max(cleanNumber(formData.get("q2")), 0),
+          Q3: Math.max(cleanNumber(formData.get("q3")), 0),
+          Q4: Math.max(cleanNumber(formData.get("q4")), 0)
+        },
+        stages: String(formData.get("stages") || "")
+          .split(/\r?\n/)
+          .map(item => item.trim())
+          .filter(Boolean)
+      };
+
+      if (!draft.name) {
+        showError("Укажите название дорожной карты.");
+        return;
+      }
+
+      const task = createRoadmapTask(draft);
+      state.tasks.push(task);
+      state.createdTasks.push(task);
+      state.activeTab = task.id;
+      state.quarter = "all";
+      buildQuarterFilter();
+      buildTabs();
+      updateExportButton();
+      closeRoadmapModalWindow();
+      render();
+    }
+
+    function uniqueSheetName(value) {
+      const existing = new Set([
+        ...state.tasks.map(task => task.name),
+        ...(state.workbook?.SheetNames || [])
+      ].map(name => normalizeHeader(name)));
+      const base = sanitizeSheetName(value) || "Новая карта";
+      let candidate = base;
+      let index = 2;
+      while (existing.has(normalizeHeader(candidate))) {
+        const suffix = ` ${index}`;
+        candidate = `${base.slice(0, 31 - suffix.length)}${suffix}`;
+        index += 1;
+      }
+      return candidate;
+    }
+
+    function sanitizeSheetName(value) {
+      return String(value || "")
+        .replace(/[:\\/?*\[\]]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 31);
+    }
+
+    function createRoadmapTask(draft) {
+      const rows = generateRoadmapRows(draft);
+      return {
+        id: slugify(draft.name),
+        name: draft.name,
+        description: draft.description,
+        owner: draft.owner,
+        rows,
+        missing: [],
+        created: true,
+        draft
+      };
+    }
+
+    function generateRoadmapRows(draft) {
+      const weeks = generateWeeks(draft.year);
+      const cumulativePlan = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+      const quarterCounts = BASE_QUARTERS.reduce((result, quarter) => {
+        result[quarter] = weeks.filter(week => week.quarter === quarter).length;
+        return result;
+      }, {});
+      let stageIndex = 0;
+
+      return weeks.map((week, index) => {
+        const isLastQuarterWeek = index === weeks.length - 1 || weeks[index + 1].quarter !== week.quarter;
+        const quarterPlan = draft.type === "quantitative"
+          ? plannedValueForWeek(draft.plans[week.quarter], week.weekInQuarter, quarterCounts[week.quarter], isLastQuarterWeek)
+          : 0;
+        cumulativePlan[week.quarter] = quarterPlan;
+        const yearPlan = BASE_QUARTERS.reduce((sum, quarter) => {
+          return sum + (quarter === week.quarter ? quarterPlan : cumulativePlan[quarter]);
+        }, 0);
+        const stageText = draft.stages[stageIndex] || "";
+        if (stageText) stageIndex += 1;
+
+        return {
+          index: index + 1,
+          quarter: week.weekInQuarter === 1 ? `${week.quarter} ${draft.year}` : `${week.quarter} ${draft.year}`,
+          week: week.week,
+          weekStart: week.start.toLocaleDateString("ru-RU"),
+          weekEnd: week.end.toLocaleDateString("ru-RU"),
+          quarterPlan,
+          yearPlan,
+          quarterProgress: 0,
+          yearProgress: 0,
+          done: 0,
+          planText: draft.type === "stage" ? stageText : "",
+          progressText: "",
+          comment: draft.type === "quantitative" ? stageText : "",
+          hasNumericQuarterPlan: draft.type === "quantitative",
+          hasNumericYearPlan: draft.type === "quantitative",
+          hasNumericQuarterProgress: false,
+          hasNumericYearProgress: false,
+          hasDone: false
+        };
+      });
+    }
+
+    function generateWeeks(year) {
+      const weeks = [];
+      let start = new Date(year, 0, 1);
+      for (let week = 1; week <= 52; week += 1) {
+        const end = new Date(start);
+        end.setDate(start.getDate() + (week === 1 ? 1 : 4));
+        const quarter = week <= 13 ? "Q1" : week <= 26 ? "Q2" : week <= 39 ? "Q3" : "Q4";
+        const quarterStartWeek = quarter === "Q1" ? 1 : quarter === "Q2" ? 14 : quarter === "Q3" ? 27 : 40;
+        weeks.push({
+          week,
+          quarter,
+          weekInQuarter: week - quarterStartWeek + 1,
+          start: new Date(start),
+          end
+        });
+        start = new Date(end);
+        start.setDate(end.getDate() + 3);
+      }
+      return weeks;
+    }
+
+    function plannedValueForWeek(totalPlan, weekInQuarter, weeksInQuarter, isLastQuarterWeek) {
+      const total = cleanNumber(totalPlan);
+      if (!total || !weeksInQuarter) return 0;
+      if (isLastQuarterWeek) return total;
+      return Math.min(Math.round((total / weeksInQuarter) * weekInQuarter), total);
+    }
+
+    function updateExportButton() {
+      exportWorkbookButton.disabled = !state.tasks.length;
+      exportWorkbookButton.textContent = state.createdTasks.length
+        ? `Скачать Excel (${state.createdTasks.length})`
+        : "Скачать Excel";
+    }
+
+    function exportWorkbook() {
+      hideError();
+      if (!state.tasks.length) {
+        showError("Нет данных для экспорта.");
+        return;
+      }
+
+      try {
+        const workbook = cloneWorkbookForExport();
+        state.createdTasks.forEach(task => {
+          const worksheet = taskToWorksheet(task);
+          XLSX.utils.book_append_sheet(workbook, worksheet, sanitizeSheetName(task.name));
+        });
+
+        const baseName = (state.fileName || "roadmaps.xlsx").replace(/\.[^.]+$/, "");
+        XLSX.writeFile(workbook, `${baseName}_updated.xlsx`);
+      } catch (error) {
+        showError(error.message || "Не удалось сформировать Excel.");
+      }
+    }
+
+    function cloneWorkbookForExport() {
+      if (!state.workbook) {
+        return XLSX.utils.book_new();
+      }
+
+      const data = XLSX.write(state.workbook, { bookType: "xlsx", type: "array" });
+      return XLSX.read(data, { type: "array", cellDates: true });
+    }
+
+    function taskToWorksheet(task) {
+      const aoa = [
+        [task.description || task.name],
+        [task.owner || ""],
+        Object.values(COLUMN_LABELS)
+      ];
+      let lastQuarter = "";
+
+      task.rows.forEach(row => {
+        const quarter = row.quarter === lastQuarter ? "" : row.quarter;
+        lastQuarter = row.quarter;
+        aoa.push([
+          quarter,
+          row.week,
+          row.weekStart,
+          row.weekEnd,
+          row.planText || row.quarterPlan || "",
+          row.hasNumericYearPlan ? row.yearPlan : "",
+          row.hasNumericQuarterProgress ? row.quarterProgress / 100 : "",
+          row.hasNumericYearProgress ? row.yearProgress / 100 : "",
+          row.hasDone ? row.done : "",
+          row.comment || ""
+        ]);
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+      worksheet["!cols"] = [
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 36 }
+      ];
+      return worksheet;
     }
 
     function buildTabs() {
@@ -1703,6 +2210,7 @@
                   <td class="${row.progressText ? "text-cell" : ""}">${escapeHtml(row.progressText || (row.hasNumericQuarterProgress ? formatPercent(row.quarterProgress) : ""))}</td>
                   <td>${row.hasNumericYearProgress ? formatPercent(row.yearProgress) : ""}</td>
                   <td>${row.hasDone ? formatNumber(row.done) : ""}</td>
+                  <td class="text-cell">${escapeHtml(row.comment || "")}</td>
                 </tr>
               `).join("")}
             </tbody>
