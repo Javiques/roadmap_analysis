@@ -147,6 +147,25 @@
       margin-bottom: 18px;
     }
 
+    .plan-edit-action {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: 0;
+      border-radius: 5px;
+      padding: 3px 5px;
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1.1;
+    }
+
+    .plan-edit-action:hover {
+      background: #eff6ff;
+      color: var(--primary-dark);
+    }
+
     .sidebar-action {
       width: 100%;
       border: 1px solid rgba(255, 255, 255, 0.25);
@@ -194,6 +213,10 @@
     .tabs {
       display: grid;
       gap: 7px;
+    }
+
+    .task-navigation + .upload {
+      margin-top: 22px;
     }
 
     .tab-button {
@@ -313,6 +336,7 @@
     }
 
     .metric {
+      position: relative;
       padding: 16px;
     }
 
@@ -821,8 +845,21 @@
 <body>
   <div class="app">
     <aside>
-      <div class="brand">
-        <h1>Прогресс задач</h1>
+      <div id="taskNavigation" class="task-navigation" hidden>
+        <div class="brand">
+          <h1>Прогресс задач</h1>
+        </div>
+
+        <div class="filters">
+          <div>
+            <label for="quarterFilter">Квартал</label>
+            <select id="quarterFilter" disabled>
+              <option value="all">Все кварталы</option>
+            </select>
+          </div>
+        </div>
+
+        <nav id="tabs" class="tabs" aria-label="Вкладки задач"></nav>
       </div>
 
       <div class="upload">
@@ -836,17 +873,6 @@
         <button id="newRoadmapButton" class="sidebar-action primary" type="button">Новая дорожная карта</button>
         <button id="exportWorkbookButton" class="sidebar-action" type="button" disabled>Скачать Excel</button>
       </div>
-
-      <div class="filters">
-        <div>
-          <label for="quarterFilter">Квартал</label>
-          <select id="quarterFilter" disabled>
-            <option value="all">Все кварталы</option>
-          </select>
-        </div>
-      </div>
-
-      <nav id="tabs" class="tabs" aria-label="Вкладки задач"></nav>
     </aside>
 
     <main>
@@ -858,14 +884,7 @@
         <div id="statusBox" class="status">Файл пока не загружен.</div>
       </div>
 
-      <section id="content" class="content">
-        <div class="empty">
-          <div>
-            <h2>Загрузите Excel-файл</h2>
-            <p>Ожидаемые колонки находятся в A3:J3: Квартал, Неделя, Начало недели, Конец недели, Квартальный план, Годовой план, Квартальный прогресс, Годовой прогресс, Выполнено, Комментарий. Значения начинаются с 4 строки.</p>
-          </div>
-        </div>
-      </section>
+      <section id="content" class="content"></section>
     </main>
   </div>
 
@@ -935,6 +954,40 @@
     </div>
   </div>
 
+  <div id="progressModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="progressModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="progressModalTitle">Обновить текущий прогресс</h2>
+          <p id="progressModalSubtitle">Укажите накопительный факт на выбранную неделю.</p>
+        </div>
+        <button id="closeProgressModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <form id="progressForm" class="roadmap-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label for="progressWeek">Неделя</label>
+              <select id="progressWeek" name="row" required></select>
+            </div>
+            <div class="form-field">
+              <label for="progressDone">Выполнено (накопительно)</label>
+              <input id="progressDone" name="done" type="number" min="0" step="any" required>
+            </div>
+            <div class="form-field full">
+              <label for="progressComment">Комментарий</label>
+              <textarea id="progressComment" name="comment" placeholder="Что сделано, риски или следующий шаг"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelProgressButton" class="button" type="button">Отмена</button>
+          <button class="button primary" type="submit">Сохранить прогресс</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const REQUIRED_COLUMNS = {
       quarter: ["квартал", "quarter"],
@@ -968,6 +1021,7 @@
       quarter: "all",
       charts: [],
       workbook: null,
+      sourceBuffer: null,
       fileName: "",
       createdTasks: []
     };
@@ -977,6 +1031,7 @@
     const fileInput = document.getElementById("fileInput");
     const quarterFilter = document.getElementById("quarterFilter");
     const tabs = document.getElementById("tabs");
+    const taskNavigation = document.getElementById("taskNavigation");
     const content = document.getElementById("content");
     const pageTitle = document.getElementById("pageTitle");
     const pageSubtitle = document.getElementById("pageSubtitle");
@@ -988,6 +1043,14 @@
     const roadmapForm = document.getElementById("roadmapForm");
     const closeRoadmapModal = document.getElementById("closeRoadmapModal");
     const cancelRoadmapButton = document.getElementById("cancelRoadmapButton");
+    const progressModal = document.getElementById("progressModal");
+    const progressForm = document.getElementById("progressForm");
+    const progressWeek = document.getElementById("progressWeek");
+    const progressDone = document.getElementById("progressDone");
+    const progressComment = document.getElementById("progressComment");
+    const progressModalSubtitle = document.getElementById("progressModalSubtitle");
+    const closeProgressModal = document.getElementById("closeProgressModal");
+    const cancelProgressButton = document.getElementById("cancelProgressButton");
 
     fileInput.addEventListener("change", handleFile);
     quarterFilter.addEventListener("change", () => {
@@ -998,10 +1061,11 @@
     exportWorkbookButton.addEventListener("click", exportWorkbook);
     closeRoadmapModal.addEventListener("click", closeRoadmapModalWindow);
     cancelRoadmapButton.addEventListener("click", closeRoadmapModalWindow);
-    roadmapModal.addEventListener("click", event => {
-      if (event.target === roadmapModal) closeRoadmapModalWindow();
-    });
     roadmapForm.addEventListener("submit", handleRoadmapSubmit);
+    closeProgressModal.addEventListener("click", closeProgressModalWindow);
+    cancelProgressButton.addEventListener("click", closeProgressModalWindow);
+    progressWeek.addEventListener("change", fillProgressForm);
+    progressForm.addEventListener("submit", handleProgressSubmit);
 
     const axisLabelTooltipPlugin = {
       id: "axisLabelTooltip",
@@ -1178,16 +1242,50 @@
     function parseDate(value) {
       if (!value) return "";
       if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        return value.toLocaleDateString("ru-RU");
+        return formatDisplayDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
       }
       if (typeof value === "number") {
         const parsed = XLSX.SSF.parse_date_code(value);
         if (parsed) {
-          const date = new Date(parsed.y, parsed.m - 1, parsed.d);
-          return date.toLocaleDateString("ru-RU");
+          return formatDisplayDate(parsed.y, parsed.m, parsed.d);
         }
       }
-      return String(value);
+      return parseTextDate(value) || String(value);
+    }
+
+    function formatDisplayDate(year, month, day) {
+      const normalizedYear = Number(year) < 100 ? 2000 + Number(year) : Number(year);
+      const date = new Date(normalizedYear, Number(month) - 1, Number(day));
+      if (
+        Number.isNaN(date.getTime())
+        || date.getFullYear() !== normalizedYear
+        || date.getMonth() !== Number(month) - 1
+        || date.getDate() !== Number(day)
+      ) return "";
+      return [date.getDate(), date.getMonth() + 1, date.getFullYear()]
+        .map((part, index) => index < 2 ? String(part).padStart(2, "0") : String(part))
+        .join(".");
+    }
+
+    function parseTextDate(value) {
+      const text = String(value).trim();
+      let match = text.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
+      if (match) return formatDisplayDate(match[1], match[2], match[3]);
+
+      match = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+      if (match) return formatDisplayDate(match[3], match[2], match[1]);
+
+      match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (match) {
+        const first = Number(match[1]);
+        const second = Number(match[2]);
+        const isUsOrder = first <= 12 || second > 12;
+        return isUsOrder
+          ? formatDisplayDate(match[3], first, second)
+          : formatDisplayDate(match[3], second, first);
+      }
+
+      return "";
     }
 
     function formatQuarter(quarter, year = "") {
@@ -1266,6 +1364,7 @@
         const record = {};
         const rawRow = rawTable[rowIndex + 1] || [];
         record.__raw = {};
+        record.__sourceRow = rowIndex + 4;
         headers.forEach((header, index) => {
           record[header] = row[index] ?? "";
           record.__raw[header] = rawRow[index] ?? "";
@@ -1295,7 +1394,7 @@
     }
 
     function mapRows(rows) {
-      if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS) };
+      if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS), columnMap: {} };
 
       const headers = Object.keys(rows[0]);
       const columnMap = {};
@@ -1304,6 +1403,9 @@
       Object.entries(REQUIRED_COLUMNS).forEach(([key, aliases]) => {
         columnMap[key] = pickColumn(headers, aliases);
       });
+      const columnIndexes = Object.fromEntries(
+        Object.entries(columnMap).map(([key, header]) => [key, headers.indexOf(header)])
+      );
       const hasExplicitQuarters = rows.some(row => {
         return normalizeQuarterValue(textCell(row, columnMap.quarter)) !== "";
       });
@@ -1346,6 +1448,7 @@
 
         const mappedRow = {
           index: index + 1,
+          sourceRow: row.__sourceRow,
           quarter,
           week,
           weekStart: parseDate(weekStartValue),
@@ -1391,7 +1494,7 @@
         });
       }
 
-      return { data, missing };
+      return { data, missing, columnMap, columnIndexes };
     }
 
     async function handleFile(event) {
@@ -1412,7 +1515,9 @@
             description: readTaskDescription(worksheet),
             owner: readTaskOwner(worksheet),
             rows: mapped.data,
-            missing: mapped.missing
+            missing: mapped.missing,
+            columnMap: mapped.columnMap,
+            columnIndexes: mapped.columnIndexes
           };
         }).filter(task => task.rows.length);
 
@@ -1422,10 +1527,12 @@
 
         state.tasks = tasks;
         state.workbook = workbook;
+        state.sourceBuffer = buffer.slice(0);
         state.fileName = file.name;
         state.createdTasks = [];
         state.activeTab = "overview";
         state.quarter = "all";
+        taskNavigation.hidden = false;
         buildQuarterFilter();
         buildTabs();
         updateExportButton();
@@ -1480,6 +1587,81 @@
 
     function closeRoadmapModalWindow() {
       roadmapModal.hidden = true;
+    }
+
+    function rowDate(value) {
+      const match = String(value || "").match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])) : null;
+    }
+
+    function defaultProgressRow(rows) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const current = rows.find(row => {
+        const start = rowDate(row.weekStart);
+        const end = rowDate(row.weekEnd);
+        return start && end && start <= today && today <= end;
+      });
+      if (current) return current;
+
+      const past = rows.filter(row => {
+        const end = rowDate(row.weekEnd);
+        return end && end < today;
+      });
+      return past.at(-1) || rows[0];
+    }
+
+    function openProgressModal(task) {
+      const rows = task.rows.filter(row => row.sourceRow);
+      if (!rows.length || !task.columnMap?.done) {
+        showError("Для этой дорожной карты не найдена колонка «Выполнено».");
+        return;
+      }
+
+      progressForm.dataset.taskId = task.id;
+      progressWeek.innerHTML = rows.map(row => {
+        const label = [row.quarter, `Неделя ${row.week}`, row.weekStart && row.weekEnd ? `${row.weekStart}–${row.weekEnd}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+        return `<option value="${row.sourceRow}">${escapeHtml(label)}</option>`;
+      }).join("");
+      progressWeek.value = String(defaultProgressRow(rows).sourceRow);
+      progressModalSubtitle.textContent = `Задача: ${task.name}. Введите общий факт на конец выбранной недели.`;
+      fillProgressForm();
+      progressModal.hidden = false;
+      progressDone.focus();
+    }
+
+    function fillProgressForm() {
+      const task = state.tasks.find(item => item.id === progressForm.dataset.taskId);
+      const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
+      if (!row) return;
+      progressDone.value = row.hasDone ? String(row.done) : "0";
+      progressComment.value = row.comment || "";
+    }
+
+    function closeProgressModalWindow() {
+      progressModal.hidden = true;
+      delete progressForm.dataset.taskId;
+    }
+
+    function handleProgressSubmit(event) {
+      event.preventDefault();
+      const task = state.tasks.find(item => item.id === progressForm.dataset.taskId);
+      const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
+      const done = cleanNumber(progressDone.value);
+      if (!task || !row || !Number.isFinite(done) || done < 0) {
+        showError("Укажите корректное накопительное значение выполнения.");
+        return;
+      }
+
+      row.done = done;
+      row.hasDone = true;
+      row.comment = progressComment.value.trim();
+      row.edited = true;
+      closeProgressModalWindow();
+      updateExportButton();
+      render();
     }
 
     function handleRoadmapSubmit(event) {
@@ -1634,8 +1816,15 @@
 
     function updateExportButton() {
       exportWorkbookButton.disabled = !state.tasks.length;
-      exportWorkbookButton.textContent = state.createdTasks.length
-        ? `Скачать Excel (${state.createdTasks.length})`
+      const updatedRows = state.tasks.reduce((count, task) => {
+        return count + task.rows.filter(row => row.edited).length;
+      }, 0);
+      const changes = [
+        state.createdTasks.length ? `новых: ${state.createdTasks.length}` : "",
+        updatedRows ? `правок: ${updatedRows}` : ""
+      ].filter(Boolean);
+      exportWorkbookButton.textContent = changes.length
+        ? `Скачать Excel (${changes.join(", ")})`
         : "Скачать Excel";
     }
 
@@ -1647,26 +1836,144 @@
       }
 
       try {
-        const workbook = cloneWorkbookForExport();
-        state.createdTasks.forEach(task => {
-          const worksheet = taskToWorksheet(task);
-          XLSX.utils.book_append_sheet(workbook, worksheet, sanitizeSheetName(task.name));
-        });
-
         const baseName = (state.fileName || "roadmaps.xlsx").replace(/\.[^.]+$/, "");
-        XLSX.writeFile(workbook, `${baseName}_updated.xlsx`);
+        const fileName = `${baseName}_updated.xlsx`;
+        const hasProgressUpdates = state.tasks.some(task => task.rows.some(row => row.edited));
+
+        if (state.sourceBuffer) {
+          if (!state.createdTasks.length && !hasProgressUpdates) {
+            downloadWorkbook(state.sourceBuffer, fileName);
+            return;
+          }
+          const archive = readXlsxArchive(state.sourceBuffer);
+          if (hasProgressUpdates) applyProgressUpdatesToArchive(archive);
+          if (state.createdTasks.length) appendCreatedSheetsToArchive(archive, state.createdTasks);
+          downloadWorkbook(XLSX.CFB.write(archive, { type: "array", fileType: "zip" }), fileName);
+          return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+        state.createdTasks.forEach(task => {
+          XLSX.utils.book_append_sheet(workbook, taskToWorksheet(task), sanitizeSheetName(task.name));
+        });
+        XLSX.writeFile(workbook, fileName);
       } catch (error) {
         showError(error.message || "Не удалось сформировать Excel.");
       }
     }
 
-    function cloneWorkbookForExport() {
-      if (!state.workbook) {
-        return XLSX.utils.book_new();
-      }
+    function downloadWorkbook(data, fileName) {
+      const url = URL.createObjectURL(new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
 
-      const data = XLSX.write(state.workbook, { bookType: "xlsx", type: "array" });
-      return XLSX.read(data, { type: "array", cellDates: true });
+    function readXlsxArchive(data) {
+      return XLSX.CFB.read(data instanceof ArrayBuffer ? new Uint8Array(data) : data, { type: "array" });
+    }
+
+    function archiveText(archive, path) {
+      const entry = XLSX.CFB.find(archive, `Root Entry/${path}`);
+      if (!entry?.content) throw new Error(`В Excel не найден файл ${path}.`);
+      return new TextDecoder("utf-8").decode(entry.content);
+    }
+
+    function setArchiveText(archive, path, text) {
+      XLSX.CFB.utils.cfb_add(archive, `Root Entry/${path}`, new TextEncoder().encode(text));
+    }
+
+    function xmlEscape(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+    }
+
+    function appendCreatedSheetsToArchive(archive, tasks) {
+      let workbookXml = archiveText(archive, "xl/workbook.xml");
+      let relationshipsXml = archiveText(archive, "xl/_rels/workbook.xml.rels");
+      let contentTypesXml = archiveText(archive, "[Content_Types].xml");
+      const paths = archive.FullPaths || [];
+      let sheetNumber = Math.max(0, ...paths.map(path => Number(path.match(/worksheets\/sheet(\d+)\.xml$/i)?.[1] || 0))) + 1;
+      let sheetId = Math.max(0, ...[...workbookXml.matchAll(/\bsheetId="(\d+)"/g)].map(match => Number(match[1]))) + 1;
+      let relationshipId = Math.max(0, ...[...relationshipsXml.matchAll(/\bId="rId(\d+)"/g)].map(match => Number(match[1]))) + 1;
+      const sheets = [];
+      const relationships = [];
+      const contentTypes = [];
+
+      tasks.forEach(task => {
+        setArchiveText(archive, `xl/worksheets/sheet${sheetNumber}.xml`, worksheetXml(task));
+        sheets.push(`<sheet name="${xmlEscape(sanitizeSheetName(task.name))}" sheetId="${sheetId}" r:id="rId${relationshipId}"/>`);
+        relationships.push(`<Relationship Id="rId${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${sheetNumber}.xml"/>`);
+        contentTypes.push(`<Override PartName="/xl/worksheets/sheet${sheetNumber}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+        sheetNumber += 1;
+        sheetId += 1;
+        relationshipId += 1;
+      });
+
+      setArchiveText(archive, "xl/workbook.xml", workbookXml.replace("</sheets>", `${sheets.join("")}</sheets>`));
+      setArchiveText(archive, "xl/_rels/workbook.xml.rels", relationshipsXml.replace("</Relationships>", `${relationships.join("")}</Relationships>`));
+      setArchiveText(archive, "[Content_Types].xml", contentTypesXml.replace("</Types>", `${contentTypes.join("")}</Types>`));
+    }
+
+    function worksheetXml(task) {
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, taskToWorksheet(task), "Sheet1");
+      return archiveText(readXlsxArchive(XLSX.write(workbook, { bookType: "xlsx", type: "array" })), "xl/worksheets/sheet1.xml");
+    }
+
+    function applyProgressUpdatesToArchive(archive) {
+      const workbookXml = archiveText(archive, "xl/workbook.xml");
+      const relationshipsXml = archiveText(archive, "xl/_rels/workbook.xml.rels");
+      const targets = new Map([...relationshipsXml.matchAll(/<Relationship\b([^>]*)\/>/g)].map(match => [
+        xmlAttribute(match[1], "Id"), xmlAttribute(match[1], "Target")
+      ]));
+      const sheetPaths = new Map([...workbookXml.matchAll(/<sheet\b([^>]*)\/>/g)].map(match => [
+        xmlUnescape(xmlAttribute(match[1], "name")),
+        `xl/${(targets.get(xmlAttribute(match[1], "r:id")) || "").replace(/^\//, "")}`
+      ]));
+
+      state.tasks.filter(task => !task.created).forEach(task => {
+        const path = sheetPaths.get(task.name);
+        if (!path || task.columnIndexes?.done < 0) return;
+        let xml = archiveText(archive, path);
+        task.rows.filter(row => row.edited).forEach(row => {
+          xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.done }), row.done, false);
+          if (task.columnIndexes?.comment >= 0) {
+            xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.comment }), row.comment, true);
+          }
+        });
+        setArchiveText(archive, path, xml);
+      });
+    }
+
+    function xmlAttribute(attributes, name) {
+      const match = String(attributes).match(new RegExp(`(?:^|\\s)${name.replace(":", "\\:")}="([^"]*)"`));
+      return match ? match[1] : "";
+    }
+
+    function xmlUnescape(value) {
+      return String(value || "").replace(/&quot;/g, "\"").replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    }
+
+    function setSheetCell(sheetXml, address, value, isText) {
+      const rowNumber = address.match(/\d+$/)?.[0];
+      const rowPattern = new RegExp(`(<row\\b[^>]*\\br="${rowNumber}"[^>]*>)([\\s\\S]*?)(</row>)`);
+      const cellPattern = new RegExp(`(<c\\b([^>]*\\br="${address}"[^>]*)>)([\\s\\S]*?)(</c>)|<c\\b([^>]*\\br="${address}"[^>]*)\\/>`);
+      const content = isText ? `<is><t>${xmlEscape(value)}</t></is>` : `<v>${Number(value)}</v>`;
+      return sheetXml.replace(rowPattern, (match, open, inner, close) => {
+        if (cellPattern.test(inner)) {
+          inner = inner.replace(cellPattern, (cell, openTag, attributes, oldContent, closeTag, emptyAttributes) => {
+            const clean = (attributes || emptyAttributes || "").replace(/\s+t="[^"]*"/g, "");
+            return `<c${clean}${isText ? ' t="inlineStr"' : ""}>${content}</c>`;
+          });
+        } else {
+          inner += `<c r="${address}"${isText ? ' t="inlineStr"' : ""}>${content}</c>`;
+        }
+        return `${open}${inner}${close}`;
+      });
     }
 
     function taskToWorksheet(task) {
@@ -2035,6 +2342,9 @@
 
       pageTitle.textContent = task.name;
       pageSubtitle.textContent = [missingText, activePeriodDescription()].filter(Boolean).join(" ");
+      const editAction = task.created || !task.columnMap?.done ? "" : `
+        <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести правки" title="Внести правки">✎</button>
+      `;
 
       const doneChartsMarkup = showYearProgress
         ? `
@@ -2056,7 +2366,7 @@
 
       content.innerHTML = `
         <div class="grid cards">
-          ${metric("Статус плана", status.label, status.detail, `status-${status.key}`)}
+          ${metric("Статус плана", status.label, status.detail, `status-${status.key}`, editAction)}
           ${metric(showYearProgress ? "Выполнено" : "Выполнено за квартал", formatNumber(summary.displayDone))}
           ${showYearProgress ? metric("Годовой план", formatNumber(summary.yearPlan)) : metric("Квартальный план", formatNumber(summary.quarterPlan))}
           ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
@@ -2085,6 +2395,11 @@
         </details>
       `;
 
+      const updateProgressButton = document.getElementById("updateProgressButton");
+      if (updateProgressButton) {
+        updateProgressButton.addEventListener("click", () => openProgressModal(task));
+      }
+
       makeLineChart("taskProgressChart", {
         labels: rows.map(row => String(row.week)),
         datasets: progressDatasets
@@ -2105,9 +2420,10 @@
       }
     }
 
-    function metric(label, value, note = "", className = "") {
+    function metric(label, value, note = "", className = "", actionMarkup = "") {
       return `
         <div class="metric ${escapeHtml(className)}">
+          ${actionMarkup}
           <div class="label">${escapeHtml(label)}</div>
           <div class="value">${escapeHtml(value)}</div>
           ${note ? `<div class="note">${escapeHtml(note)}</div>` : ""}
