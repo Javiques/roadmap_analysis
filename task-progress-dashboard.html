@@ -1,0 +1,3899 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Дашборд прогресса задач</title>
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./vendor/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #667085;
+      --line: #d9dee8;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --green: #16a34a;
+      --amber: #d97706;
+      --red: #dc2626;
+      --shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 290px 1fr;
+    }
+
+    aside {
+      background: #111827;
+      color: #f9fafb;
+      padding: 24px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    main {
+      padding: 26px;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.2;
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    h3 {
+      font-size: 15px;
+      margin: 0 0 14px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .brand {
+      margin-bottom: 22px;
+    }
+
+    .brand p {
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .upload {
+      border: 1px dashed rgba(255, 255, 255, 0.36);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      margin-bottom: 14px;
+    }
+
+    .upload-title {
+      display: block;
+      font-size: 12px;
+      color: #d1d5db;
+      margin-bottom: 7px;
+    }
+
+    input[type="file"],
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--text);
+      padding: 10px 11px;
+      font-size: 14px;
+    }
+
+    input[type="file"] {
+      color: #e5e7eb;
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .file-picker-button {
+      display: block;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 7px;
+      padding: 7px 10px;
+      color: #e5e7eb;
+      background: transparent;
+      cursor: pointer;
+      text-align: center;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .file-picker-button:hover {
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .upload-status {
+      margin: 8px 0 0;
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .upload-file-change {
+      width: 100%;
+      margin-top: 8px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: #bfdbfe;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      text-decoration: underline;
+    }
+
+    .tool-actions {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .plan-edit-action {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: 0;
+      border-radius: 5px;
+      padding: 3px 5px;
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1.1;
+    }
+
+    .plan-edit-action:hover {
+      background: #eff6ff;
+      color: var(--primary-dark);
+    }
+
+    .sidebar-action {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 7px;
+      padding: 9px 10px;
+      color: #e5e7eb;
+      background: rgba(255, 255, 255, 0.07);
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .sidebar-action:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .sidebar-action.primary {
+      border-color: rgba(37, 99, 235, 0.75);
+      background: var(--primary);
+    }
+
+    .sidebar-action.primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+    }
+
+    .sidebar-action:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .filters {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .filters label {
+      display: block;
+      color: #cbd5e1;
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .tabs {
+      display: grid;
+      gap: 7px;
+    }
+
+    .task-navigation + .upload {
+      margin-top: 22px;
+    }
+
+    .tab-button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 7px;
+      padding: 10px 11px;
+      color: #e5e7eb;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .tab-button:hover,
+    .tab-button.active {
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .tab-button span:last-child {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .topbar > div:first-child {
+      min-width: 0;
+    }
+
+    .topbar h2,
+    .status,
+    .panel h3,
+    .metric .value {
+      overflow-wrap: anywhere;
+    }
+
+    .status {
+      min-width: 230px;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .cards {
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+    }
+
+    .charts {
+      grid-template-columns: 1fr;
+      margin-top: 16px;
+    }
+
+    .quarter-charts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel,
+    .metric,
+    .task-card {
+      background: var(--panel);
+      border: 1px solid rgba(217, 222, 232, 0.8);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .sheet-data {
+      margin-top: 16px;
+    }
+
+    .sheet-data summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .sheet-data summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .sheet-data h3 {
+      margin: 0;
+    }
+
+    .sheet-data-toggle {
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .sheet-data .open-label,
+    .sheet-data[open] .closed-label {
+      display: none;
+    }
+
+    .sheet-data[open] .open-label {
+      display: inline;
+    }
+
+    .sheet-data-body {
+      margin-top: 16px;
+    }
+
+    .metric {
+      position: relative;
+      padding: 16px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .metric .note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .metric.status-behind .value {
+      color: #c2410c;
+    }
+
+    .metric.status-on-track .value {
+      color: #15803d;
+    }
+
+    .metric.status-ahead .value {
+      color: #1d4ed8;
+    }
+
+    .metric.status-complete .value {
+      color: #15803d;
+    }
+
+    .task-list {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 16px;
+    }
+
+    .task-card {
+      position: relative;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .task-card.complete {
+      border-color: rgba(22, 163, 74, 0.8);
+      box-shadow: 0 10px 24px rgba(22, 163, 74, 0.12);
+    }
+
+    .task-card.status-behind:not(.complete) {
+      border-color: rgba(234, 88, 12, 0.55);
+      box-shadow: 0 10px 24px rgba(234, 88, 12, 0.1);
+    }
+
+    .task-card.status-on-track:not(.complete) {
+      border-color: rgba(22, 163, 74, 0.45);
+    }
+
+    .task-card.status-ahead:not(.complete) {
+      border-color: rgba(37, 99, 235, 0.45);
+    }
+
+    .task-card.has-description {
+      cursor: pointer;
+      perspective: 1000px;
+    }
+
+    .task-card-inner {
+      min-height: 100%;
+      transition: transform 0.45s ease;
+      transform-style: preserve-3d;
+    }
+
+    .task-card.flipped .task-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .task-card-face {
+      min-height: 170px;
+      padding: 15px;
+      backface-visibility: hidden;
+    }
+
+    .task-card-back {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      transform: rotateY(180deg);
+      background: var(--panel);
+    }
+
+    .task-card-back p {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .task-card-hint {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 12px;
+    }
+
+    .task-owner {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0;
+    }
+
+    .task-owner b {
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .task-card header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .task-card strong {
+      display: -webkit-box;
+      min-height: 2.6em;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .task-card.complete strong {
+      -webkit-line-clamp: 1;
+    }
+
+    .task-card-completion {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      height: 0;
+      margin: 0;
+      position: relative;
+      transform: translateY(-26px);
+      z-index: 1;
+    }
+
+    .task-card-meta {
+      min-height: 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      background: #e0ecff;
+      color: #1d4ed8;
+    }
+
+    .badge.complete {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge.status-behind {
+      background: #ffedd5;
+      color: #c2410c;
+    }
+
+    .badge.status-on-track {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge.status-ahead {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge.status-no-data {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .badge.status-dot {
+      width: 14px;
+      height: 14px;
+      padding: 0;
+      font-size: 0;
+      line-height: 0;
+      border: 1px solid #111827;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+    }
+
+    .badge.status-dot.status-behind {
+      background: #ea580c;
+    }
+
+    .badge.status-dot.status-on-track {
+      background: #16a34a;
+    }
+
+    .badge.status-dot.status-ahead {
+      background: #2563eb;
+    }
+
+    .badge.status-dot.status-no-data {
+      background: #6b7280;
+    }
+
+    .badge.status-dot.status-complete {
+      background: #16a34a;
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin: 10px 0 8px;
+    }
+
+    .progress div {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--primary);
+      width: 0;
+    }
+
+    .task-card.complete .progress div {
+      background: var(--green);
+    }
+
+    .task-card.status-behind:not(.complete) .progress div {
+      background: #ea580c;
+    }
+
+    .task-card.status-on-track:not(.complete) .progress div {
+      background: #16a34a;
+    }
+
+    .task-card.status-ahead:not(.complete) .progress div {
+      background: #2563eb;
+    }
+
+    .task-card.status-no-data:not(.complete) .progress div {
+      background: #6b7280;
+    }
+
+    .mini {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 14px;
+    }
+
+    .mini b {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      margin-top: 3px;
+    }
+
+    .task-status-line {
+      font-size: 12px;
+      font-weight: 700;
+      margin: 10px 0 0;
+    }
+
+    .task-status-line.status-behind {
+      color: #c2410c;
+    }
+
+    .task-status-line.status-on-track {
+      color: #15803d;
+    }
+
+    .task-status-line.status-ahead {
+      color: #1d4ed8;
+    }
+
+    .task-status-line.status-complete {
+      color: #15803d;
+    }
+
+    .task-status-line.status-no-data {
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 520px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 940px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td.text-cell {
+      min-width: 260px;
+      max-width: 520px;
+      white-space: normal;
+      line-height: 1.35;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 1;
+      color: #475467;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .empty {
+      min-height: 62vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 30px;
+    }
+
+    .empty div {
+      max-width: 540px;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-height: 360px;
+    }
+
+    .error {
+      color: #fecaca;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .modal[hidden] {
+      display: none;
+    }
+
+    .modal-panel {
+      width: min(920px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      background: var(--panel);
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    }
+
+    .modal-header,
+    .modal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-close {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 26px;
+      line-height: 1;
+      padding: 0 4px;
+    }
+
+    .roadmap-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-field label {
+      color: #344054;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--text);
+      padding: 10px 11px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .form-field textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .report-preview {
+      min-height: 300px !important;
+      line-height: 1.5;
+    }
+
+    /* REPORT_FILTERS_START: isolated block for optional rollback */
+    .report-filters {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .report-filters h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .report-filter-heading,
+    .report-filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .report-filter-heading {
+      justify-content: space-between;
+    }
+
+    .report-filter-summary {
+      margin-left: auto;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .filter-link {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--primary);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .report-filter-list,
+    .report-status-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px 14px;
+    }
+
+    .report-filter-list {
+      max-height: 140px;
+      overflow: auto;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+    }
+
+    .report-filter-list label,
+    .report-status-list label {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      color: #344054;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .report-filter-list input,
+    .report-status-list input {
+      width: auto;
+      margin: 2px 0 0;
+    }
+    /* REPORT_FILTERS_END */
+
+    .report-action-status {
+      min-height: 20px;
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .report-action-status.success {
+      color: #15803d;
+    }
+
+    .form-help {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px 14px;
+      background: #ffffff;
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .button:hover {
+      background: #f8fafc;
+    }
+
+    .button.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .button.primary:hover {
+      background: var(--primary-dark);
+    }
+
+    @media (max-width: 1250px) and (min-width: 981px) {
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .status {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+      }
+
+      .cards,
+      .charts,
+      .quarter-charts {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      main {
+        padding: 18px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div id="taskNavigation" class="task-navigation" hidden>
+        <div class="brand">
+          <h1>Прогресс задач</h1>
+        </div>
+
+        <div class="filters">
+          <div>
+            <label for="quarterFilter">Квартал</label>
+            <select id="quarterFilter" disabled>
+              <option value="all">Все кварталы</option>
+            </select>
+          </div>
+        </div>
+
+        <nav id="tabs" class="tabs" aria-label="Вкладки задач"></nav>
+      </div>
+
+      <div class="upload">
+        <span class="upload-title">Excel-файл</span>
+        <button id="openRoadmapButton" class="file-picker-button" type="button">Открыть дорожную карту</button>
+        <input id="fileInput" class="file-input" type="file" accept=".xlsx,.xls,.xlsm,.csv">
+        <button id="changeRoadmapFileButton" class="upload-file-change" type="button" hidden>Сменить файл</button>
+        <p id="roadmapFolderStatus" class="upload-status">Выберите рабочий Excel-файл. При следующем запуске он откроется одной кнопкой.</p>
+        <div id="errorBox" class="error" hidden></div>
+      </div>
+
+      <div class="tool-actions">
+        <button id="newRoadmapButton" class="sidebar-action primary" type="button">Новая дорожная карта</button>
+        <button id="emailReportButton" class="sidebar-action" type="button" disabled>Отчёт для руководителя</button>
+        <button id="exportWorkbookButton" class="sidebar-action" type="button" disabled>Скачать Excel</button>
+        <button id="bugReportButton" class="sidebar-action" type="button">Сообщить о проблеме</button>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div>
+          <h2 id="pageTitle">Все задачи</h2>
+          <p id="pageSubtitle">Сводная вкладка появится после загрузки файла.</p>
+        </div>
+        <div id="statusBox" class="status">Файл пока не загружен.</div>
+      </div>
+
+      <section id="content" class="content"></section>
+    </main>
+  </div>
+
+  <div id="roadmapModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="roadmapModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="roadmapModalTitle">Новая дорожная карта</h2>
+          <p>Создайте задачу в дашборде и скачайте обновленный Excel.</p>
+        </div>
+        <button id="closeRoadmapModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <form id="roadmapForm" class="roadmap-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="roadmapName">Название листа</label>
+              <input id="roadmapName" name="name" required maxlength="31" placeholder="Новая задача">
+            </div>
+            <div class="form-field">
+              <label for="roadmapOwner">Ответственный</label>
+              <input id="roadmapOwner" name="owner" placeholder="Фамилия И. О.">
+            </div>
+            <div id="roadmapTemplateField" class="form-field full" hidden>
+              <label for="roadmapTemplate">Лист-образец формул</label>
+              <select id="roadmapTemplate" name="template"></select>
+              <div class="form-help">Доступны две основные ДК с проверенными формулами. Новый лист скопирует их структуру и оформление.</div>
+            </div>
+            <div class="form-field">
+              <label for="roadmapType">Тип карты</label>
+              <select id="roadmapType" name="type">
+                <option value="quantitative">Количественная</option>
+                <option value="stage">Этапная</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="roadmapYear">Год</label>
+              <input id="roadmapYear" name="year" type="number" min="2020" max="2035" value="2026" required>
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ1">План Q1</label>
+              <input id="roadmapQ1" name="q1" type="number" min="0" step="1">
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ2">План Q2</label>
+              <input id="roadmapQ2" name="q2" type="number" min="0" step="1">
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ3">План Q3</label>
+              <input id="roadmapQ3" name="q3" type="number" min="0" step="1">
+            </div>
+            <div class="form-field">
+              <label for="roadmapQ4">План Q4</label>
+              <input id="roadmapQ4" name="q4" type="number" min="0" step="1">
+            </div>
+            <div class="form-field full">
+              <label for="roadmapDescription">Описание задачи</label>
+              <textarea id="roadmapDescription" name="description" placeholder="Цель и ожидаемый результат"></textarea>
+            </div>
+            <div class="form-field full">
+              <label for="roadmapStages">Этапы или комментарии по неделям</label>
+              <textarea id="roadmapStages" name="stages" placeholder="Каждая строка попадет в ближайшую неделю как комментарий/этап"></textarea>
+              <div class="form-help">Для количественной карты строки попадут в колонку «Комментарий». Для этапной карты - в колонку «План».</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelRoadmapButton" class="button" type="button">Отмена</button>
+          <button class="button primary" type="submit">Создать</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="progressModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="progressModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="progressModalTitle">Обновить текущий прогресс</h2>
+          <p id="progressModalSubtitle">Укажите накопительный факт на выбранную неделю.</p>
+        </div>
+        <button id="closeProgressModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <form id="progressForm" class="roadmap-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label for="progressWeek">Неделя</label>
+              <select id="progressWeek" name="row" required></select>
+            </div>
+            <div class="form-field">
+              <label for="progressDone">Выполнено (накопительно)</label>
+              <input id="progressDone" name="done" type="number" min="0" step="any" required>
+            </div>
+            <div class="form-field full">
+              <label for="progressComment">Комментарий</label>
+              <textarea id="progressComment" name="comment" placeholder="Что сделано, риски или следующий шаг. Для закрытия задачи: [ЗАВЕРШЕНО]"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelProgressButton" class="button" type="button">Отмена</button>
+          <button class="button primary" type="submit">Сохранить прогресс</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="emailReportModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="emailReportModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="emailReportModalTitle">Отчёт для руководителя</h2>
+          <p>Проверьте текст, затем скопируйте его или откройте готовое письмо.</p>
+        </div>
+        <button id="closeEmailReportModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="emailReportRecipients">Получатели</label>
+            <input id="emailReportRecipients" type="text" inputmode="email" placeholder="director@company.ru; manager@company.ru">
+            <div class="form-help">Можно указать несколько адресов через запятую или точку с запятой.</div>
+          </div>
+          <!-- REPORT_FILTERS_START: isolated block for optional rollback -->
+          <section id="emailReportFilters" class="report-filters" aria-labelledby="emailReportFiltersTitle">
+            <div class="report-filter-heading">
+              <h3 id="emailReportFiltersTitle">Фильтры отчёта</h3>
+              <span id="emailReportFilterSummary" class="report-filter-summary" aria-live="polite"></span>
+              <div class="report-filter-actions">
+                <button id="selectAllReportTasks" class="filter-link" type="button">Выбрать все задачи</button>
+                <button id="clearAllReportTasks" class="filter-link" type="button">Снять выбор</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="emailReportOwner">Ответственный</label>
+                <select id="emailReportOwner">
+                  <option value="all">Все ответственные</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="emailReportAttentionLimit">Задач в блоке «Требуют внимания»</label>
+                <input id="emailReportAttentionLimit" type="number" min="1" max="20" step="1" value="5">
+              </div>
+              <div class="form-field full">
+                <label>Статусы</label>
+                <div id="emailReportStatuses" class="report-status-list">
+                  <label><input type="checkbox" value="complete" checked> Выполнено</label>
+                  <label><input type="checkbox" value="on-track" checked> По плану</label>
+                  <label><input type="checkbox" value="ahead" checked> Опережение</label>
+                  <label><input type="checkbox" value="behind" checked> Отставание</label>
+                  <label><input type="checkbox" value="no-data" checked> Нет данных</label>
+                </div>
+              </div>
+              <div class="form-field full">
+                <label>Задачи</label>
+                <div id="emailReportTasks" class="report-filter-list"></div>
+              </div>
+            </div>
+            <div class="form-help">Изменение фильтра автоматически пересобирает текст отчёта. Основной дашборд при этом не меняется.</div>
+          </section>
+          <!-- REPORT_FILTERS_END -->
+          <div class="form-field full">
+            <label for="emailReportSubject">Тема письма</label>
+            <input id="emailReportSubject" type="text">
+          </div>
+          <div class="form-field full">
+            <label for="emailReportText">Текст отчёта</label>
+            <textarea id="emailReportText" class="report-preview"></textarea>
+            <div class="form-help">Текст можно отредактировать перед отправкой.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span id="emailReportStatus" class="report-action-status" role="status" aria-live="polite"></span>
+        <button id="cancelEmailReportButton" class="button" type="button">Закрыть</button>
+        <button id="copyEmailReportButton" class="button" type="button">Скопировать отчёт</button>
+        <button id="openEmailReportButton" class="button primary" type="button">Открыть письмо</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bugReportModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="bugReportModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="bugReportModalTitle">Сообщить о проблеме</h2>
+          <p>Опишите ситуацию — обращение сохранится отдельным текстовым файлом в выбранной папке bugs.</p>
+        </div>
+        <button id="closeBugReportModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <form id="bugReportForm" class="roadmap-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="bugReporterName">Ваше имя</label>
+              <input id="bugReporterName" name="reporterName" required maxlength="120" placeholder="Фамилия И. О.">
+            </div>
+            <div class="form-field">
+              <label for="bugPriority">Важность</label>
+              <select id="bugPriority" name="priority">
+                <option value="Обычная">Обычная</option>
+                <option value="Высокая">Высокая — мешает работе</option>
+                <option value="Критическая">Критическая — нельзя продолжить</option>
+                <option value="Низкая">Низкая — пожелание</option>
+              </select>
+            </div>
+            <div class="form-field full">
+              <label for="bugTitle">Кратко: в чём проблема?</label>
+              <input id="bugTitle" name="title" required maxlength="200" placeholder="Например: не открывается отчёт за Q2">
+            </div>
+            <div class="form-field full">
+              <label for="bugSteps">Что вы сделали перед появлением проблемы?</label>
+              <textarea id="bugSteps" name="steps" required maxlength="3000" placeholder="1. Загрузил файл…&#10;2. Выбрал…&#10;3. Нажал…"></textarea>
+            </div>
+            <div class="form-field full">
+              <label for="bugExpected">Какой результат ожидали?</label>
+              <textarea id="bugExpected" name="expected" required maxlength="2000" placeholder="Ожидал, что…"></textarea>
+            </div>
+            <div class="form-field full">
+              <label for="bugActual">Что произошло на самом деле?</label>
+              <textarea id="bugActual" name="actual" required maxlength="3000" placeholder="Фактически…"></textarea>
+              <div id="bugFolderStatus" class="form-help">Сначала выберите папку bugs в левой панели. Контекст дашборда добавится автоматически.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <span id="bugReportStatus" class="report-action-status" role="status" aria-live="polite"></span>
+          <button id="selectBugFolderModalButton" class="button" type="button">Выбрать папку bugs</button>
+          <button id="cancelBugReportButton" class="button" type="button">Отмена</button>
+          <button class="button primary" type="submit">Отправить сообщение</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const REQUIRED_COLUMNS = {
+      quarter: ["квартал", "quarter"],
+      week: ["неделя", "week"],
+      weekStart: ["начало недели", "start"],
+      weekEnd: ["конец недели", "end"],
+      quarterPlan: ["квартальный план", "план", "quarter plan", "plan"],
+      yearPlan: ["годовой план", "year plan", "annual plan"],
+      quarterProgress: ["квартальный прогресс", "прогресс", "quarter progress", "progress"],
+      yearProgress: ["годовой прогресс", "year progress", "annual progress"],
+      done: ["выполнено", "done", "completed", "fact"],
+      comment: ["комментарий", "comment", "note"]
+    };
+
+    const COLUMN_LABELS = {
+      quarter: "Квартал",
+      week: "Неделя",
+      weekStart: "Начало недели",
+      weekEnd: "Конец недели",
+      quarterPlan: "Квартальный план",
+      yearPlan: "Годовой план",
+      quarterProgress: "Квартальный прогресс",
+      yearProgress: "Годовой прогресс",
+      done: "Выполнено",
+      comment: "Комментарий"
+    };
+
+    const state = {
+      tasks: [],
+      activeTab: "overview",
+      quarter: "all",
+      charts: [],
+      workbook: null,
+      sourceBuffer: null,
+      fileName: "",
+      createdTasks: [],
+      bugDirectoryHandle: null,
+      roadmapFileHandle: null
+    };
+
+    const BASE_QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+    const FILE_ACCESS_DB = "task-progress-dashboard-file-access";
+    const FILE_ACCESS_STORE = "settings";
+    const ROADMAP_FILE_KEY = "roadmap-file";
+
+    const fileInput = document.getElementById("fileInput");
+    const openRoadmapButton = document.getElementById("openRoadmapButton");
+    const changeRoadmapFileButton = document.getElementById("changeRoadmapFileButton");
+    const roadmapFolderStatus = document.getElementById("roadmapFolderStatus");
+    const quarterFilter = document.getElementById("quarterFilter");
+    const tabs = document.getElementById("tabs");
+    const taskNavigation = document.getElementById("taskNavigation");
+    const content = document.getElementById("content");
+    const pageTitle = document.getElementById("pageTitle");
+    const pageSubtitle = document.getElementById("pageSubtitle");
+    const statusBox = document.getElementById("statusBox");
+    const errorBox = document.getElementById("errorBox");
+    const newRoadmapButton = document.getElementById("newRoadmapButton");
+    const emailReportButton = document.getElementById("emailReportButton");
+    const bugReportButton = document.getElementById("bugReportButton");
+    const exportWorkbookButton = document.getElementById("exportWorkbookButton");
+    const roadmapModal = document.getElementById("roadmapModal");
+    const roadmapForm = document.getElementById("roadmapForm");
+    const roadmapTemplateField = document.getElementById("roadmapTemplateField");
+    const roadmapTemplate = document.getElementById("roadmapTemplate");
+    const closeRoadmapModal = document.getElementById("closeRoadmapModal");
+    const cancelRoadmapButton = document.getElementById("cancelRoadmapButton");
+    const progressModal = document.getElementById("progressModal");
+    const progressForm = document.getElementById("progressForm");
+    const progressWeek = document.getElementById("progressWeek");
+    const progressDone = document.getElementById("progressDone");
+    const progressComment = document.getElementById("progressComment");
+    const progressModalSubtitle = document.getElementById("progressModalSubtitle");
+    const closeProgressModal = document.getElementById("closeProgressModal");
+    const cancelProgressButton = document.getElementById("cancelProgressButton");
+    const emailReportModal = document.getElementById("emailReportModal");
+    const emailReportRecipients = document.getElementById("emailReportRecipients");
+    const emailReportSubject = document.getElementById("emailReportSubject");
+    const emailReportText = document.getElementById("emailReportText");
+    const emailReportStatus = document.getElementById("emailReportStatus");
+    // REPORT_FILTERS_START: isolated block for optional rollback
+    const emailReportFilters = document.getElementById("emailReportFilters");
+    const emailReportOwner = document.getElementById("emailReportOwner");
+    const emailReportAttentionLimit = document.getElementById("emailReportAttentionLimit");
+    const emailReportStatuses = document.getElementById("emailReportStatuses");
+    const emailReportTasks = document.getElementById("emailReportTasks");
+    const emailReportFilterSummary = document.getElementById("emailReportFilterSummary");
+    const selectAllReportTasks = document.getElementById("selectAllReportTasks");
+    const clearAllReportTasks = document.getElementById("clearAllReportTasks");
+    // REPORT_FILTERS_END
+    const closeEmailReportModal = document.getElementById("closeEmailReportModal");
+    const cancelEmailReportButton = document.getElementById("cancelEmailReportButton");
+    const copyEmailReportButton = document.getElementById("copyEmailReportButton");
+    const openEmailReportButton = document.getElementById("openEmailReportButton");
+    const bugReportModal = document.getElementById("bugReportModal");
+    const bugReportForm = document.getElementById("bugReportForm");
+    const bugReportStatus = document.getElementById("bugReportStatus");
+    const bugFolderStatus = document.getElementById("bugFolderStatus");
+    const selectBugFolderModalButton = document.getElementById("selectBugFolderModalButton");
+    const closeBugReportModal = document.getElementById("closeBugReportModal");
+    const cancelBugReportButton = document.getElementById("cancelBugReportButton");
+
+    fileInput.addEventListener("change", handleFile);
+    openRoadmapButton.addEventListener("click", openRoadmapFile);
+    changeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
+    quarterFilter.addEventListener("change", () => {
+      state.quarter = quarterFilter.value;
+      render();
+    });
+    newRoadmapButton.addEventListener("click", openRoadmapModal);
+    emailReportButton.addEventListener("click", openEmailReportModalWindow);
+    selectBugFolderModalButton.addEventListener("click", selectBugDirectory);
+    bugReportButton.addEventListener("click", openBugReportModalWindow);
+    exportWorkbookButton.addEventListener("click", exportWorkbook);
+    closeRoadmapModal.addEventListener("click", closeRoadmapModalWindow);
+    cancelRoadmapButton.addEventListener("click", closeRoadmapModalWindow);
+    roadmapForm.addEventListener("submit", handleRoadmapSubmit);
+    closeProgressModal.addEventListener("click", closeProgressModalWindow);
+    cancelProgressButton.addEventListener("click", closeProgressModalWindow);
+    progressWeek.addEventListener("change", fillProgressForm);
+    progressForm.addEventListener("submit", handleProgressSubmit);
+    closeEmailReportModal.addEventListener("click", closeEmailReportModalWindow);
+    cancelEmailReportButton.addEventListener("click", closeEmailReportModalWindow);
+    copyEmailReportButton.addEventListener("click", copyEmailReport);
+    openEmailReportButton.addEventListener("click", openEmailReport);
+    closeBugReportModal.addEventListener("click", closeBugReportModalWindow);
+    cancelBugReportButton.addEventListener("click", closeBugReportModalWindow);
+    bugReportForm.addEventListener("submit", handleBugReportSubmit);
+    // REPORT_FILTERS_START: isolated block for optional rollback
+    emailReportFilters.addEventListener("input", scheduleEmailReportRefresh);
+    emailReportFilters.addEventListener("change", scheduleEmailReportRefresh);
+    selectAllReportTasks.addEventListener("click", () => setAllReportTasks(true));
+    clearAllReportTasks.addEventListener("click", () => setAllReportTasks(false));
+    // REPORT_FILTERS_END
+
+    validateRuntimeDependencies();
+    restoreRoadmapFileAccess();
+
+    const axisLabelTooltipPlugin = {
+      id: "axisLabelTooltip",
+      afterEvent(chart, args) {
+        const pluginOptions = chart.options.plugins?.axisLabelTooltip;
+        if (!pluginOptions?.enabled) return;
+
+        const event = args.event;
+        if (!event) return;
+
+        if (event.type === "mouseout") {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        if (event.type !== "mousemove") return;
+
+        const xScale = chart.scales.x;
+        const chartArea = chart.chartArea;
+        if (!xScale || !chartArea || !xScale.ticks?.length) return;
+
+        const labelTop = chartArea.bottom;
+        const labelBottom = Math.max(xScale.bottom, labelTop) + 16;
+        const inLabelArea = event.y >= labelTop && event.y <= labelBottom;
+        const inScaleWidth = event.x >= xScale.left && event.x <= xScale.right;
+
+        if (!inLabelArea || !inScaleWidth) {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        const tickCount = xScale.ticks.length;
+        const slotWidth = tickCount > 1
+          ? Math.abs(xScale.getPixelForTick(1) - xScale.getPixelForTick(0))
+          : xScale.width;
+        const maxDistance = Math.max(18, slotWidth / 2);
+
+        let nearestIndex = -1;
+        let nearestDistance = Number.POSITIVE_INFINITY;
+        for (let index = 0; index < tickCount; index += 1) {
+          const distance = Math.abs(event.x - xScale.getPixelForTick(index));
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = index;
+          }
+        }
+
+        if (nearestIndex < 0 || nearestDistance > maxDistance) {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        if (chart.$axisLabelTooltipIndex === nearestIndex) return;
+
+        const activeElements = chart.data.datasets
+          .map((dataset, datasetIndex) => {
+            const value = dataset.data?.[nearestIndex];
+            return value === null || value === undefined ? null : { datasetIndex, index: nearestIndex };
+          })
+          .filter(Boolean);
+
+        if (!activeElements.length) {
+          clearAxisLabelTooltip(chart);
+          return;
+        }
+
+        chart.$axisLabelTooltipIndex = nearestIndex;
+        chart.setActiveElements(activeElements);
+        chart.tooltip?.setActiveElements(activeElements, {
+          x: xScale.getPixelForTick(nearestIndex),
+          y: chartArea.bottom
+        });
+        chart.update("none");
+      }
+    };
+
+    const weekAxisLabelsPlugin = {
+      id: "weekAxisLabels",
+      afterDraw(chart, args, options) {
+        if (!options?.enabled) return;
+
+        const xScale = chart.scales.x;
+        if (!xScale) return;
+
+        const ctx = chart.ctx;
+        const y = Math.min(xScale.bottom + 14, chart.height - 4);
+        ctx.save();
+        ctx.fillStyle = "#111827";
+        ctx.font = "600 11px Inter, Segoe UI, Roboto, Arial, sans-serif";
+        ctx.textBaseline = "bottom";
+        ctx.textAlign = "left";
+        ctx.fillText("Неделя", xScale.left, y);
+        ctx.textAlign = "right";
+        ctx.fillText("Неделя", xScale.right, y);
+        ctx.restore();
+      }
+    };
+
+    function clearAxisLabelTooltip(chart) {
+      if (chart.$axisLabelTooltipIndex === undefined) return;
+      chart.$axisLabelTooltipIndex = undefined;
+      chart.setActiveElements([]);
+      chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
+      chart.update("none");
+    }
+
+    if (typeof Chart !== "undefined" && Chart.register) {
+      Chart.register(axisLabelTooltipPlugin, weekAxisLabelsPlugin);
+    }
+
+    function validateRuntimeDependencies() {
+      const missing = [];
+      if (typeof XLSX === "undefined") missing.push("vendor/xlsx.full.min.js");
+      if (typeof Chart === "undefined") missing.push("vendor/chart.umd.min.js");
+      if (missing.length) {
+        showError(`Не найдены файлы библиотек: ${missing.join(", ")}. Положите папку vendor рядом с HTML-файлом.`);
+      }
+    }
+
+    function normalizeHeader(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+    }
+
+    function cleanNumber(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+      const text = String(value)
+        .replace("%", "")
+        .replace(/\s+/g, "")
+        .replace(",", ".")
+        .trim();
+      const number = Number.parseFloat(text);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function isNumericLike(value) {
+      if (typeof value === "number") return Number.isFinite(value);
+      if (value === null || value === undefined || value === "") return false;
+      const text = String(value).replace("%", "").replace(/\s+/g, "").replace(",", ".").trim();
+      return text !== "" && Number.isFinite(Number.parseFloat(text));
+    }
+
+    function cleanPercent(value, displayValue = "") {
+      if (value === null || value === undefined || value === "") return null;
+      if (typeof value === "number") {
+        // Excel stores percentages as fractions even when they exceed 100%:
+        // 1.027 means 102.7%. The formatted cell value reliably tells us that
+        // the number belongs to a percentage-formatted column.
+        if (String(displayValue).includes("%")) return value * 100;
+        return value <= 1 && value >= -1 ? value * 100 : value;
+      }
+      return cleanNumber(value);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(cleanNumber(value));
+    }
+
+    function formatPercent(value) {
+      if (value === null || value === undefined || value === "") return "";
+      return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(cleanNumber(value))}%`;
+    }
+
+    function extractYear(value) {
+      if (!value) return "";
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return String(value.getUTCFullYear());
+      }
+      if (typeof value === "number") {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        return parsed?.y ? String(parsed.y) : "";
+      }
+      const text = String(value);
+      const fullYearMatch = text.match(/\b(20\d{2})\b/);
+      if (fullYearMatch) return fullYearMatch[1];
+      const shortYearMatch = text.match(/\b\d{1,2}[./-]\d{1,2}[./-](\d{2})\b/);
+      return shortYearMatch ? `20${shortYearMatch[1]}` : "";
+    }
+
+    function parseDate(value) {
+      if (!value) return "";
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return formatDisplayDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
+      }
+      if (typeof value === "number") {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (parsed) {
+          return formatDisplayDate(parsed.y, parsed.m, parsed.d);
+        }
+      }
+      return parseTextDate(value) || String(value);
+    }
+
+    function formatDisplayDate(year, month, day) {
+      const normalizedYear = Number(year) < 100 ? 2000 + Number(year) : Number(year);
+      const date = new Date(normalizedYear, Number(month) - 1, Number(day));
+      if (
+        Number.isNaN(date.getTime())
+        || date.getFullYear() !== normalizedYear
+        || date.getMonth() !== Number(month) - 1
+        || date.getDate() !== Number(day)
+      ) return "";
+      return [date.getDate(), date.getMonth() + 1, date.getFullYear()]
+        .map((part, index) => index < 2 ? String(part).padStart(2, "0") : String(part))
+        .join(".");
+    }
+
+    function parseTextDate(value) {
+      const text = String(value).trim();
+      let match = text.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
+      if (match) return formatDisplayDate(match[1], match[2], match[3]);
+
+      match = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+      if (match) return formatDisplayDate(match[3], match[2], match[1]);
+
+      match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (match) {
+        const first = Number(match[1]);
+        const second = Number(match[2]);
+        const isUsOrder = first <= 12 || second > 12;
+        return isUsOrder
+          ? formatDisplayDate(match[3], first, second)
+          : formatDisplayDate(match[3], second, first);
+      }
+
+      return "";
+    }
+
+    function formatQuarter(quarter, year = "") {
+      return year ? `${quarter} ${year}` : quarter;
+    }
+
+    function pickColumn(headers, aliases) {
+      return headers.find(header => aliases.some(alias => normalizeHeader(header).includes(alias)));
+    }
+
+    function rawCell(row, header, options = {}) {
+      if (!header) return "";
+      if (options.raw && row.__raw && Object.prototype.hasOwnProperty.call(row.__raw, header)) {
+        return row.__raw[header];
+      }
+      return row[header];
+    }
+
+    function textCell(row, header) {
+      const value = rawCell(row, header);
+      return value === null || value === undefined ? "" : String(value).trim();
+    }
+
+    function inferQuarterByWeek(week, year = "") {
+      const weekNumber = cleanNumber(week);
+      if (weekNumber >= 1 && weekNumber <= 13) return formatQuarter("Q1", year);
+      if (weekNumber >= 14 && weekNumber <= 26) return formatQuarter("Q2", year);
+      if (weekNumber >= 27 && weekNumber <= 39) return formatQuarter("Q3", year);
+      if (weekNumber >= 40 && weekNumber <= 52) return formatQuarter("Q4", year);
+      return "";
+    }
+
+    function normalizeQuarterValue(value, fallbackYear = "") {
+      const text = String(value || "").trim();
+      if (!text) return "";
+
+      const compact = text.replace(/\s+/g, "").toUpperCase();
+      const normalizeYear = year => year && year.length === 2 ? `20${year}` : year;
+      const qMatch = compact.match(/^Q([1-4])(?:[,.\/-]?((?:20)?\d{2}))?$/);
+      if (qMatch) return formatQuarter(`Q${qMatch[1]}`, normalizeYear(qMatch[2]) || fallbackYear);
+
+      const numberMatch = compact.match(/^([1-4])(?:[,.\/-]?((?:20)?\d{2}))?$/);
+      if (numberMatch) return formatQuarter(`Q${numberMatch[1]}`, normalizeYear(numberMatch[2]) || fallbackYear);
+
+      return "";
+    }
+
+    function readAnalysisRows(worksheet) {
+      if (!worksheet["!ref"]) return [];
+
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      range.s.r = 2;
+      range.s.c = 0;
+      range.e.c = 9;
+
+      if (range.e.r < range.s.r) return [];
+
+      const table = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        range,
+        defval: "",
+        raw: false
+      });
+      const rawTable = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        range,
+        defval: "",
+        raw: true
+      });
+
+      const headers = (table[0] || []).slice(0, 10).map((header, index) => {
+        return String(header || `Колонка ${index + 1}`).trim();
+      });
+
+      return table.slice(1).map((row, rowIndex) => {
+        const record = {};
+        const rawRow = rawTable[rowIndex + 1] || [];
+        record.__raw = {};
+        record.__sourceRow = rowIndex + 4;
+        headers.forEach((header, index) => {
+          record[header] = row[index] ?? "";
+          record.__raw[header] = rawRow[index] ?? "";
+        });
+        return record;
+      });
+    }
+
+    function readTaskDescription(worksheet) {
+      if (!worksheet["!ref"]) return "";
+
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      const values = [];
+      for (let col = range.s.c; col <= range.e.c; col += 1) {
+        const cell = worksheet[XLSX.utils.encode_cell({ r: 0, c: col })];
+        const value = cell?.w ?? cell?.v ?? "";
+        const text = String(value).trim();
+        if (text) values.push(text);
+      }
+      return values.join(" ").trim();
+    }
+
+    function readTaskOwner(worksheet) {
+      const cell = worksheet["A2"];
+      const value = cell?.w ?? cell?.v ?? "";
+      return String(value).trim();
+    }
+
+    function mapRows(rows) {
+      if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS), columnMap: {} };
+
+      const headers = Object.keys(rows[0]);
+      const columnMap = {};
+      let lastQuarter = "";
+
+      Object.entries(REQUIRED_COLUMNS).forEach(([key, aliases]) => {
+        columnMap[key] = pickColumn(headers, aliases);
+      });
+      const columnIndexes = Object.fromEntries(
+        Object.entries(columnMap).map(([key, header]) => [key, headers.indexOf(header)])
+      );
+      const hasExplicitQuarters = rows.some(row => {
+        return normalizeQuarterValue(textCell(row, columnMap.quarter)) !== "";
+      });
+
+      const hasSimplePlan = columnMap.quarterPlan && normalizeHeader(columnMap.quarterPlan) === "план";
+      const hasSimpleProgress = columnMap.quarterProgress && normalizeHeader(columnMap.quarterProgress) === "прогресс";
+
+      const missing = Object.entries(columnMap)
+        .filter(([key, header]) => {
+          if (header) return false;
+          if (key === "yearPlan" && hasSimplePlan) return false;
+          if (key === "yearProgress" && hasSimpleProgress) return false;
+          if (key === "comment") return false;
+          return true;
+        })
+        .map(([key]) => COLUMN_LABELS[key]);
+
+      const hasWeekColumn = Boolean(columnMap.week);
+
+      let data = rows.map((row, index) => {
+        const weekStartRaw = rawCell(row, columnMap.weekStart, { raw: true });
+        const weekEndRaw = rawCell(row, columnMap.weekEnd, { raw: true });
+        const weekStartValue = rawCell(row, columnMap.weekStart);
+        const weekEndValue = rawCell(row, columnMap.weekEnd);
+        const rowYear = extractYear(weekStartValue) || extractYear(weekEndValue) || extractYear(weekStartRaw) || extractYear(weekEndRaw);
+        const explicitQuarter = normalizeQuarterValue(textCell(row, columnMap.quarter), rowYear);
+        const rawWeek = rawCell(row, columnMap.week);
+        const week = rawWeek || (hasWeekColumn ? "" : index + 1);
+        const inferredQuarter = inferQuarterByWeek(week, rowYear);
+        const quarter = explicitQuarter
+          || (hasExplicitQuarters && lastQuarter ? lastQuarter : inferredQuarter || lastQuarter);
+        if (quarter) lastQuarter = quarter;
+
+        const quarterPlanRaw = rawCell(row, columnMap.quarterPlan, { raw: true });
+        const yearPlanRaw = rawCell(row, columnMap.yearPlan, { raw: true });
+        // Проценты должны читаться как исходные числа Excel. Форматированное
+        // значение вроде "40%" теряет точность и искажает обратный расчёт плана.
+        const quarterProgressRaw = rawCell(row, columnMap.quarterProgress, { raw: true });
+        const yearProgressRaw = rawCell(row, columnMap.yearProgress, { raw: true });
+        const quarterProgressDisplay = rawCell(row, columnMap.quarterProgress);
+        const yearProgressDisplay = rawCell(row, columnMap.yearProgress);
+        const doneRaw = rawCell(row, columnMap.done, { raw: true });
+        const commentRaw = rawCell(row, columnMap.comment);
+
+        const mappedRow = {
+          index: index + 1,
+          sourceRow: row.__sourceRow,
+          quarter,
+          week,
+          weekStart: parseDate(weekStartValue),
+          weekEnd: parseDate(weekEndValue),
+          quarterPlan: cleanNumber(quarterPlanRaw),
+          yearPlan: cleanNumber(yearPlanRaw),
+          quarterProgress: cleanPercent(quarterProgressRaw, quarterProgressDisplay),
+          yearProgress: cleanPercent(yearProgressRaw, yearProgressDisplay),
+          done: cleanNumber(doneRaw),
+          planText: isNumericLike(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
+          progressText: isNumericLike(quarterProgressRaw) ? "" : textCell(row, columnMap.quarterProgress),
+          comment: textCell(row, columnMap.comment),
+          hasNumericQuarterPlan: isNumericLike(quarterPlanRaw),
+          hasNumericYearPlan: isNumericLike(yearPlanRaw),
+          hasNumericQuarterProgress: isNumericLike(quarterProgressRaw),
+          hasNumericYearProgress: isNumericLike(yearProgressRaw),
+          hasDone: isNumericLike(doneRaw)
+        };
+        const meaningfulValues = [
+          rawCell(row, columnMap.week),
+          mappedRow.weekStart,
+          mappedRow.weekEnd,
+          quarterPlanRaw,
+          yearPlanRaw,
+          quarterProgressRaw,
+          yearProgressRaw,
+          doneRaw,
+          commentRaw
+        ];
+        return meaningfulValues.some(value => value !== "" && value !== 0) ? mappedRow : null;
+      }).filter(Boolean);
+
+      if (data.length && !data.some(row => row.hasNumericQuarterProgress)) {
+        const totalPlanItems = data.filter(row => row.planText).length || data.filter(row => row.hasDone).length;
+        data = data.map(row => {
+          const currentDone = row.hasDone ? cleanNumber(row.done) : 0;
+          const derived = totalPlanItems > 0 ? Math.max((currentDone / totalPlanItems) * 100, 0) : 0;
+          return {
+            ...row,
+            quarterProgress: derived,
+            yearProgress: row.hasNumericYearProgress ? row.yearProgress : derived
+          };
+        });
+      }
+
+      return { data, missing, columnMap, columnIndexes };
+    }
+
+    function supportsSavedRoadmapAccess() {
+      return "showOpenFilePicker" in window && "indexedDB" in window;
+    }
+
+    function openFileAccessDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(FILE_ACCESS_DB, 1);
+        request.onupgradeneeded = () => {
+          if (!request.result.objectStoreNames.contains(FILE_ACCESS_STORE)) {
+            request.result.createObjectStore(FILE_ACCESS_STORE);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Не удалось открыть локальные настройки."));
+      });
+    }
+
+    async function readFileAccessSetting(key) {
+      const database = await openFileAccessDatabase();
+      try {
+        return await new Promise((resolve, reject) => {
+          const request = database.transaction(FILE_ACCESS_STORE, "readonly").objectStore(FILE_ACCESS_STORE).get(key);
+          request.onsuccess = () => resolve(request.result || null);
+          request.onerror = () => reject(request.error || new Error("Не удалось прочитать локальную настройку."));
+        });
+      } finally {
+        database.close();
+      }
+    }
+
+    async function writeFileAccessSetting(key, value) {
+      const database = await openFileAccessDatabase();
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = database.transaction(FILE_ACCESS_STORE, "readwrite");
+          transaction.objectStore(FILE_ACCESS_STORE).put(value, key);
+          transaction.oncomplete = resolve;
+          transaction.onerror = () => reject(transaction.error || new Error("Не удалось сохранить локальную настройку."));
+        });
+      } finally {
+        database.close();
+      }
+    }
+
+    function updateRoadmapFileStatus() {
+      if (!supportsSavedRoadmapAccess()) {
+        changeRoadmapFileButton.hidden = true;
+        roadmapFolderStatus.textContent = "Выберите Excel-файл. Быстрое повторное открытие доступно в Google Chrome или Microsoft Edge.";
+        return;
+      }
+
+      const fileName = state.roadmapFileHandle?.name;
+      changeRoadmapFileButton.hidden = !fileName;
+      roadmapFolderStatus.textContent = fileName
+        ? `Сохранённый файл: «${fileName}».`
+        : "Выберите рабочий Excel-файл. При следующем запуске он откроется одной кнопкой.";
+    }
+
+    async function ensureReadPermission(handle) {
+      if (!handle) return false;
+      const current = await handle.queryPermission({ mode: "read" });
+      if (current === "granted") return true;
+      return (await handle.requestPermission({ mode: "read" })) === "granted";
+    }
+
+    async function restoreRoadmapFileAccess() {
+      updateRoadmapFileStatus();
+      if (!supportsSavedRoadmapAccess()) return;
+
+      try {
+        state.roadmapFileHandle = await readFileAccessSetting(ROADMAP_FILE_KEY);
+      } catch (error) {
+        state.roadmapFileHandle = null;
+      }
+      updateRoadmapFileStatus();
+    }
+
+    async function chooseRoadmapFile() {
+      hideError();
+      if (!supportsSavedRoadmapAccess()) {
+        fileInput.click();
+        return;
+      }
+
+      try {
+        const [fileHandle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{
+            description: "Файлы Excel",
+            accept: {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+              "application/vnd.ms-excel": [".xls"],
+              "application/vnd.ms-excel.sheet.macroEnabled.12": [".xlsm"],
+              "text/csv": [".csv"]
+            }
+          }]
+        });
+        state.roadmapFileHandle = fileHandle;
+        await writeFileAccessSetting(ROADMAP_FILE_KEY, fileHandle);
+        updateRoadmapFileStatus();
+        await loadRoadmapFile(await fileHandle.getFile());
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          showError("Не удалось открыть или сохранить Excel-файл. Проверьте доступ к сетевому диску.");
+        }
+      }
+    }
+
+    async function openRoadmapFile() {
+      if (!state.roadmapFileHandle) {
+        await chooseRoadmapFile();
+        return;
+      }
+
+      try {
+        if (!await ensureReadPermission(state.roadmapFileHandle)) {
+          showError("Не получено разрешение на чтение сохранённого файла.");
+          return;
+        }
+        await loadRoadmapFile(await state.roadmapFileHandle.getFile());
+      } catch (error) {
+        showError("Не удалось открыть сохранённый файл. Нажмите «Сменить файл» и выберите его заново.");
+      }
+    }
+
+    async function handleFile(event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      await loadRoadmapFile(file);
+    }
+
+    async function loadRoadmapFile(file) {
+      hideError();
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+        const tasks = workbook.SheetNames.map(sheetName => {
+          const worksheet = workbook.Sheets[sheetName];
+          const rows = readAnalysisRows(worksheet);
+          const mapped = mapRows(rows);
+          return {
+            id: slugify(sheetName),
+            name: sheetName,
+            description: readTaskDescription(worksheet),
+            owner: readTaskOwner(worksheet),
+            rows: mapped.data,
+            missing: mapped.missing,
+            columnMap: mapped.columnMap,
+            columnIndexes: mapped.columnIndexes
+          };
+        }).filter(task => task.rows.length);
+
+        if (!tasks.length) {
+          throw new Error("В файле не найдено листов с данными для построения диаграмм.");
+        }
+
+        state.tasks = tasks;
+        state.workbook = workbook;
+        state.sourceBuffer = buffer.slice(0);
+        state.fileName = file.name;
+        state.createdTasks = [];
+        state.activeTab = "overview";
+        state.quarter = "all";
+        taskNavigation.hidden = false;
+        buildQuarterFilter();
+        buildTabs();
+        updateExportButton();
+        render();
+      } catch (error) {
+        showError(error.message || "Не удалось прочитать файл.");
+      }
+    }
+
+    function slugify(value) {
+      return String(value)
+        .toLowerCase()
+        .replace(/[^a-zа-я0-9]+/gi, "-")
+        .replace(/^-|-$/g, "") || `task-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function buildQuarterFilter() {
+      const quarters = [...new Set(state.tasks.flatMap(task => task.rows.map(row => String(row.quarter).trim()).filter(Boolean)))];
+      quarters.sort(compareQuarters);
+
+      quarterFilter.innerHTML = `<option value="all">Все кварталы</option>` + quarters
+        .map(quarter => `<option value="${escapeHtml(quarter)}">${escapeHtml(quarter)}</option>`)
+        .join("");
+      quarterFilter.disabled = quarters.length === 0;
+      quarterFilter.value = "all";
+    }
+
+    function quarterSortKey(value) {
+      const match = String(value).match(/^Q([1-4])(?:\s+(20\d{2}))?$/);
+      if (!match) return { year: 0, quarter: 0, label: String(value) };
+      return {
+        year: match[2] ? cleanNumber(match[2]) : 0,
+        quarter: cleanNumber(match[1]),
+        label: String(value)
+      };
+    }
+
+    function compareQuarters(a, b) {
+      const left = quarterSortKey(a);
+      const right = quarterSortKey(b);
+      return (left.year - right.year)
+        || (left.quarter - right.quarter)
+        || left.label.localeCompare(right.label, "ru", { numeric: true });
+    }
+
+    function openRoadmapModal() {
+      roadmapForm.reset();
+      document.getElementById("roadmapYear").value = new Date().getFullYear();
+      // Пока формулы проверены только в первых двух исходных ДК. В дальнейшем
+      // сюда можно добавить отдельные образцы для других типов дорожных карт.
+      const templates = state.tasks.filter(task => !task.created && task.name).slice(0, 2);
+      const activeTemplate = templates.find(task => task.id === state.activeTab)?.name || templates[0]?.name || "";
+      roadmapTemplateField.hidden = templates.length === 0;
+      roadmapTemplate.innerHTML = templates.map(task => {
+        const selected = task.name === activeTemplate ? " selected" : "";
+        return `<option value="${escapeHtml(task.name)}"${selected}>${escapeHtml(task.name)}</option>`;
+      }).join("");
+      roadmapModal.hidden = false;
+      document.getElementById("roadmapName").focus();
+    }
+
+    function closeRoadmapModalWindow() {
+      roadmapModal.hidden = true;
+    }
+
+    function rowDate(value) {
+      const match = String(value || "").match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])) : null;
+    }
+
+    function defaultProgressRow(rows) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const current = rows.find(row => {
+        const start = rowDate(row.weekStart);
+        const end = rowDate(row.weekEnd);
+        return start && end && start <= today && today <= end;
+      });
+      if (current) return current;
+
+      const past = rows.filter(row => {
+        const end = rowDate(row.weekEnd);
+        return end && end < today;
+      });
+      return past[past.length - 1] || rows[0];
+    }
+
+    function openProgressModal(task) {
+      const rows = task.rows.filter(row => row.sourceRow);
+      if (!rows.length || !task.columnMap?.done) {
+        showError("Для этой дорожной карты не найдена колонка «Выполнено».");
+        return;
+      }
+
+      progressForm.dataset.taskId = task.id;
+      progressWeek.innerHTML = rows.map(row => {
+        const label = [row.quarter, `Неделя ${row.week}`, row.weekStart && row.weekEnd ? `${row.weekStart}–${row.weekEnd}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+        return `<option value="${row.sourceRow}">${escapeHtml(label)}</option>`;
+      }).join("");
+      progressWeek.value = String(defaultProgressRow(rows).sourceRow);
+      progressModalSubtitle.textContent = `Задача: ${task.name}. Введите общий факт на конец выбранной недели.`;
+      fillProgressForm();
+      progressModal.hidden = false;
+      progressDone.focus();
+    }
+
+    function fillProgressForm() {
+      const task = state.tasks.find(item => item.id === progressForm.dataset.taskId);
+      const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
+      if (!row) return;
+      progressDone.value = row.hasDone ? String(row.done) : "0";
+      progressComment.value = row.comment || "";
+    }
+
+    function closeProgressModalWindow() {
+      progressModal.hidden = true;
+      delete progressForm.dataset.taskId;
+    }
+
+    function handleProgressSubmit(event) {
+      event.preventDefault();
+      const task = state.tasks.find(item => item.id === progressForm.dataset.taskId);
+      const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
+      const done = cleanNumber(progressDone.value);
+      if (!task || !row || !Number.isFinite(done) || done < 0) {
+        showError("Укажите корректное накопительное значение выполнения.");
+        return;
+      }
+
+      row.done = done;
+      row.hasDone = true;
+      row.comment = progressComment.value.trim();
+      row.edited = true;
+      closeProgressModalWindow();
+      updateExportButton();
+      render();
+    }
+
+    function handleRoadmapSubmit(event) {
+      event.preventDefault();
+      hideError();
+
+      const formData = new FormData(roadmapForm);
+      const draft = {
+        name: uniqueSheetName(formData.get("name")),
+        owner: String(formData.get("owner") || "").trim(),
+        description: String(formData.get("description") || "").trim(),
+        templateSheetName: roadmapTemplateField.hidden ? "" : String(formData.get("template") || "").trim(),
+        type: formData.get("type") === "stage" ? "stage" : "quantitative",
+        year: clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035),
+        plans: {
+          Q1: Math.max(cleanNumber(formData.get("q1")), 0),
+          Q2: Math.max(cleanNumber(formData.get("q2")), 0),
+          Q3: Math.max(cleanNumber(formData.get("q3")), 0),
+          Q4: Math.max(cleanNumber(formData.get("q4")), 0)
+        },
+        stages: String(formData.get("stages") || "")
+          .split(/\r?\n/)
+          .map(item => item.trim())
+          .filter(Boolean)
+      };
+
+      if (!draft.name) {
+        showError("Укажите название дорожной карты.");
+        return;
+      }
+
+      const task = createRoadmapTask(draft);
+      state.tasks.push(task);
+      state.createdTasks.push(task);
+      state.activeTab = task.id;
+      state.quarter = "all";
+      buildQuarterFilter();
+      buildTabs();
+      updateExportButton();
+      closeRoadmapModalWindow();
+      render();
+    }
+
+    function reportPeriodLabel() {
+      return state.quarter === "all" ? "Все кварталы" : state.quarter;
+    }
+
+    function buildExecutiveReport(options = {}) {
+      const allItems = state.tasks.map((task, taskIndex) => {
+        const summary = taskSummary(task);
+        return { task, taskIndex, summary, status: displayStatus(summary) };
+      });
+      const selectedTasks = options.selectedTasks || new Set(allItems.map(item => item.taskIndex));
+      const selectedStatuses = options.selectedStatuses || new Set(["complete", "on-track", "ahead", "behind", "no-data"]);
+      const ownerFilter = options.owner || "all";
+      const items = allItems.filter(item => {
+        const ownerMatches = ownerFilter === "all"
+          || (ownerFilter === "__empty__" ? !item.task.owner : item.task.owner === ownerFilter);
+        return selectedTasks.has(item.taskIndex)
+          && selectedStatuses.has(item.status.key)
+          && ownerMatches;
+      });
+      const counts = items.reduce((result, item) => {
+        result[item.status.key] = (result[item.status.key] || 0) + 1;
+        return result;
+      }, {});
+      const progressValues = items
+        .filter(item => item.summary.rowsCount > 0)
+        .map(item => state.quarter === "all" ? item.summary.yearProgress : item.summary.quarterProgress)
+        .filter(value => Number.isFinite(cleanNumber(value)));
+      const averageProgress = progressValues.length ? average(progressValues) : 0;
+      const attentionLimit = clamp(cleanNumber(options.attentionLimit) || 5, 1, 20);
+      const behind = items
+        .filter(item => item.status.key === "behind")
+        .sort((left, right) => cleanNumber(left.summary.planStatus.delta) - cleanNumber(right.summary.planStatus.delta));
+      const noData = items.filter(item => item.status.key === "no-data");
+      const attentionItems = [...behind, ...noData].slice(0, attentionLimit);
+      const now = new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      }).format(new Date());
+      const period = reportPeriodLabel();
+      const subject = `Статус дорожных карт за ${period}`;
+      const requiresAttention = behind.length + noData.length;
+      const lines = [
+        "СТАТУС ДОРОЖНЫХ КАРТ",
+        `Период оценки: ${period}. Отчёт сформирован: ${now}.`,
+        "",
+        "КРАТКИЙ ВЫВОД",
+        requiresAttention
+          ? `Из ${items.length} дорожных карт ${requiresAttention} требуют внимания: ${behind.length} отстают от плана, по ${noData.length} недостаточно данных для оценки.`
+          : `Все ${items.length} дорожных карт, включённых в отчёт, выполняются по плану или уже завершены.`,
+        "",
+        "СОСТОЯНИЕ ПОРТФЕЛЯ",
+        `В отчёте: ${items.length} из ${allItems.length} дорожных карт.`,
+        `Завершены: ${counts.complete || 0}.`,
+        `Выполняются по плану: ${counts["on-track"] || 0}.`,
+        `Опережают план: ${counts.ahead || 0}.`,
+        `Отстают от плана: ${counts.behind || 0}.`,
+        `Недостаточно данных для оценки: ${counts["no-data"] || 0}.`,
+        `Средний указанный прогресс: ${formatPercent(averageProgress)}.`,
+        "",
+        "РИСКИ И СЛЕДУЮЩИЕ ДЕЙСТВИЯ"
+      ];
+
+      if (!attentionItems.length) {
+        lines.push("Рисков, требующих отдельного решения, не выявлено.");
+      } else {
+        attentionItems.forEach(({ task, summary, status }, index) => {
+          const owner = task.owner || "не указан";
+          if (status.key === "behind") {
+            const plan = formatNumber(summary.planStatus.plan);
+            const fact = formatNumber(summary.planStatus.fact);
+            const delta = formatNumber(Math.abs(cleanNumber(summary.planStatus.delta)));
+            lines.push(`${index + 1}. ${task.name}. Ответственный: ${owner}. План на текущую дату: ${plan}; факт: ${fact}; отставание: ${delta}. Действие: подтвердить план устранения отставания.`);
+          } else {
+            lines.push(`${index + 1}. ${task.name}. Ответственный: ${owner}. Оценка невозможна: ${status.detail} Действие: актуализировать план или факт.`);
+          }
+        });
+        if (behind.length + noData.length > attentionItems.length) {
+          lines.push(`В отчёт включены первые ${attentionItems.length} задач, требующих внимания, из ${behind.length + noData.length}.`);
+        }
+      }
+
+      lines.push(
+        "",
+        "Пояснение: статус «по плану» сравнивает фактическое выполнение с плановым значением на текущую неделю выбранного периода.",
+        "Отчёт сформирован в дашборде прогресса задач."
+      );
+      return { subject, text: lines.join("\n"), selectedCount: items.length, totalCount: allItems.length };
+    }
+
+    // REPORT_FILTERS_START: isolated block for optional rollback
+    function initializeEmailReportFilters() {
+      const owners = [...new Set(state.tasks.map(task => task.owner).filter(Boolean))]
+        .sort((left, right) => left.localeCompare(right, "ru"));
+      const hasEmptyOwner = state.tasks.some(task => !task.owner);
+      emailReportOwner.innerHTML = `
+        <option value="all">Все ответственные</option>
+        ${owners.map(owner => `<option value="${escapeHtml(owner)}">${escapeHtml(owner)}</option>`).join("")}
+        ${hasEmptyOwner ? '<option value="__empty__">Ответственный не указан</option>' : ""}
+      `;
+      emailReportTasks.innerHTML = state.tasks.map((task, index) => `
+        <label>
+          <input type="checkbox" value="${index}" checked>
+          <span>${escapeHtml(task.name)}${task.owner ? ` — ${escapeHtml(task.owner)}` : ""}</span>
+        </label>
+      `).join("");
+      emailReportStatuses.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.checked = true;
+      });
+      emailReportAttentionLimit.value = "5";
+    }
+
+    function getEmailReportOptions() {
+      return {
+        owner: emailReportOwner.value,
+        attentionLimit: emailReportAttentionLimit.value,
+        selectedTasks: new Set(
+          [...emailReportTasks.querySelectorAll('input[type="checkbox"]:checked')]
+            .map(input => cleanNumber(input.value))
+        ),
+        selectedStatuses: new Set(
+          [...emailReportStatuses.querySelectorAll('input[type="checkbox"]:checked')]
+            .map(input => input.value)
+        )
+      };
+    }
+
+    let emailReportRefreshFrame = null;
+
+    function scheduleEmailReportRefresh() {
+      if (emailReportRefreshFrame !== null) {
+        cancelAnimationFrame(emailReportRefreshFrame);
+      }
+      emailReportRefreshFrame = requestAnimationFrame(() => {
+        emailReportRefreshFrame = null;
+        refreshEmailReport();
+      });
+    }
+
+    function refreshEmailReport() {
+      const report = buildExecutiveReport(getEmailReportOptions());
+      emailReportSubject.value = report.subject;
+      emailReportText.value = report.text;
+      emailReportFilterSummary.textContent = `В отчёте: ${report.selectedCount} из ${report.totalCount}`;
+      setEmailReportStatus("");
+    }
+
+    function setAllReportTasks(checked) {
+      emailReportTasks.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.checked = checked;
+      });
+      refreshEmailReport();
+    }
+    // REPORT_FILTERS_END
+
+    function openEmailReportModalWindow() {
+      if (!state.tasks.length) {
+        showError("Сначала загрузите Excel-файл или создайте дорожную карту.");
+        return;
+      }
+      initializeEmailReportFilters();
+      refreshEmailReport();
+      emailReportModal.hidden = false;
+      emailReportRecipients.focus();
+    }
+
+    function closeEmailReportModalWindow() {
+      emailReportModal.hidden = true;
+      setEmailReportStatus("");
+    }
+
+    function setEmailReportStatus(message, success = false) {
+      emailReportStatus.textContent = message;
+      emailReportStatus.classList.toggle("success", success);
+    }
+
+    async function copyEmailReport() {
+      const text = emailReportText.value.trim();
+      if (!text) {
+        setEmailReportStatus("Текст отчёта пуст.");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        emailReportText.focus();
+        emailReportText.select();
+        if (!document.execCommand("copy")) {
+          setEmailReportStatus("Не удалось скопировать автоматически. Выделите текст и нажмите Ctrl+C.");
+          return;
+        }
+      }
+      setEmailReportStatus("Отчёт скопирован в буфер обмена.", true);
+    }
+
+    function openEmailReport() {
+      const recipients = emailReportRecipients.value
+        .split(/[;,]/)
+        .map(value => value.trim())
+        .filter(Boolean)
+        .join(",");
+      const subject = emailReportSubject.value.trim();
+      const body = emailReportText.value.trim();
+
+      if (!body) {
+        setEmailReportStatus("Текст отчёта пуст.");
+        return;
+      }
+
+      const mailto = `mailto:${encodeURIComponent(recipients)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      setEmailReportStatus("Открываем почтовую программу…", true);
+      window.location.href = mailto;
+    }
+
+    function openBugReportModalWindow() {
+      setBugReportStatus("");
+      updateBugFolderStatus();
+      bugReportModal.hidden = false;
+      document.getElementById("bugReporterName").focus();
+    }
+
+    function closeBugReportModalWindow() {
+      bugReportModal.hidden = true;
+      setBugReportStatus("");
+    }
+
+    function setBugReportStatus(message, success = false) {
+      bugReportStatus.textContent = message;
+      bugReportStatus.classList.toggle("success", success);
+    }
+
+    function updateBugFolderStatus() {
+      const folderName = state.bugDirectoryHandle?.name;
+      const message = folderName
+        ? `Папка для сообщений: «${folderName}». Контекст дашборда добавится автоматически.`
+        : "Нажмите «Выбрать папку bugs» ниже. Контекст дашборда добавится автоматически.";
+      bugFolderStatus.textContent = message;
+      selectBugFolderModalButton.textContent = folderName ? `Папка: ${folderName}` : "Выбрать папку bugs";
+    }
+
+    async function selectBugDirectory() {
+      if (!("showDirectoryPicker" in window)) {
+        showError("Выбор папки для сообщений поддерживается в Google Chrome и Microsoft Edge.");
+        return;
+      }
+
+      try {
+        const directory = await window.showDirectoryPicker({ mode: "readwrite" });
+        const permission = await directory.requestPermission({ mode: "readwrite" });
+        if (permission !== "granted") {
+          showError("Не получено разрешение на запись в выбранную папку.");
+          return;
+        }
+        state.bugDirectoryHandle = directory;
+        updateBugFolderStatus();
+        hideError();
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          showError("Не удалось выбрать папку для сообщений. Проверьте разрешение браузера.");
+        }
+      }
+    }
+
+    function bugReportFileName() {
+      const now = new Date();
+      const stamp = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0"),
+        String(now.getHours()).padStart(2, "0"),
+        String(now.getMinutes()).padStart(2, "0"),
+        String(now.getSeconds()).padStart(2, "0")
+      ].join("");
+      const suffix = typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID().slice(0, 8)
+        : Math.random().toString(36).slice(2, 10);
+      return `bug-${stamp}-${suffix}.txt`;
+    }
+
+    function bugReportText(report) {
+      const date = new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(new Date());
+      return [
+        "СООБЩЕНИЕ О ПРОБЛЕМЕ В ДАШБОРДЕ",
+        `Дата: ${date}`,
+        `Автор: ${report.reporterName}`,
+        `Важность: ${report.priority}`,
+        "",
+        `Проблема: ${report.title}`,
+        "",
+        "ЧТО БЫЛО СДЕЛАНО:",
+        report.steps,
+        "",
+        "ОЖИДАЕМЫЙ РЕЗУЛЬТАТ:",
+        report.expected,
+        "",
+        "ФАКТИЧЕСКИЙ РЕЗУЛЬТАТ:",
+        report.actual,
+        "",
+        "КОНТЕКСТ ДАШБОРДА:",
+        `Файл: ${report.context.fileName}`,
+        `Период: ${report.context.quarter}`,
+        `Открытая вкладка: ${report.context.activeTask}`,
+        `Браузер: ${report.context.browser}`,
+        ""
+      ].join("\n");
+    }
+
+    async function handleBugReportSubmit(event) {
+      event.preventDefault();
+      if (!state.bugDirectoryHandle) {
+        setBugReportStatus("Сначала нажмите «Выбрать папку bugs» и укажите общую папку для сообщений.");
+        return;
+      }
+
+      const activeTask = state.tasks.find(task => task.id === state.activeTab);
+      const formData = new FormData(bugReportForm);
+      const report = {
+        reporterName: String(formData.get("reporterName") || "").trim(),
+        priority: String(formData.get("priority") || "Обычная").trim(),
+        title: String(formData.get("title") || "").trim(),
+        steps: String(formData.get("steps") || "").trim(),
+        expected: String(formData.get("expected") || "").trim(),
+        actual: String(formData.get("actual") || "").trim(),
+        context: {
+          fileName: state.fileName || "Файл не загружен",
+          quarter: reportPeriodLabel(),
+          activeTask: activeTask?.name || "Все задачи",
+          page: state.activeTab || "overview",
+          browser: navigator.userAgent
+        }
+      };
+
+      setBugReportStatus("Сохраняем сообщение…");
+      try {
+        const permission = await state.bugDirectoryHandle.requestPermission({ mode: "readwrite" });
+        if (permission !== "granted") throw new Error("нет разрешения на запись в выбранную папку.");
+        const fileName = bugReportFileName();
+        const fileHandle = await state.bugDirectoryHandle.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(bugReportText(report));
+        await writable.close();
+        bugReportForm.reset();
+        setBugReportStatus(`Сообщение сохранено: ${fileName}`, true);
+      } catch (error) {
+        setBugReportStatus(`Не удалось сохранить сообщение: ${error.message}`);
+      }
+    }
+
+    function uniqueSheetName(value) {
+      const existing = new Set([
+        ...state.tasks.map(task => task.name),
+        ...(state.workbook?.SheetNames || [])
+      ].map(name => normalizeHeader(name)));
+      const base = sanitizeSheetName(value) || "Новая карта";
+      let candidate = base;
+      let index = 2;
+      while (existing.has(normalizeHeader(candidate))) {
+        const suffix = ` ${index}`;
+        candidate = `${base.slice(0, 31 - suffix.length)}${suffix}`;
+        index += 1;
+      }
+      return candidate;
+    }
+
+    function sanitizeSheetName(value) {
+      return String(value || "")
+        .replace(/[:\\/?*\[\]]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 31);
+    }
+
+    function createRoadmapTask(draft) {
+      const rows = generateRoadmapRows(draft);
+      return {
+        id: slugify(draft.name),
+        name: draft.name,
+        description: draft.description,
+        owner: draft.owner,
+        rows,
+        missing: [],
+        created: true,
+        columnMap: { done: "Выполнено", comment: "Комментарий" },
+        draft
+      };
+    }
+
+    function generateRoadmapRows(draft) {
+      const weeks = generateWeeks(draft.year);
+      const cumulativePlan = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+      const quarterCounts = BASE_QUARTERS.reduce((result, quarter) => {
+        result[quarter] = weeks.filter(week => week.quarter === quarter).length;
+        return result;
+      }, {});
+      let stageIndex = 0;
+
+      return weeks.map((week, index) => {
+        const isLastQuarterWeek = index === weeks.length - 1 || weeks[index + 1].quarter !== week.quarter;
+        const quarterPlan = draft.type === "quantitative"
+          ? plannedValueForWeek(draft.plans[week.quarter], week.weekInQuarter, quarterCounts[week.quarter], isLastQuarterWeek)
+          : 0;
+        cumulativePlan[week.quarter] = quarterPlan;
+        const yearPlan = BASE_QUARTERS.reduce((sum, quarter) => {
+          return sum + (quarter === week.quarter ? quarterPlan : cumulativePlan[quarter]);
+        }, 0);
+        const stageText = draft.stages[stageIndex] || "";
+        if (stageText) stageIndex += 1;
+
+        return {
+          index: index + 1,
+          sourceRow: index + 4,
+          quarter: week.weekInQuarter === 1 ? `${week.quarter} ${draft.year}` : `${week.quarter} ${draft.year}`,
+          week: week.week,
+          weekStart: week.start.toLocaleDateString("ru-RU"),
+          weekEnd: week.end.toLocaleDateString("ru-RU"),
+          quarterPlan,
+          yearPlan,
+          quarterProgress: 0,
+          yearProgress: 0,
+          done: 0,
+          planText: draft.type === "stage" ? stageText : "",
+          progressText: "",
+          comment: draft.type === "quantitative" ? stageText : "",
+          hasNumericQuarterPlan: draft.type === "quantitative",
+          hasNumericYearPlan: draft.type === "quantitative",
+          hasNumericQuarterProgress: false,
+          hasNumericYearProgress: false,
+          hasDone: false
+        };
+      });
+    }
+
+    function generateWeeks(year) {
+      const weeks = [];
+      let start = new Date(year, 0, 1);
+      for (let week = 1; week <= 52; week += 1) {
+        const end = new Date(start);
+        end.setDate(start.getDate() + (week === 1 ? 1 : 4));
+        const quarter = week <= 13 ? "Q1" : week <= 26 ? "Q2" : week <= 39 ? "Q3" : "Q4";
+        const quarterStartWeek = quarter === "Q1" ? 1 : quarter === "Q2" ? 14 : quarter === "Q3" ? 27 : 40;
+        weeks.push({
+          week,
+          quarter,
+          weekInQuarter: week - quarterStartWeek + 1,
+          start: new Date(start),
+          end
+        });
+        start = new Date(end);
+        start.setDate(end.getDate() + 3);
+      }
+      return weeks;
+    }
+
+    function plannedValueForWeek(totalPlan, weekInQuarter, weeksInQuarter, isLastQuarterWeek) {
+      const total = cleanNumber(totalPlan);
+      if (!total || !weeksInQuarter) return 0;
+      if (isLastQuarterWeek) return total;
+      return Math.min(Math.round((total / weeksInQuarter) * weekInQuarter), total);
+    }
+
+    function updateExportButton() {
+      exportWorkbookButton.disabled = !state.tasks.length;
+      emailReportButton.disabled = !state.tasks.length;
+      const updatedRows = state.tasks.reduce((count, task) => {
+        return count + task.rows.filter(row => row.edited).length;
+      }, 0);
+      const changes = [
+        state.createdTasks.length ? `новых: ${state.createdTasks.length}` : "",
+        updatedRows ? `правок: ${updatedRows}` : ""
+      ].filter(Boolean);
+      exportWorkbookButton.textContent = changes.length
+        ? `Скачать Excel (${changes.join(", ")})`
+        : "Скачать Excel";
+    }
+
+    function exportWorkbook() {
+      hideError();
+      if (!state.tasks.length) {
+        showError("Нет данных для экспорта.");
+        return;
+      }
+
+      try {
+        const baseName = (state.fileName || "roadmaps.xlsx").replace(/\.[^.]+$/, "");
+        const fileName = `${baseName}_updated.xlsx`;
+        const hasProgressUpdates = state.tasks.some(task => task.rows.some(row => row.edited));
+
+        if (state.sourceBuffer) {
+          if (!state.createdTasks.length && !hasProgressUpdates) {
+            downloadWorkbook(state.sourceBuffer, fileName);
+            return;
+          }
+          const archive = readXlsxArchive(state.sourceBuffer);
+          if (hasProgressUpdates) applyProgressUpdatesToArchive(archive);
+          if (state.createdTasks.length) appendCreatedSheetsToArchive(archive, state.createdTasks);
+          downloadWorkbook(XLSX.CFB.write(archive, { type: "array", fileType: "zip" }), fileName);
+          return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+        state.createdTasks.forEach(task => {
+          XLSX.utils.book_append_sheet(workbook, taskToWorksheet(task), sanitizeSheetName(task.name));
+        });
+        XLSX.writeFile(workbook, fileName);
+      } catch (error) {
+        showError(error.message || "Не удалось сформировать Excel.");
+      }
+    }
+
+    function downloadWorkbook(data, fileName) {
+      const url = URL.createObjectURL(new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function readXlsxArchive(data) {
+      return XLSX.CFB.read(data instanceof ArrayBuffer ? new Uint8Array(data) : data, { type: "array" });
+    }
+
+    function archiveText(archive, path) {
+      const entry = XLSX.CFB.find(archive, `Root Entry/${path}`);
+      if (!entry?.content) throw new Error(`В Excel не найден файл ${path}.`);
+      return new TextDecoder("utf-8").decode(entry.content);
+    }
+
+    function setArchiveText(archive, path, text) {
+      XLSX.CFB.utils.cfb_add(archive, `Root Entry/${path}`, new TextEncoder().encode(text));
+    }
+
+    function archiveHasPath(archive, path) {
+      return Boolean(XLSX.CFB.find(archive, `Root Entry/${path}`)?.content);
+    }
+
+    function copyWorksheetRelationships(archive, sourceSheetPath, targetSheetPath) {
+      const sourceName = sourceSheetPath.match(/xl\/worksheets\/(sheet\d+\.xml)$/i)?.[1];
+      const targetName = targetSheetPath.match(/xl\/worksheets\/(sheet\d+\.xml)$/i)?.[1];
+      if (!sourceName || !targetName) return;
+      const sourceRelationshipsPath = `xl/worksheets/_rels/${sourceName}.rels`;
+      if (!archiveHasPath(archive, sourceRelationshipsPath)) return;
+      setArchiveText(archive, `xl/worksheets/_rels/${targetName}.rels`, archiveText(archive, sourceRelationshipsPath));
+    }
+
+    function xmlEscape(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+    }
+
+    function removeTemplateFills(archive, worksheetXml) {
+      const stylesPath = "xl/styles.xml";
+      if (!archiveHasPath(archive, stylesPath)) return worksheetXml;
+
+      let stylesXml = archiveText(archive, stylesPath);
+      const cellXfsMatch = stylesXml.match(/<cellXfs\b([^>]*)>([\s\S]*?)<\/cellXfs>/);
+      if (!cellXfsMatch) return worksheetXml;
+
+      const xfs = [...cellXfsMatch[2].matchAll(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g)].map(match => match[0]);
+      const usedStyles = new Set([...worksheetXml.matchAll(/<c\b[^>]*\bs="(\d+)"/g)].map(match => Number(match[1])));
+      const replacements = new Map();
+      const neutralStyles = [];
+
+      usedStyles.forEach(styleIndex => {
+        const style = xfs[styleIndex];
+        const fillId = Number(style?.match(/\bfillId="(\d+)"/)?.[1] || 0);
+        if (!style || fillId <= 1) return;
+
+        const neutralStyle = style
+          .replace(/\sfillId="\d+"/, ' fillId="0"')
+          .replace(/\sapplyFill="[^"]*"/, ' applyFill="0"');
+        replacements.set(styleIndex, xfs.length + neutralStyles.length);
+        neutralStyles.push(neutralStyle);
+      });
+
+      if (!neutralStyles.length) return worksheetXml;
+
+      const updatedAttributes = cellXfsMatch[1].replace(/\bcount="\d+"/, `count="${xfs.length + neutralStyles.length}"`);
+      stylesXml = stylesXml.replace(cellXfsMatch[0], `<cellXfs${updatedAttributes}>${cellXfsMatch[2]}${neutralStyles.join("")}</cellXfs>`);
+      setArchiveText(archive, stylesPath, stylesXml);
+
+      return worksheetXml.replace(/(<c\b[^>]*?\bs=")(\d+)(")/g, (match, prefix, styleIndex, suffix) => {
+        const replacement = replacements.get(Number(styleIndex));
+        return replacement === undefined ? match : `${prefix}${replacement}${suffix}`;
+      });
+    }
+
+    function appendCreatedSheetsToArchive(archive, tasks) {
+      let workbookXml = archiveText(archive, "xl/workbook.xml");
+      let relationshipsXml = archiveText(archive, "xl/_rels/workbook.xml.rels");
+      let contentTypesXml = archiveText(archive, "[Content_Types].xml");
+      const relationshipTargets = new Map([...relationshipsXml.matchAll(/<Relationship\b([^>]*)\/>/g)].map(match => [
+        xmlAttribute(match[1], "Id"), xmlAttribute(match[1], "Target")
+      ]));
+      const sheetPaths = new Map([...workbookXml.matchAll(/<sheet\b([^>]*)\/>/g)].map(match => [
+        xmlUnescape(xmlAttribute(match[1], "name")),
+        `xl/${(relationshipTargets.get(xmlAttribute(match[1], "r:id")) || "").replace(/^\//, "")}`
+      ]));
+      const paths = archive.FullPaths || [];
+      let sheetNumber = Math.max(0, ...paths.map(path => Number(path.match(/worksheets\/sheet(\d+)\.xml$/i)?.[1] || 0))) + 1;
+      let sheetId = Math.max(0, ...[...workbookXml.matchAll(/\bsheetId="(\d+)"/g)].map(match => Number(match[1]))) + 1;
+      let relationshipId = Math.max(0, ...[...relationshipsXml.matchAll(/\bId="rId(\d+)"/g)].map(match => Number(match[1]))) + 1;
+      const sheets = [];
+      const relationships = [];
+      const contentTypes = [];
+
+      tasks.forEach(task => {
+        const templatePath = sheetPaths.get(task.draft?.templateSheetName);
+        const worksheet = templatePath
+          ? templateWorksheetXml(archiveText(archive, templatePath), task)
+          : worksheetXml(task);
+        const newSheetPath = `xl/worksheets/sheet${sheetNumber}.xml`;
+        setArchiveText(archive, newSheetPath, templatePath ? removeTemplateFills(archive, worksheet) : worksheet);
+        if (templatePath) copyWorksheetRelationships(archive, templatePath, newSheetPath);
+        sheets.push(`<sheet name="${xmlEscape(sanitizeSheetName(task.name))}" sheetId="${sheetId}" r:id="rId${relationshipId}"/>`);
+        relationships.push(`<Relationship Id="rId${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${sheetNumber}.xml"/>`);
+        contentTypes.push(`<Override PartName="/xl/worksheets/sheet${sheetNumber}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+        sheetNumber += 1;
+        sheetId += 1;
+        relationshipId += 1;
+      });
+
+      setArchiveText(archive, "xl/workbook.xml", forceWorkbookCalculation(workbookXml.replace("</sheets>", `${sheets.join("")}</sheets>`)));
+      setArchiveText(archive, "xl/_rels/workbook.xml.rels", relationshipsXml.replace("</Relationships>", `${relationships.join("")}</Relationships>`));
+      setArchiveText(archive, "[Content_Types].xml", contentTypesXml.replace("</Types>", `${contentTypes.join("")}</Types>`));
+    }
+
+    function forceWorkbookCalculation(workbookXml) {
+      const calculationAttributes = ' calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"';
+      if (/<calcPr\b/.test(workbookXml)) {
+        return workbookXml.replace(/<calcPr\b([^>]*)\/>/, (match, attributes) => {
+          const clean = attributes.replace(/\s+(?:calcMode|fullCalcOnLoad|forceFullCalc)="[^"]*"/g, "");
+          return `<calcPr${clean}${calculationAttributes}/>`;
+        });
+      }
+      return workbookXml.replace("</workbook>", `<calcPr${calculationAttributes}/></workbook>`);
+    }
+
+    function templateCellHasFormula(sheetXml, address) {
+      const cellPattern = new RegExp(`<c\\b[^>/]*\\br="${address}"[^>/]*>([\\s\\S]*?)<\\/c>`);
+      const cell = sheetXml.match(cellPattern);
+      return Boolean(cell && /<f\\b/.test(cell[1]));
+    }
+
+    function setTemplateCellValue(sheetXml, address, value, isText) {
+      return templateCellHasFormula(sheetXml, address)
+        ? sheetXml
+        : setSheetCell(sheetXml, address, value, isText);
+    }
+
+    function excelDateSerial(value) {
+      const match = String(value || "").match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      if (!match) return "";
+      return Math.round((Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1])) - Date.UTC(1899, 11, 30)) / 86400000);
+    }
+
+    function templateWorksheetXml(templateXml, task) {
+      if (!/<row\b[^>]*\br="55"/.test(templateXml)) {
+        throw new Error(`Лист-шаблон «${task.draft.templateSheetName}» не содержит стандартные 52 недели.`);
+      }
+
+      let xml = templateXml;
+      xml = setTemplateCellValue(xml, "A1", task.description || task.name, true);
+      xml = setTemplateCellValue(xml, "A2", task.owner || "", true);
+      const totalPlan = BASE_QUARTERS.reduce((sum, quarter) => sum + cleanNumber(task.draft.plans[quarter]), 0);
+      const helperPlans = {
+        M6: task.draft.plans.Q1,
+        M7: task.draft.plans.Q2,
+        M8: task.draft.plans.Q3,
+        M9: task.draft.plans.Q4,
+        M10: totalPlan
+      };
+      Object.entries(helperPlans).forEach(([address, value]) => {
+        xml = setTemplateCellValue(xml, address, value, false);
+      });
+      let lastQuarter = "";
+
+      task.rows.forEach((row, index) => {
+        const rowNumber = index + 4;
+        const quarter = row.quarter === lastQuarter ? "" : row.quarter;
+        lastQuarter = row.quarter;
+        const quarterPlan = row.planText || row.quarterPlan || "";
+        xml = setTemplateCellValue(xml, `A${rowNumber}`, quarter, true);
+        xml = setTemplateCellValue(xml, `B${rowNumber}`, row.week, false);
+        xml = setTemplateCellValue(xml, `C${rowNumber}`, excelDateSerial(row.weekStart), false);
+        xml = setTemplateCellValue(xml, `D${rowNumber}`, excelDateSerial(row.weekEnd), false);
+        xml = setTemplateCellValue(xml, `E${rowNumber}`, quarterPlan, !isNumericLike(quarterPlan));
+        xml = setTemplateCellValue(xml, `F${rowNumber}`, row.hasNumericYearPlan ? row.yearPlan : "", false);
+        xml = setTemplateCellValue(xml, `I${rowNumber}`, row.hasDone ? row.done : 0, false);
+        xml = setTemplateCellValue(xml, `J${rowNumber}`, row.comment || "", true);
+      });
+      return xml;
+    }
+
+    function worksheetXml(task) {
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, taskToWorksheet(task), "Sheet1");
+      return archiveText(readXlsxArchive(XLSX.write(workbook, { bookType: "xlsx", type: "array" })), "xl/worksheets/sheet1.xml");
+    }
+
+    function applyProgressUpdatesToArchive(archive) {
+      const workbookXml = archiveText(archive, "xl/workbook.xml");
+      const relationshipsXml = archiveText(archive, "xl/_rels/workbook.xml.rels");
+      const targets = new Map([...relationshipsXml.matchAll(/<Relationship\b([^>]*)\/>/g)].map(match => [
+        xmlAttribute(match[1], "Id"), xmlAttribute(match[1], "Target")
+      ]));
+      const sheetPaths = new Map([...workbookXml.matchAll(/<sheet\b([^>]*)\/>/g)].map(match => [
+        xmlUnescape(xmlAttribute(match[1], "name")),
+        `xl/${(targets.get(xmlAttribute(match[1], "r:id")) || "").replace(/^\//, "")}`
+      ]));
+
+      state.tasks.filter(task => !task.created).forEach(task => {
+        const path = sheetPaths.get(task.name);
+        if (!path || task.columnIndexes?.done < 0) return;
+        let xml = archiveText(archive, path);
+        task.rows.filter(row => row.edited).forEach(row => {
+          xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.done }), row.done, false);
+          if (task.columnIndexes?.comment >= 0) {
+            xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.comment }), row.comment, true);
+          }
+        });
+        setArchiveText(archive, path, xml);
+      });
+    }
+
+    function xmlAttribute(attributes, name) {
+      const match = String(attributes).match(new RegExp(`(?:^|\\s)${name.replace(":", "\\:")}="([^"]*)"`));
+      return match ? match[1] : "";
+    }
+
+    function xmlUnescape(value) {
+      return String(value || "").replace(/&quot;/g, "\"").replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    }
+
+    function setSheetCell(sheetXml, address, value, isText) {
+      const rowNumber = address.match(/\d+$/)?.[0];
+      const rowPattern = new RegExp(`(<row\\b[^>]*\\br="${rowNumber}"[^>]*>)([\\s\\S]*?)(</row>)`);
+      const cellPattern = new RegExp(`(<c\\b([^>/]*\\br="${address}"[^>/]*)>)([\\s\\S]*?)(</c>)|<c\\b([^>/]*\\br="${address}"[^>/]*)\\/>`);
+      const content = isText ? `<is><t>${xmlEscape(value)}</t></is>` : `<v>${Number(value)}</v>`;
+      return sheetXml.replace(rowPattern, (match, open, inner, close) => {
+        if (cellPattern.test(inner)) {
+          inner = inner.replace(cellPattern, (cell, openTag, attributes, oldContent, closeTag, emptyAttributes) => {
+            const clean = (attributes || emptyAttributes || "")
+              .replace(/\s+t="[^"]*"/g, "")
+              .replace(/\/\s*$/, "");
+            return `<c${clean}${isText ? ' t="inlineStr"' : ""}>${content}</c>`;
+          });
+        } else {
+          inner += `<c r="${address}"${isText ? ' t="inlineStr"' : ""}>${content}</c>`;
+        }
+        return `${open}${inner}${close}`;
+      });
+    }
+
+    function taskToWorksheet(task) {
+      const aoa = [
+        [task.description || task.name],
+        [task.owner || ""],
+        Object.values(COLUMN_LABELS)
+      ];
+      let lastQuarter = "";
+
+      task.rows.forEach(row => {
+        const quarter = row.quarter === lastQuarter ? "" : row.quarter;
+        lastQuarter = row.quarter;
+        aoa.push([
+          quarter,
+          row.week,
+          row.weekStart,
+          row.weekEnd,
+          row.planText || row.quarterPlan || "",
+          row.hasNumericYearPlan ? row.yearPlan : "",
+          row.hasNumericQuarterProgress ? row.quarterProgress / 100 : "",
+          row.hasNumericYearProgress ? row.yearProgress / 100 : "",
+          row.hasDone ? row.done : "",
+          row.comment || ""
+        ]);
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+      worksheet["!cols"] = [
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 36 }
+      ];
+      return worksheet;
+    }
+
+    function buildTabs() {
+      tabs.innerHTML = "";
+      const overview = createTabButton("overview", "Все задачи");
+      tabs.appendChild(overview);
+
+      state.tasks.forEach(task => {
+        tabs.appendChild(createTabButton(task.id, task.name));
+      });
+    }
+
+    function createTabButton(id, label, count) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tab-button";
+      button.dataset.tab = id;
+      button.innerHTML = `<span>${escapeHtml(label)}</span>${count === undefined ? "" : `<span>${count}</span>`}`;
+      button.addEventListener("click", () => {
+        state.activeTab = id;
+        render();
+      });
+      return button;
+    }
+
+    function filteredRows(task) {
+      if (state.quarter === "all") return task.rows;
+      return task.rows.filter(row => String(row.quarter).trim() === state.quarter);
+    }
+
+    function usesRowLevelDone(rows) {
+      const hasTextPlan = rows.some(row => row.planText);
+      const hasNumericPlan = rows.some(row => row.hasNumericQuarterPlan || row.hasNumericYearPlan);
+      const doneRows = rows.filter(row => row.hasDone);
+      return hasTextPlan && !hasNumericPlan && doneRows.length > 1;
+    }
+
+    function doneTotal(rows) {
+      const doneRows = rows.filter(row => row.hasDone);
+      if (!doneRows.length) return 0;
+      if (usesRowLevelDone(rows)) {
+        return doneRows.reduce((sum, row) => sum + cleanNumber(row.done), 0);
+      }
+      return cleanNumber(doneRows[doneRows.length - 1].done);
+    }
+
+    function hasCompletionMarker(comment) {
+      return /^\s*(?:\[\s*завершено\s*\]|завершено(?:[.!:;,]|$))/i.test(String(comment || ""));
+    }
+
+    function summarizeRows(rows, completionRows = rows) {
+      const rowsWithDone = rows.filter(row => row.hasDone);
+      const activeRows = rowsWithDone.length ? rowsWithDone : rows;
+      const lastDoneRow = [...rowsWithDone].pop();
+      const rowLevelDone = usesRowLevelDone(rows);
+      const done = doneTotal(rows);
+      const quarterDoneSeries = rowLevelDone ? [] : quarterDoneValues(rows, completionRows);
+      const lastQuarterDone = [...quarterDoneSeries].reverse().find(value => value !== null && value !== undefined);
+      const quarterDone = rowLevelDone || lastQuarterDone === undefined ? done : lastQuarterDone;
+      const numericQuarterPlans = rows.filter(row => row.hasNumericQuarterPlan).map(row => cleanNumber(row.quarterPlan));
+      const numericYearPlans = rows.filter(row => row.hasNumericYearPlan).map(row => cleanNumber(row.yearPlan));
+      const textPlans = rows.filter(row => row.planText);
+      const numericQuarterProgressRows = activeRows.filter(row => row.hasNumericQuarterProgress);
+      const numericYearProgressRows = activeRows.filter(row => row.hasNumericYearProgress);
+      const inferredYearPlans = activeRows
+        .filter(row => row.hasDone && row.hasNumericYearProgress)
+        .map(row => {
+          const progress = cleanNumber(row.yearProgress);
+          return progress > 0 ? cleanNumber(row.done) / (progress / 100) : 0;
+        })
+        .filter(value => Number.isFinite(value) && value > 0);
+
+      const quarterPlan = numericQuarterPlans.length ? Math.max(...numericQuarterPlans, 0) : textPlans.length;
+      // Колонка «Годовой план» — первичный источник. Обратный расчёт по
+      // проценту нужен только для старых листов, где этой колонки нет.
+      const yearPlan = numericYearPlans.length
+        ? Math.max(...numericYearPlans, 0)
+        : inferredYearPlans.length
+          ? Math.max(...inferredYearPlans, 0)
+          : quarterPlan;
+      const lastQuarterProgress = [...numericQuarterProgressRows].pop();
+      const lastYearProgress = [...numericYearProgressRows].pop();
+      const progressDone = state.quarter === "all" ? done : quarterDone;
+      const derivedProgress = quarterPlan > 0 ? Math.max((progressDone / quarterPlan) * 100, 0) : 0;
+      const quarterProgress = lastQuarterProgress ? lastQuarterProgress.quarterProgress : derivedProgress;
+      const yearProgress = lastYearProgress ? lastYearProgress.yearProgress : quarterProgress;
+      const completionRowsWithDone = completionRows.filter(row => row.hasDone);
+      const completionActiveRows = completionRowsWithDone.length ? completionRowsWithDone : completionRows;
+      const completionDone = doneTotal(completionRows);
+      const completionYearPlans = completionRows
+        .filter(row => row.hasNumericYearPlan)
+        .map(row => cleanNumber(row.yearPlan));
+      const completionInferredYearPlans = completionActiveRows
+        .filter(row => row.hasDone && row.hasNumericYearProgress)
+        .map(row => {
+          const progress = cleanNumber(row.yearProgress);
+          return progress > 0 ? cleanNumber(row.done) / (progress / 100) : 0;
+        })
+        .filter(value => Number.isFinite(value) && value > 0);
+      const completionYearPlan = completionYearPlans.length
+        ? Math.max(...completionYearPlans, 0)
+        : completionInferredYearPlans.length
+          ? Math.max(...completionInferredYearPlans, 0)
+          : yearPlan;
+      const completionLastDoneRow = [...completionRowsWithDone].pop();
+      // Закрытие задачи задаётся явно в комментарии последней строки с фактом:
+      // «[ЗАВЕРШЕНО]» или «Завершено». Достижение числового плана само по себе
+      // не означает, что работы прекращены.
+      const isComplete = hasCompletionMarker(completionLastDoneRow?.comment);
+      const displayDone = state.quarter === "all" ? done : quarterDone;
+      const remaining = state.quarter === "all"
+        ? Math.max(yearPlan - done, 0)
+        : Math.max(quarterPlan - quarterDone, 0);
+      const planStatus = buildPlanStatus(rows, lastDoneRow, displayDone);
+
+      return { done, quarterDone, displayDone, remaining, quarterPlan, yearPlan, quarterProgress, yearProgress, isComplete, completionDone, completionYearPlan, planStatus, rowsCount: rows.length };
+    }
+
+    function planComparisonRow(rows, fallbackRow) {
+      const datedRows = rows.map(row => ({
+        row,
+        start: rowDate(row.weekStart),
+        end: rowDate(row.weekEnd)
+      })).filter(item => item.start && item.end);
+
+      if (!datedRows.length) return fallbackRow;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (today < datedRows[0].start) return null;
+
+      const current = datedRows.find(item => item.start <= today && today <= item.end);
+      if (current) return current.row;
+
+      const started = datedRows.filter(item => item.start <= today);
+      return started.length ? started[started.length - 1].row : null;
+    }
+
+    function buildPlanStatus(rows, lastDoneRow, factValue) {
+      if (!rows.length) {
+        return {
+          key: "no-data",
+          label: "Нет данных",
+          detail: "Нет данных выбранного периода.",
+          delta: null,
+          fact: factValue,
+          plan: null
+        };
+      }
+
+      const useYearPlan = state.quarter === "all";
+      const planRow = useYearPlan
+        ? planComparisonRow(rows, lastDoneRow)
+        : rows.reduce((bestRow, row) => {
+            if (!row.hasNumericQuarterPlan) return bestRow;
+            if (!bestRow || cleanNumber(row.quarterPlan) > cleanNumber(bestRow.quarterPlan)) return row;
+            return bestRow;
+          }, null);
+      if (!planRow) {
+        return {
+          key: "no-data",
+          label: "Нет данных",
+          detail: useYearPlan ? "Выбранный период еще не начался." : "Нет итогового квартального плана.",
+          delta: null,
+          fact: factValue,
+          plan: null
+        };
+      }
+
+      const hasPlan = useYearPlan
+        ? planRow.hasNumericYearPlan
+        : planRow.hasNumericQuarterPlan;
+      const planValue = hasPlan
+        ? cleanNumber(useYearPlan ? rowYearPlanValue(planRow) : rowQuarterPlanValue(planRow))
+        : null;
+
+      if (planValue === null) {
+        return {
+          key: "no-data",
+          label: "Нет данных",
+          detail: "Нет планового значения на текущую неделю.",
+          delta: null,
+          fact: factValue,
+          plan: null
+        };
+      }
+
+      const fact = cleanNumber(factValue);
+      const delta = fact - planValue;
+      const absDelta = Math.abs(delta);
+
+      if (absDelta < 0.000001) {
+        return {
+          key: "on-track",
+          label: "Идем по плану",
+          detail: `${useYearPlan ? "План на сейчас" : "Итоговый план квартала"}: ${formatNumber(planValue)}.`,
+          delta,
+          fact,
+          plan: planValue
+        };
+      }
+
+      if (delta > 0) {
+        return {
+          key: "ahead",
+          label: "Перевыполняем",
+          detail: `${useYearPlan ? "Опережение текущего плана" : "Опережение квартального плана"}: ${formatNumber(absDelta)}.`,
+          delta,
+          fact,
+          plan: planValue
+        };
+      }
+
+      return {
+        key: "behind",
+        label: "Отстаем",
+        detail: `${useYearPlan ? "Отставание от текущего плана" : "Отставание от квартального плана"}: ${formatNumber(absDelta)}.`,
+        delta,
+        fact,
+        plan: planValue
+      };
+    }
+
+    function displayStatus(summary) {
+      if (summary.isComplete) {
+        const overage = cleanNumber(summary.completionDone) - cleanNumber(summary.completionYearPlan);
+        if (overage > 0.000001) {
+          return {
+            key: "complete",
+            label: "Перевыполнено",
+            detail: `Годовой план превышен на ${formatNumber(overage)}.`
+          };
+        }
+        return {
+          key: "complete",
+          label: "Выполнено",
+          detail: "План закрыт полностью."
+        };
+      }
+
+      return summary.planStatus;
+    }
+
+    function taskSummary(task) {
+      return summarizeRows(filteredRows(task), task.rows);
+    }
+
+    function activeQuarterText() {
+      return state.quarter === "all" ? "все кварталы" : state.quarter;
+    }
+
+    function activeQuarterBadge() {
+      return state.quarter === "all" ? "Все кварталы" : `Квартал: ${state.quarter}`;
+    }
+
+    function activePeriodDescription() {
+      return state.quarter === "all"
+        ? "Показаны данные по всем кварталам."
+        : `Показаны только данные за ${state.quarter}.`;
+    }
+
+    function quarterProgressLabel(prefix = "") {
+      const label = state.quarter === "all"
+        ? `${prefix ? `${prefix} ` : ""}квартальный прогресс`
+        : `${prefix ? `${prefix} ` : ""}прогресс за ${state.quarter}`;
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    function render() {
+      destroyCharts();
+      markActiveTab();
+
+      if (!state.tasks.length) return;
+
+      const quarterText = activeQuarterText();
+      const activeTask = state.activeTab === "overview"
+        ? null
+        : state.tasks.find(item => item.id === state.activeTab);
+      const taskText = activeTask ? activeTask.name : "Все задачи";
+      statusBox.textContent = `Задача: ${taskText}. Период: ${quarterText}.`;
+
+      if (state.activeTab === "overview") {
+        renderOverview();
+        return;
+      }
+
+      const task = state.tasks.find(item => item.id === state.activeTab) || state.tasks[0];
+      renderTask(task);
+    }
+
+    function markActiveTab() {
+      [...tabs.querySelectorAll(".tab-button")].forEach(button => {
+        button.classList.toggle("active", button.dataset.tab === state.activeTab);
+      });
+    }
+
+    function renderOverview() {
+      const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
+      const showYearProgress = state.quarter === "all";
+      const showYearPlan = state.quarter === "all";
+      const overviewYearPlanValues = showYearPlan
+        ? summaries.map(item => {
+            const hasYearPlan = filteredRows(item.task).some(row => row.hasNumericYearPlan);
+            return hasYearPlan ? item.summary.yearPlan : null;
+          })
+        : [];
+      const overviewProgressDatasets = [
+        {
+          label: `${showYearProgress ? "Годовой прогресс" : quarterProgressLabel()}, %`,
+          data: summaries.map(item => showYearProgress ? item.summary.yearProgress : item.summary.quarterProgress),
+          backgroundColor: "#2563eb"
+        }
+      ];
+
+      const overviewDoneDatasets = [];
+
+      if (!showYearPlan) {
+        overviewDoneDatasets.push({
+          label: "Квартальный план",
+          data: summaries.map(item => item.summary.quarterPlan),
+          backgroundColor: "#2563eb"
+        });
+      }
+
+      if (showYearPlan && hasPlottableValues(overviewYearPlanValues)) {
+        overviewDoneDatasets.push({
+          label: "Годовой план",
+          data: overviewYearPlanValues,
+          backgroundColor: "#16a34a"
+        });
+      }
+
+      overviewDoneDatasets.push({
+        label: showYearPlan ? "Выполнено" : "Выполнено за квартал",
+        data: summaries.map(item => showYearPlan ? item.summary.done : item.summary.displayDone),
+        backgroundColor: "#d97706"
+      });
+
+      pageTitle.textContent = "Все задачи";
+      pageSubtitle.textContent = activePeriodDescription();
+
+      content.innerHTML = `
+        <div class="grid task-list">
+          ${summaries.map(({ task, summary }) => taskCard(task, summary)).join("")}
+        </div>
+
+        <div class="grid charts">
+          <section class="panel">
+            <h3>Прогресс по задачам</h3>
+            <canvas id="overviewProgressChart"></canvas>
+          </section>
+          <section class="panel">
+            <h3>Выполнено и план по задачам</h3>
+            <canvas id="overviewDoneChart"></canvas>
+          </section>
+        </div>
+      `;
+      setupFlipCards();
+
+      makeBarChart("overviewProgressChart", {
+        labels: summaries.map(item => item.task.name),
+        datasets: overviewProgressDatasets
+      }, true, true);
+
+      makeBarChart("overviewDoneChart", {
+        labels: summaries.map(item => item.task.name),
+        datasets: overviewDoneDatasets
+      }, false, true);
+    }
+
+    function renderTask(task) {
+      const rows = filteredRows(task);
+      const summary = summarizeRows(rows, task.rows);
+      const status = displayStatus(summary);
+      const showYearProgress = state.quarter === "all";
+      const quarterPlanValues = rows.map(rowQuarterPlanValue);
+      const yearPlanValues = showYearProgress ? rows.map(rowYearPlanValue) : [];
+      const progressDatasets = [];
+
+      if (showYearProgress) {
+        if (hasPlottableValues(yearPlanValues)) {
+          progressDatasets.push({
+            label: "Годовой план",
+            data: yearPlanValues,
+            yAxisID: "y",
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22, 163, 74, 0.1)",
+            pointBackgroundColor: "#16a34a",
+            tension: 0.25,
+            fill: false,
+            spanGaps: false
+          });
+        }
+      } else if (hasPlottableValues(quarterPlanValues)) {
+        progressDatasets.push({
+          label: "Квартальный план",
+          data: quarterPlanValues,
+          yAxisID: "y",
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.12)",
+          pointBackgroundColor: "#2563eb",
+          tension: 0.25,
+          fill: false,
+          spanGaps: false
+        });
+      }
+
+      progressDatasets.push({
+        label: showYearProgress ? "Выполнено" : "Выполнено за квартал",
+        data: showYearProgress ? rows.map(row => row.hasDone ? row.done : null) : quarterDoneValues(rows, task.rows),
+        yAxisID: "y",
+        borderColor: "#d97706",
+        backgroundColor: "rgba(217, 119, 6, 0.14)",
+        pointBackgroundColor: "#d97706",
+        tension: 0.25,
+        fill: true,
+        spanGaps: true
+      });
+      const missingText = task.missing.length
+        ? `Не найдены колонки: ${task.missing.join(", ")}.`
+        : "";
+
+      pageTitle.textContent = task.name;
+      pageSubtitle.textContent = [missingText, activePeriodDescription()].filter(Boolean).join(" ");
+      const editAction = !task.columnMap?.done ? "" : `
+        <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести правки" title="Внести правки">✎</button>
+      `;
+
+      const doneChartsMarkup = showYearProgress
+        ? `
+        <div class="grid charts quarter-charts">
+          ${BASE_QUARTERS.map(quarter => `
+            <section class="panel">
+              <h3>${quarter}: выполнено и план</h3>
+              <canvas id="${doneChartId(quarter)}"></canvas>
+            </section>
+          `).join("")}
+        </div>`
+        : `
+        <div class="grid charts">
+          <section class="panel">
+            <h3>Выполнено и план по неделям</h3>
+            <canvas id="taskDoneChart"></canvas>
+          </section>
+        </div>`;
+
+      content.innerHTML = `
+        <div class="grid cards">
+          ${metric("Статус плана", status.label, status.detail, `status-${status.key}`, editAction)}
+          ${metric(showYearProgress ? "Выполнено" : "Выполнено за квартал", formatNumber(summary.displayDone))}
+          ${showYearProgress ? metric("Годовой план", formatNumber(summary.yearPlan)) : metric("Квартальный план", formatNumber(summary.quarterPlan))}
+          ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
+        </div>
+
+        <div class="grid charts">
+          <section class="panel">
+            <h3>Динамика прогресса</h3>
+            <canvas id="taskProgressChart"></canvas>
+          </section>
+        </div>
+
+        ${doneChartsMarkup}
+
+        <details class="panel sheet-data">
+          <summary>
+            <h3>Данные листа</h3>
+            <span class="sheet-data-toggle">
+              <span class="closed-label">Развернуть</span>
+              <span class="open-label">Свернуть</span>
+            </span>
+          </summary>
+          <div class="sheet-data-body">
+            ${rows.length ? table(rows) : `<p>Нет строк для выбранного квартала.</p>`}
+          </div>
+        </details>
+      `;
+
+      const updateProgressButton = document.getElementById("updateProgressButton");
+      if (updateProgressButton) {
+        updateProgressButton.addEventListener("click", () => openProgressModal(task));
+      }
+
+      makeLineChart("taskProgressChart", {
+        labels: rows.map(row => String(row.week)),
+        datasets: progressDatasets
+      });
+
+      if (showYearProgress) {
+        rowsByBaseQuarter(rows).forEach(({ quarter, rows: quarterRows }) => {
+          makeBarChart(doneChartId(quarter), {
+            labels: quarterRows.map(row => String(row.week)),
+            datasets: donePlanDatasets(quarterRows, true, task.rows)
+          }, false, false, true);
+        });
+      } else {
+        makeBarChart("taskDoneChart", {
+          labels: rows.map(row => String(row.week)),
+            datasets: donePlanDatasets(rows, false, task.rows)
+        }, false, false, true);
+      }
+    }
+
+    function metric(label, value, note = "", className = "", actionMarkup = "") {
+      return `
+        <div class="metric ${escapeHtml(className)}">
+          ${actionMarkup}
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+          ${note ? `<div class="note">${escapeHtml(note)}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function setupFlipCards() {
+      content.querySelectorAll("[data-flip-card]").forEach(card => {
+        const toggle = () => {
+          const flipped = card.classList.toggle("flipped");
+          card.setAttribute("aria-label", flipped ? "Показать показатели задачи" : "Показать описание задачи");
+        };
+        card.addEventListener("click", toggle);
+        card.addEventListener("keydown", event => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          toggle();
+        });
+      });
+    }
+
+    function taskCard(task, summary) {
+      const showYearProgress = state.quarter === "all";
+      const status = displayStatus(summary);
+      const progressValue = showYearProgress ? summary.yearProgress : summary.quarterProgress;
+      const progress = clamp(progressValue, 0, 100);
+      const progressLabel = showYearProgress ? "Годовой прогресс" : quarterProgressLabel();
+      const completionBadge = summary.isComplete ? `<span class="badge complete">${escapeHtml(status.label)}</span>` : "";
+      const completionMarkup = completionBadge
+        ? `<div class="task-card-completion">${completionBadge}</div>`
+        : "";
+      const statusBadge = `<span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}" aria-label="${escapeHtml(status.label)}"></span>`;
+      const miniMetrics = showYearProgress
+        ? `
+            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
+            <span>Год. план<b>${formatNumber(summary.yearPlan)}</b></span>
+            <span>Осталось<b>${formatNumber(summary.remaining)}</b></span>
+          `
+        : `
+            <span>За квартал<b>${formatNumber(summary.displayDone)}</b></span>
+            <span>Кв. план<b>${formatNumber(summary.quarterPlan)}</b></span>
+            <span>Осталось<b>${formatNumber(summary.remaining)}</b></span>
+          `;
+      const hasDescription = Boolean(task.description);
+      const description = hasDescription ? task.description : "";
+      const ownerMarkup = task.owner ? `<p class="task-owner">Ответственный: <b>${escapeHtml(task.owner)}</b></p>` : "";
+      const metadataMarkup = ownerMarkup
+        ? `<div class="task-card-meta">${ownerMarkup}</div>`
+        : "";
+      return `
+        <article
+          class="task-card status-${escapeHtml(status.key)}${summary.isComplete ? " complete" : ""}${hasDescription ? " has-description" : ""}"
+          ${hasDescription ? `data-flip-card tabindex="0" role="button" aria-label="Показать описание задачи ${escapeHtml(task.name)}"` : ""}
+        >
+          <div class="task-card-inner">
+            <div class="task-card-face task-card-front">
+              <header>
+                <strong>${escapeHtml(task.name)}</strong>
+                ${statusBadge}
+              </header>
+              ${completionMarkup}
+              ${metadataMarkup}
+              <p>${escapeHtml(progressLabel)}: ${formatPercent(progressValue)}</p>
+              <div class="progress" aria-label="${escapeHtml(progressLabel)}">
+                <div style="width:${progress}%"></div>
+              </div>
+              <p class="task-status-line status-${escapeHtml(status.key)}">${escapeHtml(status.detail)}</p>
+              <div class="mini">
+                ${miniMetrics}
+              </div>
+              ${hasDescription ? `<span class="task-card-hint">Нажмите, чтобы открыть описание</span>` : ""}
+            </div>
+            ${hasDescription ? `
+              <div class="task-card-face task-card-back">
+                <p>${escapeHtml(description)}</p>
+                <span class="task-card-hint">Нажмите, чтобы вернуться</span>
+              </div>
+            ` : ""}
+          </div>
+        </article>
+      `;
+    }
+
+    function table(rows) {
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                ${Object.values(COLUMN_LABELS).map(label => `<th>${escapeHtml(label)}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.quarter)}</td>
+                  <td>${escapeHtml(row.week)}</td>
+                  <td>${escapeHtml(row.weekStart)}</td>
+                  <td>${escapeHtml(row.weekEnd)}</td>
+                  <td class="${row.planText ? "text-cell" : ""}">${escapeHtml(row.planText || formatNumber(row.quarterPlan))}</td>
+                  <td>${row.hasNumericYearPlan ? formatNumber(row.yearPlan) : ""}</td>
+                  <td class="${row.progressText ? "text-cell" : ""}">${escapeHtml(row.progressText || (row.hasNumericQuarterProgress ? formatPercent(row.quarterProgress) : ""))}</td>
+                  <td>${row.hasNumericYearProgress ? formatPercent(row.yearProgress) : ""}</td>
+                  <td>${row.hasDone ? formatNumber(row.done) : ""}</td>
+                  <td class="text-cell">${escapeHtml(row.comment || "")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function average(values) {
+      const valid = values.map(cleanNumber).filter(value => Number.isFinite(value));
+      if (!valid.length) return 0;
+      return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+    }
+
+    function hasPlottableValues(values) {
+      return values.some(value => value !== null && value !== undefined && cleanNumber(value) !== 0);
+    }
+
+    function baseQuarterValue(quarter) {
+      const match = String(quarter || "").trim().match(/^Q([1-4])\b/i);
+      return match ? `Q${match[1]}` : "";
+    }
+
+    function doneChartId(quarter) {
+      return `taskDoneChart-${quarter}`;
+    }
+
+    function rowsByBaseQuarter(rows) {
+      return BASE_QUARTERS.map(quarter => ({
+        quarter,
+        rows: rows.filter(row => baseQuarterValue(row.quarter) === quarter)
+      }));
+    }
+
+    function donePlanDatasets(rows, includeYearPlan = false, allRows = rows) {
+      const quarterPlanValues = rows.map(rowQuarterPlanValue);
+      const yearPlanValues = includeYearPlan ? rows.map(rowYearPlanValue) : [];
+      const doneValues = includeYearPlan || state.quarter !== "all"
+        ? quarterDoneValues(rows, allRows)
+        : rows.map(row => row.hasDone ? row.done : null);
+      const datasets = [];
+
+      if (hasPlottableValues(quarterPlanValues)) {
+        datasets.push({
+          label: "Квартальный план",
+          data: quarterPlanValues,
+          backgroundColor: "#2563eb"
+        });
+      }
+
+      if (includeYearPlan && hasPlottableValues(yearPlanValues)) {
+        datasets.push({
+          label: "Годовой план",
+          data: yearPlanValues,
+          backgroundColor: "#16a34a"
+        });
+      }
+
+      datasets.push({
+        label: includeYearPlan || state.quarter !== "all" ? "Выполнено за квартал" : "Выполнено",
+        data: doneValues,
+        backgroundColor: "#d97706"
+      });
+
+      return datasets;
+    }
+
+    function quarterDoneValues(rows, allRows = rows) {
+      const baseline = inferQuarterBaseline(rows, allRows);
+      return rows.map(row => row.hasDone ? Math.max(cleanNumber(row.done) - baseline, 0) : null);
+    }
+
+    function inferQuarterBaseline(rows, allRows = rows) {
+      const firstQuarterRow = rows[0];
+      const startIndex = allRows.indexOf(firstQuarterRow);
+      if (startIndex <= 0) return 0;
+
+      // «Выполнено» ведётся накопительно. Для квартального значения берём
+      // факт последней заполненной недели предыдущего квартала, а не пытаемся
+      // восстановить его по округлённому проценту и недельному плану.
+      const previousDoneRows = allRows.slice(0, startIndex).filter(row => row.hasDone);
+      return previousDoneRows.length ? cleanNumber(previousDoneRows[previousDoneRows.length - 1].done) : 0;
+    }
+
+    function rowQuarterPlanValue(row) {
+      if (row.hasNumericQuarterPlan) return row.quarterPlan;
+      if (row.planText) return 1;
+      return null;
+    }
+
+    function rowYearPlanValue(row) {
+      return row.hasNumericYearPlan ? row.yearPlan : null;
+    }
+
+    function wrapChartLabel(label, maxLineLength = 18, maxLines = 3) {
+      const words = String(label ?? "").trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return "";
+
+      const lines = [];
+      words.forEach(word => {
+        const lastLine = lines[lines.length - 1] || "";
+        const candidate = lastLine ? `${lastLine} ${word}` : word;
+
+        if (!lines.length) {
+          lines.push(word);
+        } else if (candidate.length <= maxLineLength) {
+          lines[lines.length - 1] = candidate;
+        } else if (lines.length < maxLines) {
+          lines.push(word);
+        } else {
+          lines[maxLines - 1] = `${lines[maxLines - 1]} ${word}`;
+        }
+      });
+
+      if (lines.length > maxLines) {
+        lines.length = maxLines;
+      }
+
+      const lastIndex = lines.length - 1;
+      if (lines[lastIndex].length > maxLineLength) {
+        lines[lastIndex] = `${lines[lastIndex].slice(0, maxLineLength - 1).trim()}…`;
+      }
+
+      return lines;
+    }
+
+    function chartOptions(percentScale, showDoneScale = false, wrapLabels = false, weekAxis = false) {
+      const scales = {
+        x: {
+          ticks: {
+            color: "#667085",
+            maxRotation: wrapLabels || weekAxis ? 0 : 35,
+            minRotation: 0,
+            ...(weekAxis ? {
+              autoSkip: false,
+              font: { size: 10 },
+              padding: 6
+            } : {}),
+            ...(wrapLabels ? {
+              autoSkip: false,
+              font: { size: 11 },
+              padding: 8,
+              callback: function(value) {
+                return wrapChartLabel(this.getLabelForValue(value));
+              }
+            } : {})
+          },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          suggestedMax: percentScale ? 100 : undefined,
+          ticks: {
+            color: "#667085",
+            callback: value => percentScale ? `${value}%` : value
+          },
+          grid: { color: "rgba(217, 222, 232, 0.7)" }
+        }
+      };
+
+      if (showDoneScale) {
+        scales.yDone = {
+          beginAtZero: true,
+          position: "right",
+          ticks: {
+            color: "#d97706",
+            callback: value => formatNumber(value)
+          },
+          grid: { drawOnChartArea: false }
+        };
+      }
+
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            bottom: weekAxis ? 16 : 0
+          }
+        },
+        plugins: {
+          axisLabelTooltip: { enabled: wrapLabels },
+          weekAxisLabels: { enabled: weekAxis },
+          legend: { position: "bottom" },
+          tooltip: {
+            callbacks: {
+              label: context => {
+                const value = context.parsed.y ?? context.parsed;
+                const label = String(context.dataset.label || "").replace(/,\s*%$/, "");
+                if (context.dataset.yAxisID === "yDone") {
+                  return `${label}: ${formatNumber(value)}`;
+                }
+                return percentScale
+                  ? `${label}: ${formatPercent(value)}`
+                  : `${label}: ${formatNumber(value)}`;
+              }
+            }
+          }
+        },
+        scales
+      };
+    }
+
+    function makeBarChart(id, data, percentScale, wrapLabels = false, weekAxis = false) {
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      state.charts.push(new Chart(ctx, {
+        type: "bar",
+        data,
+        options: chartOptions(percentScale, false, wrapLabels, weekAxis)
+      }));
+    }
+
+    function makeLineChart(id, data, percentScale = false, showDoneScale = false) {
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      const options = chartOptions(percentScale, showDoneScale, false, true);
+      state.charts.push(new Chart(ctx, {
+        type: "line",
+        data,
+        options
+      }));
+    }
+
+    function destroyCharts() {
+      state.charts.forEach(chart => chart.destroy());
+      state.charts = [];
+    }
+
+    function showError(message) {
+      errorBox.hidden = false;
+      errorBox.textContent = message;
+      statusBox.textContent = "Ошибка чтения файла.";
+    }
+
+    function hideError() {
+      errorBox.hidden = true;
+      errorBox.textContent = "";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Рабочие данные и обращения пользователей
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+bugs/*
+!bugs/.gitkeep
+
+# Временные файлы
+.agents/
+.codex/
+.chrome-dashboard-*/
+__pycache__/
+*.pyc
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.vscode/
