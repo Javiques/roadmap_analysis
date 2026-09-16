@@ -26,6 +26,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -35,10 +39,12 @@
     .app {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 290px 1fr;
+      grid-template-columns: 310px 1fr;
     }
 
     aside {
+      display: flex;
+      flex-direction: column;
       background: #111827;
       color: #f9fafb;
       padding: 24px 18px;
@@ -50,6 +56,7 @@
 
     main {
       padding: 26px;
+      min-width: 0;
       overflow: hidden;
     }
 
@@ -76,12 +83,179 @@
     }
 
     .brand {
-      margin-bottom: 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .brand-copy {
+      min-width: 0;
     }
 
     .brand p {
       color: #cbd5e1;
       font-size: 13px;
+    }
+
+    .settings-button {
+      position: relative;
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.07);
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .settings-button:hover,
+    .settings-button[aria-expanded="true"] {
+      border-color: rgba(96, 165, 250, 0.75);
+      background: rgba(37, 99, 235, 0.24);
+      color: #ffffff;
+    }
+
+    .sidebar-settings {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: auto;
+      padding-top: 18px;
+      border-top: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .settings-change-indicator {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 8px;
+      height: 8px;
+      border: 2px solid #111827;
+      border-radius: 50%;
+      background: #60a5fa;
+    }
+
+    .empty-sidebar-state {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 320px;
+    }
+
+    .empty-sidebar-source {
+      border: 1px solid rgba(96, 165, 250, 0.45);
+      border-radius: 10px;
+      padding: 14px;
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    .empty-sidebar-source p {
+      margin-top: 9px;
+      color: #bfdbfe;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .empty-sidebar-actions {
+      display: grid;
+      gap: 9px;
+      margin-top: auto;
+      padding-top: 28px;
+    }
+
+    .empty-sidebar-actions .sidebar-action {
+      padding-block: 11px;
+    }
+
+    .settings-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(1px);
+    }
+
+    .settings-drawer {
+      position: fixed;
+      z-index: 41;
+      top: 0;
+      bottom: 0;
+      left: 310px;
+      width: 340px;
+      padding: 22px;
+      overflow-y: auto;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      background: #182235;
+      color: #f8fafc;
+      box-shadow: 20px 0 45px rgba(15, 23, 42, 0.28);
+      opacity: 0;
+      transform: translateX(-18px);
+      visibility: hidden;
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    }
+
+    .settings-drawer.open {
+      opacity: 1;
+      transform: translateX(0);
+      visibility: visible;
+    }
+
+    .settings-drawer-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    .settings-drawer-header h2 {
+      font-size: 19px;
+    }
+
+    .settings-drawer-header p {
+      margin-top: 6px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .settings-drawer-close {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #e5e7eb;
+      cursor: pointer;
+      font: inherit;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .settings-drawer-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .settings-group + .settings-group {
+      margin-top: 22px;
+      padding-top: 22px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .settings-group .tool-actions {
+      margin: 0;
+    }
+
+    .settings-group .upload {
+      margin: 0;
     }
 
     .upload {
@@ -165,7 +339,17 @@
     .tool-actions {
       display: grid;
       gap: 8px;
-      margin-bottom: 18px;
+      margin: 22px 0 18px;
+    }
+
+    .sidebar-section-title {
+      display: block;
+      margin-bottom: 8px;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .plan-edit-action {
@@ -221,7 +405,7 @@
     .filters {
       display: grid;
       gap: 12px;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     .filters label {
@@ -231,29 +415,123 @@
       margin-bottom: 7px;
     }
 
-    .tabs {
-      display: grid;
-      gap: 7px;
+    .dashboard-overview-button,
+    .task-picker-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.07);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
     }
 
-    .task-navigation + .upload {
-      margin-top: 22px;
+    .dashboard-overview-button {
+      margin-bottom: 20px;
+    }
+
+    .dashboard-overview-button:hover:not(:disabled),
+    .dashboard-overview-button.active,
+    .task-picker-button:hover:not(:disabled),
+    .task-picker-button.active,
+    .task-picker-button[aria-expanded="true"] {
+      border-color: rgba(96, 165, 250, 0.7);
+      background: rgba(37, 99, 235, 0.22);
+    }
+
+    .dashboard-overview-button:disabled,
+    .task-picker-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .dashboard-overview-button-icon {
+      color: #93c5fd;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .task-picker {
+      position: relative;
+    }
+
+    .task-picker-button-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-picker-chevron {
+      flex: 0 0 auto;
+      color: #94a3b8;
+      transition: transform 0.16s ease;
+    }
+
+    .task-picker-button[aria-expanded="true"] .task-picker-chevron {
+      transform: rotate(180deg);
+    }
+
+    .task-picker-panel {
+      margin-top: 7px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 8px;
+      padding: 8px;
+      background: #1f2937;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .task-picker-search {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      border-radius: 7px;
+      padding: 9px 10px;
+      background: #111827;
+      color: #f8fafc;
+      font: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .task-picker-search::placeholder {
+      color: #94a3b8;
+    }
+
+    .task-picker-search:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+    }
+
+    .tabs {
+      display: grid;
+      gap: 3px;
+      max-height: 270px;
+      margin-top: 7px;
+      overflow-y: auto;
     }
 
     .tab-button {
       width: 100%;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
       gap: 8px;
       border: 0;
-      border-radius: 7px;
-      padding: 10px 11px;
-      color: #e5e7eb;
+      border-radius: 6px;
+      padding: 9px 10px;
+      color: #dbeafe;
       background: transparent;
       cursor: pointer;
       text-align: left;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .tab-button:hover,
@@ -261,9 +539,53 @@
       background: rgba(255, 255, 255, 0.11);
     }
 
-    .tab-button span:last-child {
+    .task-picker-option-label {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      color: #dbeafe;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-picker-option-count {
       color: #9ca3af;
       font-size: 12px;
+    }
+
+    .task-picker-status-dot {
+      width: 11px;
+      height: 11px;
+      flex: 0 0 11px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      background: #6b7280;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+
+    .task-picker-status-dot.status-behind {
+      background: #ea580c;
+    }
+
+    .task-picker-status-dot.status-on-track,
+    .task-picker-status-dot.status-complete {
+      background: #16a34a;
+    }
+
+    .task-picker-status-dot.status-ahead {
+      background: #2563eb;
+    }
+
+    .task-picker-status-dot.status-no-data {
+      background: #6b7280;
+    }
+
+    .task-picker-empty {
+      padding: 12px 8px 6px;
+      color: #94a3b8;
+      font-size: 12px;
+      text-align: center;
     }
 
     .topbar {
@@ -293,6 +615,25 @@
       box-shadow: var(--shadow);
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .period-control label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status.period-control {
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .period-control select {
+      padding-block: 8px;
     }
 
     .grid {
@@ -329,6 +670,148 @@
 
     .sheet-data {
       margin-top: 16px;
+    }
+
+    .completed-period-panel {
+      margin-top: 16px;
+      border-color: rgba(22, 163, 74, 0.3);
+      background: #f0fdf4;
+    }
+
+    .completed-period-panel p {
+      color: #166534;
+    }
+
+    .stage-panel {
+      margin-top: 16px;
+    }
+
+    .stage-panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .stage-panel-header h3 {
+      margin-bottom: 4px;
+    }
+
+    .stage-panel-header p {
+      font-size: 12px;
+    }
+
+    .stage-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .stage-item {
+      display: grid;
+      grid-template-columns: minmax(112px, 140px) minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-left-width: 4px;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .stage-item.stage-complete {
+      border-left-color: var(--green);
+      background: #f8fff9;
+    }
+
+    .stage-item.stage-partial,
+    .stage-item.stage-active {
+      border-left-color: var(--primary);
+    }
+
+    .stage-item.stage-review {
+      border-left-color: var(--amber);
+      background: #fffaf2;
+    }
+
+    .stage-item.stage-planned {
+      border-left-color: #94a3b8;
+    }
+
+    .stage-meta {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .stage-meta strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .stage-content {
+      display: grid;
+      min-width: 0;
+      gap: 9px;
+    }
+
+    .stage-entry-label {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .stage-entry-text {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.42;
+      overflow-wrap: anywhere;
+    }
+
+    .stage-result-value {
+      color: #15803d;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .stage-badge {
+      justify-self: end;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .stage-badge.stage-complete {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .stage-badge.stage-partial,
+    .stage-badge.stage-active {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .stage-badge.stage-review {
+      background: #ffedd5;
+      color: #c2410c;
+    }
+
+    .stage-empty {
+      padding: 24px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
     }
 
     .sheet-data summary {
@@ -489,6 +972,12 @@
       font-weight: 650;
     }
 
+    .task-owner.missing,
+    .task-owner.missing b {
+      color: #98a2b3;
+      font-weight: 500;
+    }
+
     .task-card header {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -647,6 +1136,18 @@
       margin-top: 3px;
     }
 
+    .mini.completed-earlier {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mini.completed-earlier > span:first-child {
+      white-space: nowrap;
+    }
+
+    .mini.completed-earlier > span:last-child {
+      text-align: right;
+    }
+
     .task-status-line {
       font-size: 12px;
       font-weight: 700;
@@ -731,9 +1232,27 @@
       max-width: 540px;
     }
 
-    canvas {
+    .chart-scroll {
+      width: 100%;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-inline: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .chart-frame {
+      position: relative;
+      width: 100%;
+      min-width: 0;
+      height: clamp(300px, 38vw, 360px);
+    }
+
+    .chart-frame canvas {
+      display: block;
       width: 100% !important;
-      max-height: 360px;
+      height: 100% !important;
+      max-height: none;
     }
 
     .error {
@@ -984,11 +1503,20 @@
       .cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .quarter-charts {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 980px) {
       .app {
         grid-template-columns: 1fr;
+      }
+
+      .settings-drawer {
+        left: 0;
+        width: min(340px, calc(100vw - 20px));
       }
 
       aside {
@@ -1006,6 +1534,11 @@
         display: grid;
       }
 
+      .status {
+        width: 100%;
+        min-width: 0;
+      }
+
       main {
         padding: 18px;
       }
@@ -1014,57 +1547,162 @@
         grid-template-columns: 1fr;
       }
     }
+
+    @media (max-width: 520px) {
+      aside {
+        padding: 20px 14px;
+      }
+
+      main {
+        padding: 14px;
+      }
+
+      .task-list {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .panel,
+      .metric {
+        padding: 14px;
+      }
+
+      .metric .value {
+        font-size: 24px;
+      }
+
+      .chart-frame {
+        height: 300px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .stage-item {
+        grid-template-columns: 1fr;
+        gap: 9px;
+      }
+
+      .stage-badge {
+        grid-row: 1;
+        justify-self: start;
+      }
+
+      .stage-meta {
+        grid-row: 2;
+      }
+
+      .stage-content {
+        grid-row: 3;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="app">
     <aside>
-      <div id="taskNavigation" class="task-navigation" hidden>
-        <div class="brand">
-          <h1>Прогресс задач</h1>
+      <div class="brand">
+        <div class="brand-copy">
+          <h1>Дорожные карты</h1>
+          <p>Контроль планов и выполнения</p>
         </div>
+      </div>
 
-        <div class="filters">
-          <div>
-            <label for="quarterFilter">Квартал</label>
-            <select id="quarterFilter" disabled>
-              <option value="all">Все кварталы</option>
-            </select>
+      <div id="taskNavigation" class="task-navigation" hidden>
+        <button id="dashboardOverviewButton" class="dashboard-overview-button active" type="button" disabled>
+          <span>Дашборд всех карт</span>
+          <span class="dashboard-overview-button-icon" aria-hidden="true">▦</span>
+        </button>
+
+        <div>
+          <span class="sidebar-section-title">Дорожная карта</span>
+          <div id="taskPicker" class="task-picker">
+            <button id="taskPickerButton" class="task-picker-button" type="button" aria-label="Выбрать дорожную карту" aria-expanded="false" aria-controls="taskPickerPanel" disabled>
+              <span id="taskPickerLabel" class="task-picker-button-label">Выберите карту</span>
+              <span class="task-picker-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div id="taskPickerPanel" class="task-picker-panel" hidden>
+              <input id="taskPickerSearch" class="task-picker-search" type="search" aria-label="Поиск дорожной карты" placeholder="Найти карту…" autocomplete="off">
+              <nav id="tabs" class="tabs" aria-label="Дорожные карты"></nav>
+              <div id="taskPickerEmpty" class="task-picker-empty" hidden>Карты не найдены</div>
+            </div>
           </div>
         </div>
-
-        <nav id="tabs" class="tabs" aria-label="Вкладки задач"></nav>
       </div>
 
-      <div class="upload">
-        <span class="upload-title">Excel-файл</span>
-        <button id="openRoadmapButton" class="file-picker-button" type="button">Открыть дорожную карту</button>
-        <input id="fileInput" class="file-input" type="file" accept=".xlsx,.xls,.xlsm,.csv">
-        <button id="changeRoadmapFileButton" class="upload-file-change" type="button" hidden>Сменить файл</button>
-        <p id="roadmapFolderStatus" class="upload-status">Выберите рабочий Excel-файл. При следующем запуске он откроется одной кнопкой.</p>
-        <div id="errorBox" class="error" hidden></div>
+      <div id="emptySidebarState" class="empty-sidebar-state">
+        <section class="empty-sidebar-source" aria-labelledby="emptySidebarSourceTitle">
+          <span id="emptySidebarSourceTitle" class="sidebar-section-title">Выбор дорожных карт</span>
+          <button id="initialOpenRoadmapButton" class="sidebar-action primary" type="button">Выбрать Excel-файл</button>
+          <p id="initialRoadmapStatus">Загрузите рабочий файл с дорожными картами.</p>
+        </section>
+
+        <div class="empty-sidebar-actions">
+          <button id="initialNewRoadmapButton" class="sidebar-action" type="button">Новая дорожная карта</button>
+          <button id="initialBugReportButton" class="sidebar-action" type="button">Сообщить о проблеме</button>
+        </div>
       </div>
 
-      <div class="tool-actions">
-        <button id="newRoadmapButton" class="sidebar-action primary" type="button">Новая дорожная карта</button>
-        <button id="emailReportButton" class="sidebar-action" type="button" disabled>Отчёт для руководителя</button>
-        <button id="exportWorkbookButton" class="sidebar-action" type="button" disabled>Скачать Excel</button>
-        <button id="bugReportButton" class="sidebar-action" type="button">Сообщить о проблеме</button>
+      <div id="sidebarSettings" class="sidebar-settings" hidden>
+        <button id="settingsButton" class="settings-button" type="button" aria-label="Настройки и действия" aria-expanded="false" aria-controls="settingsDrawer" title="Настройки и действия" hidden>
+          <span aria-hidden="true">⚙</span>
+          <span id="settingsChangeIndicator" class="settings-change-indicator" hidden></span>
+        </button>
       </div>
+
     </aside>
 
     <main>
       <div class="topbar">
         <div>
-          <h2 id="pageTitle">Все задачи</h2>
+          <h2 id="pageTitle">Дашборд всех карт</h2>
           <p id="pageSubtitle">Сводная вкладка появится после загрузки файла.</p>
         </div>
-        <div id="statusBox" class="status">Файл пока не загружен.</div>
+        <div id="statusBox" class="status period-control">
+          <label for="quarterFilter">Период</label>
+          <select id="quarterFilter" disabled>
+            <option value="all">Все кварталы</option>
+          </select>
+        </div>
       </div>
 
       <section id="content" class="content"></section>
     </main>
   </div>
+
+  <div id="settingsBackdrop" class="settings-backdrop" hidden></div>
+  <section id="settingsDrawer" class="settings-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settingsDrawerTitle">
+    <div class="settings-drawer-header">
+      <div>
+        <h2 id="settingsDrawerTitle">Настройки и действия</h2>
+        <p>Работа с картами и источником данных</p>
+      </div>
+      <button id="closeSettingsDrawer" class="settings-drawer-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+
+    <section class="settings-group" aria-labelledby="roadmapActionsTitle">
+      <span id="roadmapActionsTitle" class="sidebar-section-title">Работа с картами</span>
+      <div class="tool-actions">
+        <button id="newRoadmapButton" class="sidebar-action primary" type="button">Новая дорожная карта</button>
+        <button id="emailReportButton" class="sidebar-action" type="button" disabled>Отчёт для руководителя</button>
+        <button id="exportWorkbookButton" class="sidebar-action" type="button" disabled>Скачать Excel</button>
+      </div>
+    </section>
+
+    <section class="settings-group" aria-labelledby="dataSourceTitle">
+      <span id="dataSourceTitle" class="sidebar-section-title">Источник данных</span>
+      <div class="upload">
+        <button id="openRoadmapButton" class="file-picker-button" type="button">Открыть Excel-файл</button>
+        <input id="fileInput" class="file-input" type="file" accept=".xlsx,.xls,.xlsm,.csv">
+        <button id="changeRoadmapFileButton" class="upload-file-change" type="button" hidden>Сменить файл</button>
+        <p id="roadmapFolderStatus" class="upload-status">Выберите рабочий Excel-файл. При следующем запуске он откроется одной кнопкой.</p>
+        <div id="errorBox" class="error" hidden></div>
+      </div>
+    </section>
+
+    <section class="settings-group" aria-labelledby="supportTitle">
+      <span id="supportTitle" class="sidebar-section-title">Поддержка</span>
+      <button id="bugReportButton" class="sidebar-action" type="button">Сообщить о проблеме</button>
+    </section>
+  </section>
 
   <div id="roadmapModal" class="modal" hidden>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="roadmapModalTitle">
@@ -1154,7 +1792,7 @@
               <select id="progressWeek" name="row" required></select>
             </div>
             <div class="form-field">
-              <label for="progressDone">Выполнено (накопительно)</label>
+              <label id="progressDoneLabel" for="progressDone">Выполнено (накопительно)</label>
               <input id="progressDone" name="done" type="number" min="0" step="any" required>
             </div>
             <div class="form-field full">
@@ -1352,10 +1990,27 @@
     const quarterFilter = document.getElementById("quarterFilter");
     const tabs = document.getElementById("tabs");
     const taskNavigation = document.getElementById("taskNavigation");
+    const emptySidebarState = document.getElementById("emptySidebarState");
+    const initialOpenRoadmapButton = document.getElementById("initialOpenRoadmapButton");
+    const initialRoadmapStatus = document.getElementById("initialRoadmapStatus");
+    const initialNewRoadmapButton = document.getElementById("initialNewRoadmapButton");
+    const initialBugReportButton = document.getElementById("initialBugReportButton");
+    const dashboardOverviewButton = document.getElementById("dashboardOverviewButton");
+    const taskPicker = document.getElementById("taskPicker");
+    const taskPickerButton = document.getElementById("taskPickerButton");
+    const taskPickerLabel = document.getElementById("taskPickerLabel");
+    const taskPickerPanel = document.getElementById("taskPickerPanel");
+    const taskPickerSearch = document.getElementById("taskPickerSearch");
+    const taskPickerEmpty = document.getElementById("taskPickerEmpty");
+    const sidebarSettings = document.getElementById("sidebarSettings");
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsChangeIndicator = document.getElementById("settingsChangeIndicator");
+    const settingsBackdrop = document.getElementById("settingsBackdrop");
+    const settingsDrawer = document.getElementById("settingsDrawer");
+    const closeSettingsDrawerButton = document.getElementById("closeSettingsDrawer");
     const content = document.getElementById("content");
     const pageTitle = document.getElementById("pageTitle");
     const pageSubtitle = document.getElementById("pageSubtitle");
-    const statusBox = document.getElementById("statusBox");
     const errorBox = document.getElementById("errorBox");
     const newRoadmapButton = document.getElementById("newRoadmapButton");
     const emailReportButton = document.getElementById("emailReportButton");
@@ -1371,6 +2026,7 @@
     const progressForm = document.getElementById("progressForm");
     const progressWeek = document.getElementById("progressWeek");
     const progressDone = document.getElementById("progressDone");
+    const progressDoneLabel = document.getElementById("progressDoneLabel");
     const progressComment = document.getElementById("progressComment");
     const progressModalSubtitle = document.getElementById("progressModalSubtitle");
     const closeProgressModal = document.getElementById("closeProgressModal");
@@ -1404,15 +2060,46 @@
 
     fileInput.addEventListener("change", handleFile);
     openRoadmapButton.addEventListener("click", openRoadmapFile);
+    initialOpenRoadmapButton.addEventListener("click", openRoadmapFile);
     changeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
     quarterFilter.addEventListener("change", () => {
       state.quarter = quarterFilter.value;
       render();
     });
-    newRoadmapButton.addEventListener("click", openRoadmapModal);
-    emailReportButton.addEventListener("click", openEmailReportModalWindow);
+    dashboardOverviewButton.addEventListener("click", () => {
+      state.activeTab = "overview";
+      closeTaskPicker();
+      render();
+    });
+    taskPickerButton.addEventListener("click", toggleTaskPicker);
+    taskPickerSearch.addEventListener("input", filterTaskOptions);
+    settingsButton.addEventListener("click", toggleSettingsDrawer);
+    settingsBackdrop.addEventListener("click", closeSettingsDrawerWindow);
+    closeSettingsDrawerButton.addEventListener("click", closeSettingsDrawerWindow);
+    document.addEventListener("click", event => {
+      if (!taskPicker.contains(event.target)) closeTaskPicker();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeTaskPicker();
+        closeSettingsDrawerWindow();
+      }
+    });
+    newRoadmapButton.addEventListener("click", () => {
+      closeSettingsDrawerWindow();
+      openRoadmapModal();
+    });
+    initialNewRoadmapButton.addEventListener("click", openRoadmapModal);
+    emailReportButton.addEventListener("click", () => {
+      closeSettingsDrawerWindow();
+      openEmailReportModalWindow();
+    });
     selectBugFolderModalButton.addEventListener("click", selectBugDirectory);
-    bugReportButton.addEventListener("click", openBugReportModalWindow);
+    bugReportButton.addEventListener("click", () => {
+      closeSettingsDrawerWindow();
+      openBugReportModalWindow();
+    });
+    initialBugReportButton.addEventListener("click", openBugReportModalWindow);
     exportWorkbookButton.addEventListener("click", exportWorkbook);
     closeRoadmapModal.addEventListener("click", closeRoadmapModalWindow);
     cancelRoadmapButton.addEventListener("click", closeRoadmapModalWindow);
@@ -1602,6 +2289,25 @@
       return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(cleanNumber(value));
     }
 
+    function formatQuantity(value) {
+      return `${formatNumber(value)} шт`;
+    }
+
+    function stageWord(value) {
+      const number = Math.abs(cleanNumber(value));
+      if (!Number.isInteger(number)) return "этапа";
+      const remainder100 = number % 100;
+      const remainder10 = number % 10;
+      if (remainder100 >= 11 && remainder100 <= 14) return "этапов";
+      if (remainder10 === 1) return "этап";
+      if (remainder10 >= 2 && remainder10 <= 4) return "этапа";
+      return "этапов";
+    }
+
+    function formatStageQuantity(value) {
+      return `${formatNumber(value)} ${stageWord(value)}`;
+    }
+
     function formatPercent(value) {
       if (value === null || value === undefined || value === "") return "";
       return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(cleanNumber(value))}%`;
@@ -1778,7 +2484,7 @@
     }
 
     function mapRows(rows) {
-      if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS), columnMap: {} };
+      if (!rows.length) return { data: [], missing: Object.values(COLUMN_LABELS), columnMap: {}, type: "quantitative" };
 
       const headers = Object.keys(rows[0]);
       const columnMap = {};
@@ -1848,6 +2554,7 @@
           done: cleanNumber(doneRaw),
           planText: isNumericLike(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
           progressText: isNumericLike(quarterProgressRaw) ? "" : textCell(row, columnMap.quarterProgress),
+          doneText: isNumericLike(doneRaw) ? "" : textCell(row, columnMap.done),
           comment: textCell(row, columnMap.comment),
           hasNumericQuarterPlan: isNumericLike(quarterPlanRaw),
           hasNumericYearPlan: isNumericLike(yearPlanRaw),
@@ -1882,7 +2589,14 @@
         });
       }
 
-      return { data, missing, columnMap, columnIndexes };
+      const hasTextPlan = data.some(row => row.planText);
+      const hasNumericPlan = data.some(row => row.hasNumericQuarterPlan || row.hasNumericYearPlan);
+      const type = hasTextPlan && !hasNumericPlan ? "stage" : "quantitative";
+      const relevantMissing = type === "stage"
+        ? missing.filter(label => !["Годовой план", "Годовой прогресс"].includes(label))
+        : missing;
+
+      return { data, missing: relevantMissing, columnMap, columnIndexes, type };
     }
 
     function supportsSavedRoadmapAccess() {
@@ -1932,15 +2646,19 @@
     function updateRoadmapFileStatus() {
       if (!supportsSavedRoadmapAccess()) {
         changeRoadmapFileButton.hidden = true;
-        roadmapFolderStatus.textContent = "Выберите Excel-файл. Быстрое повторное открытие доступно в Google Chrome или Microsoft Edge.";
+        const message = "Выберите Excel-файл. Быстрое повторное открытие доступно в Google Chrome или Microsoft Edge.";
+        roadmapFolderStatus.textContent = message;
+        initialRoadmapStatus.textContent = message;
         return;
       }
 
       const fileName = state.roadmapFileHandle?.name;
       changeRoadmapFileButton.hidden = !fileName;
-      roadmapFolderStatus.textContent = fileName
+      const message = fileName
         ? `Сохранённый файл: «${fileName}».`
         : "Выберите рабочий Excel-файл. При следующем запуске он откроется одной кнопкой.";
+      roadmapFolderStatus.textContent = message;
+      initialRoadmapStatus.textContent = message;
     }
 
     async function ensureReadPermission(handle) {
@@ -2033,6 +2751,7 @@
             description: readTaskDescription(worksheet),
             owner: readTaskOwner(worksheet),
             rows: mapped.data,
+            type: mapped.type,
             missing: mapped.missing,
             columnMap: mapped.columnMap,
             columnIndexes: mapped.columnIndexes
@@ -2050,7 +2769,7 @@
         state.createdTasks = [];
         state.activeTab = "overview";
         state.quarter = "all";
-        taskNavigation.hidden = false;
+        updateSidebarMode();
         buildQuarterFilter();
         buildTabs();
         updateExportButton();
@@ -2094,6 +2813,16 @@
       return (left.year - right.year)
         || (left.quarter - right.quarter)
         || left.label.localeCompare(right.label, "ru", { numeric: true });
+    }
+
+    function compareQuarterPeriods(a, b) {
+      const left = String(a || "").match(/^Q([1-4])(?:\s+(20\d{2}))?$/i);
+      const right = String(b || "").match(/^Q([1-4])(?:\s+(20\d{2}))?$/i);
+      if (!left || !right) return 0;
+      const leftYear = cleanNumber(left[2]);
+      const rightYear = cleanNumber(right[2]);
+      if (leftYear && rightYear && leftYear !== rightYear) return leftYear - rightYear;
+      return cleanNumber(left[1]) - cleanNumber(right[1]);
     }
 
     function openRoadmapModal() {
@@ -2146,6 +2875,7 @@
       }
 
       progressForm.dataset.taskId = task.id;
+      progressForm.dataset.taskType = isStageTask(task) ? "stage" : "quantitative";
       progressWeek.innerHTML = rows.map(row => {
         const label = [row.quarter, `Неделя ${row.week}`, row.weekStart && row.weekEnd ? `${row.weekStart}–${row.weekEnd}` : ""]
           .filter(Boolean)
@@ -2153,7 +2883,11 @@
         return `<option value="${row.sourceRow}">${escapeHtml(label)}</option>`;
       }).join("");
       progressWeek.value = String(defaultProgressRow(rows).sourceRow);
-      progressModalSubtitle.textContent = `Задача: ${task.name}. Введите общий факт на конец выбранной недели.`;
+      const stageTask = isStageTask(task);
+      progressDoneLabel.textContent = stageTask ? "Выполнено этапов за неделю" : "Выполнено (накопительно)";
+      progressModalSubtitle.textContent = stageTask
+        ? `Задача: ${task.name}. Укажите объём выполнения этапов за выбранную неделю.`
+        : `Задача: ${task.name}. Введите общий факт на конец выбранной недели.`;
       fillProgressForm();
       progressModal.hidden = false;
       progressDone.focus();
@@ -2170,6 +2904,7 @@
     function closeProgressModalWindow() {
       progressModal.hidden = true;
       delete progressForm.dataset.taskId;
+      delete progressForm.dataset.taskType;
     }
 
     function handleProgressSubmit(event) {
@@ -2178,12 +2913,15 @@
       const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
       const done = cleanNumber(progressDone.value);
       if (!task || !row || !Number.isFinite(done) || done < 0) {
-        showError("Укажите корректное накопительное значение выполнения.");
+        showError(progressForm.dataset.taskType === "stage"
+          ? "Укажите корректное значение выполненных этапов за неделю."
+          : "Укажите корректное накопительное значение выполнения.");
         return;
       }
 
       row.done = done;
       row.hasDone = true;
+      row.doneText = "";
       row.comment = progressComment.value.trim();
       row.edited = true;
       closeProgressModalWindow();
@@ -2225,6 +2963,7 @@
       state.createdTasks.push(task);
       state.activeTab = task.id;
       state.quarter = "all";
+      updateSidebarMode();
       buildQuarterFilter();
       buildTabs();
       updateExportButton();
@@ -2256,7 +2995,7 @@
         return result;
       }, {});
       const progressValues = items
-        .filter(item => item.summary.rowsCount > 0)
+        .filter(item => item.summary.rowsCount > 0 && !item.summary.completedEarlier)
         .map(item => state.quarter === "all" ? item.summary.yearProgress : item.summary.quarterProgress)
         .filter(value => Number.isFinite(cleanNumber(value)));
       const averageProgress = progressValues.length ? average(progressValues) : 0;
@@ -2300,7 +3039,9 @@
       } else {
         attentionItems.forEach(({ task, summary, status }, index) => {
           const owner = task.owner || "не указан";
-          if (status.key === "behind") {
+          if (summary.stage && status.key === "behind") {
+            lines.push(`${index + 1}. ${task.name}. Ответственный: ${owner}. ${status.detail} Выполнено этапов: ${formatNumber(summary.displayDone)} из ${formatNumber(summary.quarterPlan)}. Действие: актуализировать этапы и сроки.`);
+          } else if (status.key === "behind") {
             const plan = formatNumber(summary.planStatus.plan);
             const fact = formatNumber(summary.planStatus.fact);
             const delta = formatNumber(Math.abs(cleanNumber(summary.planStatus.delta)));
@@ -2620,6 +3361,7 @@
         description: draft.description,
         owner: draft.owner,
         rows,
+        type: draft.type,
         missing: [],
         created: true,
         columnMap: { done: "Выполнено", comment: "Комментарий" },
@@ -2662,6 +3404,7 @@
           done: 0,
           planText: draft.type === "stage" ? stageText : "",
           progressText: "",
+          doneText: "",
           comment: draft.type === "quantitative" ? stageText : "",
           hasNumericQuarterPlan: draft.type === "quantitative",
           hasNumericYearPlan: draft.type === "quantitative",
@@ -2713,6 +3456,12 @@
       exportWorkbookButton.textContent = changes.length
         ? `Скачать Excel (${changes.join(", ")})`
         : "Скачать Excel";
+      settingsChangeIndicator.hidden = changes.length === 0;
+      const settingsLabel = changes.length
+        ? `Настройки и действия. Есть несохранённые изменения: ${changes.join(", ")}.`
+        : "Настройки и действия";
+      settingsButton.setAttribute("aria-label", settingsLabel);
+      settingsButton.title = settingsLabel;
     }
 
     function exportWorkbook() {
@@ -3036,14 +3785,75 @@
       return worksheet;
     }
 
+    function updateSidebarMode() {
+      const hasTasks = state.tasks.length > 0;
+      emptySidebarState.hidden = hasTasks;
+      taskNavigation.hidden = !hasTasks;
+      sidebarSettings.hidden = !hasTasks;
+      settingsButton.hidden = !hasTasks;
+      if (!hasTasks) closeSettingsDrawerWindow();
+    }
+
     function buildTabs() {
       tabs.innerHTML = "";
-      const overview = createTabButton("overview", "Все задачи");
-      tabs.appendChild(overview);
-
       state.tasks.forEach(task => {
         tabs.appendChild(createTabButton(task.id, task.name));
       });
+      const hasTasks = state.tasks.length > 0;
+      dashboardOverviewButton.disabled = !hasTasks;
+      taskPickerButton.disabled = !hasTasks;
+      filterTaskOptions();
+      updateTaskPickerStatuses();
+    }
+
+    function toggleSettingsDrawer() {
+      if (settingsDrawer.classList.contains("open")) {
+        closeSettingsDrawerWindow();
+        return;
+      }
+      closeTaskPicker();
+      settingsBackdrop.hidden = false;
+      settingsDrawer.classList.add("open");
+      settingsDrawer.setAttribute("aria-hidden", "false");
+      settingsButton.setAttribute("aria-expanded", "true");
+      closeSettingsDrawerButton.focus();
+    }
+
+    function closeSettingsDrawerWindow() {
+      if (!settingsDrawer.classList.contains("open")) return;
+      settingsDrawer.classList.remove("open");
+      settingsDrawer.setAttribute("aria-hidden", "true");
+      settingsButton.setAttribute("aria-expanded", "false");
+      settingsBackdrop.hidden = true;
+      settingsButton.focus();
+    }
+
+    function toggleTaskPicker() {
+      if (taskPickerPanel.hidden) {
+        taskPickerPanel.hidden = false;
+        taskPickerButton.setAttribute("aria-expanded", "true");
+        taskPickerSearch.value = "";
+        filterTaskOptions();
+        taskPickerSearch.focus();
+        return;
+      }
+      closeTaskPicker();
+    }
+
+    function closeTaskPicker() {
+      taskPickerPanel.hidden = true;
+      taskPickerButton.setAttribute("aria-expanded", "false");
+    }
+
+    function filterTaskOptions() {
+      const query = normalizeHeader(taskPickerSearch.value);
+      let visibleCount = 0;
+      tabs.querySelectorAll(".tab-button").forEach(button => {
+        const isVisible = !query || normalizeHeader(button.textContent).includes(query);
+        button.hidden = !isVisible;
+        if (isVisible) visibleCount += 1;
+      });
+      taskPickerEmpty.hidden = visibleCount !== 0;
     }
 
     function createTabButton(id, label, count) {
@@ -3051,17 +3861,152 @@
       button.type = "button";
       button.className = "tab-button";
       button.dataset.tab = id;
-      button.innerHTML = `<span>${escapeHtml(label)}</span>${count === undefined ? "" : `<span>${count}</span>`}`;
+      button.innerHTML = `
+        <span class="task-picker-status-dot status-no-data" role="img" aria-label="Нет данных" title="Нет данных"></span>
+        <span class="task-picker-option-label">${escapeHtml(label)}</span>
+        ${count === undefined ? "" : `<span class="task-picker-option-count">${escapeHtml(count)}</span>`}
+      `;
       button.addEventListener("click", () => {
         state.activeTab = id;
+        closeTaskPicker();
         render();
       });
       return button;
     }
 
+    function updateTaskPickerStatuses() {
+      tabs.querySelectorAll(".tab-button").forEach(button => {
+        const task = state.tasks.find(item => item.id === button.dataset.tab);
+        const dot = button.querySelector(".task-picker-status-dot");
+        if (!task || !dot) return;
+        const status = displayStatus(taskSummary(task));
+        dot.className = `task-picker-status-dot status-${status.key}`;
+        dot.title = status.label;
+        dot.setAttribute("aria-label", status.label);
+        button.title = `${task.name}: ${status.label}`;
+      });
+    }
+
     function filteredRows(task) {
       if (state.quarter === "all") return task.rows;
       return task.rows.filter(row => String(row.quarter).trim() === state.quarter);
+    }
+
+    function isStageTask(task) {
+      if (task?.type) return task.type === "stage";
+      const rows = task?.rows || [];
+      return rows.some(row => row.planText)
+        && !rows.some(row => row.hasNumericQuarterPlan || row.hasNumericYearPlan);
+    }
+
+    function stageRowTexts(row) {
+      return [...new Set([row.progressText, row.doneText, row.comment]
+        .map(value => String(value || "").trim())
+        .filter(Boolean))];
+    }
+
+    function stageRowNeedsReview(row) {
+      return stageRowTexts(row).some(text => /пересмотр|актуализ|переплан/i.test(text));
+    }
+
+    function stageRowsForDisplay(rows) {
+      return rows.filter(row => row.planText
+        || stageRowTexts(row).length
+        || (row.hasDone && cleanNumber(row.done) > 0));
+    }
+
+    function summarizeStageRows(rows, allRows = rows) {
+      const planned = rows.filter(row => row.planText).length;
+      const done = rows
+        .filter(row => row.hasDone && cleanNumber(row.done) > 0)
+        .reduce((sum, row) => sum + cleanNumber(row.done), 0);
+      const allPlanned = allRows.filter(row => row.planText).length;
+      const allDone = allRows
+        .filter(row => row.hasDone && cleanNumber(row.done) > 0)
+        .reduce((sum, row) => sum + cleanNumber(row.done), 0);
+      const displayRows = stageRowsForDisplay(rows);
+      const hasActivity = displayRows.some(row => stageRowTexts(row).length || (row.hasDone && cleanNumber(row.done) > 0));
+      const needsReview = displayRows.some(stageRowNeedsReview);
+      const completionRow = [...allRows].reverse().find(row => {
+        return [row.comment, row.doneText, row.progressText].some(hasCompletionMarker);
+      });
+      const explicitComplete = Boolean(completionRow) && (
+        state.quarter === "all"
+        || compareQuarterPeriods(state.quarter, completionRow.quarter) >= 0
+      );
+      const isComplete = explicitComplete || (planned > 0 && done >= planned);
+      const remaining = Math.max(planned - done, 0);
+      const progress = planned > 0 ? Math.max((done / planned) * 100, 0) : 0;
+      let stageStatus;
+
+      if (!planned && !hasActivity) {
+        stageStatus = {
+          key: "no-data",
+          label: "Нет этапов",
+          detail: "В выбранном периоде нет запланированных этапов.",
+          delta: null,
+          fact: done,
+          plan: null
+        };
+      } else if (isComplete) {
+        stageStatus = {
+          key: "complete",
+          label: "Выполнено",
+          detail: state.quarter === "all" ? "Все этапы выполнены." : "Все этапы выбранного периода выполнены.",
+          delta: done - planned,
+          fact: done,
+          plan: planned
+        };
+      } else if (needsReview) {
+        stageStatus = {
+          key: "behind",
+          label: "На пересмотре",
+          detail: "В Excel есть отметка о пересмотре или актуализации дорожной карты.",
+          delta: done - planned,
+          fact: done,
+          plan: planned
+        };
+      } else if (hasActivity) {
+        stageStatus = {
+          key: "on-track",
+          label: "В работе",
+          detail: `Выполнено ${formatStageQuantity(done)} из ${formatStageQuantity(planned)}.`,
+          delta: done - planned,
+          fact: done,
+          plan: planned
+        };
+      } else {
+        stageStatus = {
+          key: "on-track",
+          label: "Запланировано",
+          detail: `Запланировано ${formatStageQuantity(planned)}, отметок выполнения пока нет.`,
+          delta: -planned,
+          fact: done,
+          plan: planned
+        };
+      }
+
+      return {
+        stage: true,
+        done,
+        quarterDone: done,
+        displayDone: done,
+        remaining,
+        quarterPlan: planned,
+        yearPlan: planned,
+        quarterProgress: progress,
+        yearProgress: progress,
+        isComplete,
+        completedEarlier: false,
+        completionQuarter: completionRow?.quarter || "",
+        completionDate: completionRow?.weekEnd || completionRow?.weekStart || "",
+        completionDone: allDone,
+        completionYearPlan: allPlanned,
+        planStatus: stageStatus,
+        stageStatus,
+        displayRows,
+        rowsCount: rows.length
+      };
     }
 
     function usesRowLevelDone(rows) {
@@ -3142,14 +4087,40 @@
       // Закрытие задачи задаётся явно в комментарии последней строки с фактом:
       // «[ЗАВЕРШЕНО]» или «Завершено». Достижение числового плана само по себе
       // не означает, что работы прекращены.
-      const isComplete = hasCompletionMarker(completionLastDoneRow?.comment);
+      const hasCompletion = hasCompletionMarker(completionLastDoneRow?.comment);
+      const completionQuarter = hasCompletion ? completionLastDoneRow?.quarter || "" : "";
+      const completionDate = hasCompletion
+        ? completionLastDoneRow?.weekEnd || completionLastDoneRow?.weekStart || ""
+        : "";
+      const selectedPeriodRelation = state.quarter === "all" || !completionQuarter
+        ? 0
+        : compareQuarterPeriods(state.quarter, completionQuarter);
+      const completedEarlier = hasCompletion && state.quarter !== "all" && selectedPeriodRelation > 0;
+      const isComplete = hasCompletion && (state.quarter === "all" || selectedPeriodRelation >= 0);
       const displayDone = state.quarter === "all" ? done : quarterDone;
       const remaining = state.quarter === "all"
         ? Math.max(yearPlan - done, 0)
         : Math.max(quarterPlan - quarterDone, 0);
       const planStatus = buildPlanStatus(rows, lastDoneRow, displayDone);
 
-      return { done, quarterDone, displayDone, remaining, quarterPlan, yearPlan, quarterProgress, yearProgress, isComplete, completionDone, completionYearPlan, planStatus, rowsCount: rows.length };
+      return {
+        done,
+        quarterDone,
+        displayDone,
+        remaining,
+        quarterPlan,
+        yearPlan,
+        quarterProgress,
+        yearProgress,
+        isComplete,
+        completedEarlier,
+        completionQuarter,
+        completionDate,
+        completionDone,
+        completionYearPlan,
+        planStatus,
+        rowsCount: rows.length
+      };
     }
 
     function planComparisonRow(rows, fallbackRow) {
@@ -3258,6 +4229,18 @@
     }
 
     function displayStatus(summary) {
+      if (summary.stage) return summary.stageStatus;
+
+      if (summary.completedEarlier) {
+        const completionPeriod = summary.completionQuarter || "предыдущем периоде";
+        const completionDate = summary.completionDate ? `, ${summary.completionDate}` : "";
+        return {
+          key: "complete",
+          label: "Выполнено ранее",
+          detail: `Задача завершена в ${completionPeriod}${completionDate}.`
+        };
+      }
+
       if (summary.isComplete) {
         const overage = cleanNumber(summary.completionDone) - cleanNumber(summary.completionYearPlan);
         if (overage > 0.000001) {
@@ -3278,7 +4261,10 @@
     }
 
     function taskSummary(task) {
-      return summarizeRows(filteredRows(task), task.rows);
+      const rows = filteredRows(task);
+      return isStageTask(task)
+        ? summarizeStageRows(rows, task.rows)
+        : summarizeRows(rows, task.rows);
     }
 
     function activeQuarterText() {
@@ -3308,13 +4294,6 @@
 
       if (!state.tasks.length) return;
 
-      const quarterText = activeQuarterText();
-      const activeTask = state.activeTab === "overview"
-        ? null
-        : state.tasks.find(item => item.id === state.activeTab);
-      const taskText = activeTask ? activeTask.name : "Все задачи";
-      statusBox.textContent = `Задача: ${taskText}. Период: ${quarterText}.`;
-
       if (state.activeTab === "overview") {
         renderOverview();
         return;
@@ -3325,6 +4304,11 @@
     }
 
     function markActiveTab() {
+      const activeTask = state.tasks.find(task => task.id === state.activeTab);
+      dashboardOverviewButton.classList.toggle("active", state.activeTab === "overview");
+      taskPickerButton.classList.toggle("active", Boolean(activeTask));
+      taskPickerLabel.textContent = activeTask?.name || "Выберите карту";
+      updateTaskPickerStatuses();
       [...tabs.querySelectorAll(".tab-button")].forEach(button => {
         button.classList.toggle("active", button.dataset.tab === state.activeTab);
       });
@@ -3332,10 +4316,12 @@
 
     function renderOverview() {
       const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
+      const quantitativeSummaries = summaries.filter(item => !isStageTask(item.task));
+      const stageSummaries = summaries.filter(item => isStageTask(item.task));
       const showYearProgress = state.quarter === "all";
       const showYearPlan = state.quarter === "all";
       const overviewYearPlanValues = showYearPlan
-        ? summaries.map(item => {
+        ? quantitativeSummaries.map(item => {
             const hasYearPlan = filteredRows(item.task).some(row => row.hasNumericYearPlan);
             return hasYearPlan ? item.summary.yearPlan : null;
           })
@@ -3343,7 +4329,9 @@
       const overviewProgressDatasets = [
         {
           label: `${showYearProgress ? "Годовой прогресс" : quarterProgressLabel()}, %`,
-          data: summaries.map(item => showYearProgress ? item.summary.yearProgress : item.summary.quarterProgress),
+          data: summaries.map(item => item.summary.completedEarlier
+            ? null
+            : showYearProgress ? item.summary.yearProgress : item.summary.quarterProgress),
           backgroundColor: "#2563eb"
         }
       ];
@@ -3353,7 +4341,7 @@
       if (!showYearPlan) {
         overviewDoneDatasets.push({
           label: "Квартальный план",
-          data: summaries.map(item => item.summary.quarterPlan),
+          data: quantitativeSummaries.map(item => item.summary.completedEarlier ? null : item.summary.quarterPlan),
           backgroundColor: "#2563eb"
         });
       }
@@ -3362,17 +4350,32 @@
         overviewDoneDatasets.push({
           label: "Годовой план",
           data: overviewYearPlanValues,
-          backgroundColor: "#16a34a"
+          backgroundColor: "#d97706"
         });
       }
 
       overviewDoneDatasets.push({
         label: showYearPlan ? "Выполнено" : "Выполнено за квартал",
-        data: summaries.map(item => showYearPlan ? item.summary.done : item.summary.displayDone),
-        backgroundColor: "#d97706"
+        data: quantitativeSummaries.map(item => item.summary.completedEarlier
+          ? null
+          : showYearPlan ? item.summary.done : item.summary.displayDone),
+        backgroundColor: "#16a34a"
       });
 
-      pageTitle.textContent = "Все задачи";
+      const stageDoneDatasets = [
+        {
+          label: "Этапов в плане",
+          data: stageSummaries.map(item => item.summary.quarterPlan),
+          backgroundColor: "#2563eb"
+        },
+        {
+          label: "Выполнено этапов",
+          data: stageSummaries.map(item => item.summary.displayDone),
+          backgroundColor: "#16a34a"
+        }
+      ];
+
+      pageTitle.textContent = "Дашборд всех карт";
       pageSubtitle.textContent = activePeriodDescription();
 
       content.innerHTML = `
@@ -3383,12 +4386,32 @@
         <div class="grid charts">
           <section class="panel">
             <h3>Прогресс по задачам</h3>
-            <canvas id="overviewProgressChart"></canvas>
+            <div class="chart-scroll">
+              <div class="chart-frame overview-chart-frame">
+                <canvas id="overviewProgressChart"></canvas>
+              </div>
+            </div>
           </section>
-          <section class="panel">
-            <h3>Выполнено и план по задачам</h3>
-            <canvas id="overviewDoneChart"></canvas>
-          </section>
+          ${quantitativeSummaries.length ? `
+            <section class="panel">
+              <h3>Выполнено и план по количественным картам</h3>
+              <div class="chart-scroll">
+                <div class="chart-frame overview-chart-frame">
+                  <canvas id="overviewDoneChart"></canvas>
+                </div>
+              </div>
+            </section>
+          ` : ""}
+          ${stageSummaries.length ? `
+            <section class="panel">
+              <h3>Выполнение этапных карт</h3>
+              <div class="chart-scroll">
+                <div class="chart-frame overview-chart-frame">
+                  <canvas id="overviewStageChart"></canvas>
+                </div>
+              </div>
+            </section>
+          ` : ""}
         </div>
       `;
       setupFlipCards();
@@ -3398,16 +4421,34 @@
         datasets: overviewProgressDatasets
       }, true, true);
 
-      makeBarChart("overviewDoneChart", {
-        labels: summaries.map(item => item.task.name),
-        datasets: overviewDoneDatasets
-      }, false, true);
+      if (quantitativeSummaries.length) {
+        makeBarChart("overviewDoneChart", {
+          labels: quantitativeSummaries.map(item => item.task.name),
+          datasets: overviewDoneDatasets
+        }, false, true);
+      }
+
+      if (stageSummaries.length) {
+        makeStageBarChart("overviewStageChart", {
+          labels: stageSummaries.map(item => item.task.name),
+          datasets: stageDoneDatasets
+        });
+      }
     }
 
     function renderTask(task) {
+      if (isStageTask(task)) {
+        renderStageTask(task);
+        return;
+      }
+
       const rows = filteredRows(task);
       const summary = summarizeRows(rows, task.rows);
       const status = displayStatus(summary);
+      if (summary.completedEarlier) {
+        renderCompletedEarlierTask(task, summary, status);
+        return;
+      }
       const showYearProgress = state.quarter === "all";
       const quarterPlanValues = rows.map(rowQuarterPlanValue);
       const yearPlanValues = showYearProgress ? rows.map(rowYearPlanValue) : [];
@@ -3419,9 +4460,9 @@
             label: "Годовой план",
             data: yearPlanValues,
             yAxisID: "y",
-            borderColor: "#16a34a",
-            backgroundColor: "rgba(22, 163, 74, 0.1)",
-            pointBackgroundColor: "#16a34a",
+            borderColor: "#d97706",
+            backgroundColor: "rgba(217, 119, 6, 0.1)",
+            pointBackgroundColor: "#d97706",
             tension: 0.25,
             fill: false,
             spanGaps: false
@@ -3445,9 +4486,9 @@
         label: showYearProgress ? "Выполнено" : "Выполнено за квартал",
         data: showYearProgress ? rows.map(row => row.hasDone ? row.done : null) : quarterDoneValues(rows, task.rows),
         yAxisID: "y",
-        borderColor: "#d97706",
-        backgroundColor: "rgba(217, 119, 6, 0.14)",
-        pointBackgroundColor: "#d97706",
+        borderColor: "#16a34a",
+        backgroundColor: "rgba(22, 163, 74, 0.14)",
+        pointBackgroundColor: "#16a34a",
         tension: 0.25,
         fill: true,
         spanGaps: true
@@ -3468,7 +4509,9 @@
           ${BASE_QUARTERS.map(quarter => `
             <section class="panel">
               <h3>${quarter}: выполнено и план</h3>
-              <canvas id="${doneChartId(quarter)}"></canvas>
+              <div class="chart-frame">
+                <canvas id="${doneChartId(quarter)}"></canvas>
+              </div>
             </section>
           `).join("")}
         </div>`
@@ -3476,22 +4519,26 @@
         <div class="grid charts">
           <section class="panel">
             <h3>Выполнено и план по неделям</h3>
-            <canvas id="taskDoneChart"></canvas>
+            <div class="chart-frame">
+              <canvas id="taskDoneChart"></canvas>
+            </div>
           </section>
         </div>`;
 
       content.innerHTML = `
         <div class="grid cards">
           ${metric("Статус плана", status.label, status.detail, `status-${status.key}`, editAction)}
-          ${metric(showYearProgress ? "Выполнено" : "Выполнено за квартал", formatNumber(summary.displayDone))}
-          ${showYearProgress ? metric("Годовой план", formatNumber(summary.yearPlan)) : metric("Квартальный план", formatNumber(summary.quarterPlan))}
+          ${metric(showYearProgress ? "Выполнено" : "Выполнено за квартал", formatQuantity(summary.displayDone))}
+          ${showYearProgress ? metric("Годовой план", formatQuantity(summary.yearPlan)) : metric("Квартальный план", formatQuantity(summary.quarterPlan))}
           ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
         </div>
 
         <div class="grid charts">
           <section class="panel">
             <h3>Динамика прогресса</h3>
-            <canvas id="taskProgressChart"></canvas>
+            <div class="chart-frame">
+              <canvas id="taskProgressChart"></canvas>
+            </div>
           </section>
         </div>
 
@@ -3519,20 +4566,160 @@
       makeLineChart("taskProgressChart", {
         labels: rows.map(row => String(row.week)),
         datasets: progressDatasets
-      });
+      }, false, false, rows.map(chartDateLabel));
 
       if (showYearProgress) {
         rowsByBaseQuarter(rows).forEach(({ quarter, rows: quarterRows }) => {
           makeBarChart(doneChartId(quarter), {
             labels: quarterRows.map(row => String(row.week)),
             datasets: donePlanDatasets(quarterRows, true, task.rows)
-          }, false, false, true);
+          }, false, false, true, quarterRows.map(chartDateLabel));
         });
       } else {
         makeBarChart("taskDoneChart", {
           labels: rows.map(row => String(row.week)),
             datasets: donePlanDatasets(rows, false, task.rows)
-        }, false, false, true);
+        }, false, false, true, rows.map(chartDateLabel));
+      }
+    }
+
+    function stageRowState(row) {
+      if (stageRowNeedsReview(row)) return { key: "review", label: "На пересмотре" };
+      const done = row.hasDone ? cleanNumber(row.done) : 0;
+      if (done >= 1) return { key: "complete", label: "Выполнено" };
+      if (done > 0) return { key: "partial", label: "Частично" };
+      if (stageRowTexts(row).length) return { key: "active", label: "В работе" };
+      return { key: "planned", label: "Запланировано" };
+    }
+
+    function stageItem(row) {
+      const rowState = stageRowState(row);
+      const period = [row.quarter, row.week ? `Неделя ${row.week}` : ""].filter(Boolean);
+      const dates = row.weekStart && row.weekEnd
+        ? `${row.weekStart} — ${row.weekEnd}`
+        : row.weekStart || row.weekEnd || "";
+      const activity = stageRowTexts(row);
+      const doneValue = row.hasDone && cleanNumber(row.done) > 0
+        ? `<div class="stage-result-value">Отметка выполнения: ${escapeHtml(formatStageQuantity(row.done))}</div>`
+        : "";
+      const planMarkup = row.planText
+        ? `
+          <div>
+            <span class="stage-entry-label">План</span>
+            <div class="stage-entry-text">${escapeHtml(row.planText)}</div>
+          </div>
+        `
+        : "";
+      const activityMarkup = activity.length
+        ? `
+          <div>
+            <span class="stage-entry-label">Ход работ</span>
+            ${activity.map(text => `<div class="stage-entry-text">${escapeHtml(text)}</div>`).join("")}
+          </div>
+        `
+        : "";
+
+      return `
+        <article class="stage-item stage-${rowState.key}">
+          <div class="stage-meta">
+            ${period.map(value => `<strong>${escapeHtml(value)}</strong>`).join("")}
+            ${dates ? `<span>${escapeHtml(dates)}</span>` : ""}
+          </div>
+          <div class="stage-content">
+            ${planMarkup}
+            ${activityMarkup}
+            ${doneValue}
+          </div>
+          <span class="stage-badge stage-${rowState.key}">${escapeHtml(rowState.label)}</span>
+        </article>
+      `;
+    }
+
+    function renderStageTask(task) {
+      const rows = filteredRows(task);
+      const summary = summarizeStageRows(rows, task.rows);
+      const status = displayStatus(summary);
+      const missingText = task.missing.length
+        ? `Не найдены колонки: ${task.missing.join(", ")}.`
+        : "";
+      const editAction = !task.columnMap?.done ? "" : `
+        <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести отметку выполнения" title="Внести отметку выполнения">✎</button>
+      `;
+
+      pageTitle.textContent = task.name;
+      pageSubtitle.textContent = [missingText, "Этапная дорожная карта.", activePeriodDescription()].filter(Boolean).join(" ");
+      content.innerHTML = `
+        <div class="grid cards">
+          ${metric("Статус этапов", status.label, status.detail, `status-${status.key}`, editAction)}
+          ${metric("Выполнено", formatStageQuantity(summary.displayDone))}
+          ${metric("Всего в плане", formatStageQuantity(summary.quarterPlan))}
+          ${metric("Прогресс этапов", formatPercent(summary.quarterProgress))}
+        </div>
+
+        <section class="panel stage-panel">
+          <div class="stage-panel-header">
+            <div>
+              <h3>План и ход работ</h3>
+              <p>Текстовые этапы и отметки выполнения по неделям.</p>
+            </div>
+            <span class="badge">${escapeHtml(activeQuarterBadge())}</span>
+          </div>
+          <div class="stage-list">
+            ${summary.displayRows.length
+              ? summary.displayRows.map(stageItem).join("")
+              : `<div class="stage-empty">В выбранном периоде нет этапов или отметок о ходе работ.</div>`}
+          </div>
+        </section>
+
+        <details class="panel sheet-data">
+          <summary>
+            <h3>Данные этапной карты</h3>
+            <span class="sheet-data-toggle">
+              <span class="closed-label">Развернуть</span>
+              <span class="open-label">Свернуть</span>
+            </span>
+          </summary>
+          <div class="sheet-data-body">
+            ${summary.displayRows.length ? stageTable(summary.displayRows) : `<p>Нет строк для выбранного периода.</p>`}
+          </div>
+        </details>
+      `;
+
+      const updateProgressButton = document.getElementById("updateProgressButton");
+      if (updateProgressButton) {
+        updateProgressButton.addEventListener("click", () => openProgressModal(task));
+      }
+    }
+
+    function renderCompletedEarlierTask(task, summary, status) {
+      const missingText = task.missing.length
+        ? `Не найдены колонки: ${task.missing.join(", ")}.`
+        : "";
+      const completionPeriod = summary.completionQuarter || "предыдущий период";
+      const completionDate = summary.completionDate || "Не указана";
+      const editAction = !task.columnMap?.done ? "" : `
+        <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести правки" title="Внести правки">✎</button>
+      `;
+
+      pageTitle.textContent = task.name;
+      pageSubtitle.textContent = [missingText, `Задача завершена до начала ${state.quarter}.`].filter(Boolean).join(" ");
+      content.innerHTML = `
+        <div class="grid cards">
+          ${metric("Статус", status.label, status.detail, "status-complete", editAction)}
+          ${metric("Итоговый факт", formatQuantity(summary.completionDone))}
+          ${metric("Период завершения", completionPeriod)}
+          ${metric("Дата завершения", completionDate)}
+        </div>
+
+        <section class="panel completed-period-panel">
+          <h3>В выбранном периоде задача уже завершена</h3>
+          <p>Данные ${state.quarter} не отображаются, поскольку задача была закрыта в ${escapeHtml(completionPeriod)}. Для просмотра результата выберите период завершения или «Все кварталы».</p>
+        </section>
+      `;
+
+      const updateProgressButton = document.getElementById("updateProgressButton");
+      if (updateProgressButton) {
+        updateProgressButton.addEventListener("click", () => openProgressModal(task));
       }
     }
 
@@ -3563,33 +4750,42 @@
     }
 
     function taskCard(task, summary) {
+      if (isStageTask(task)) return stageTaskCard(task, summary);
+
       const showYearProgress = state.quarter === "all";
       const status = displayStatus(summary);
       const progressValue = showYearProgress ? summary.yearProgress : summary.quarterProgress;
-      const progress = clamp(progressValue, 0, 100);
+      const progress = summary.completedEarlier ? 100 : clamp(progressValue, 0, 100);
       const progressLabel = showYearProgress ? "Годовой прогресс" : quarterProgressLabel();
+      const progressText = summary.completedEarlier
+        ? `Завершена в ${summary.completionQuarter || "предыдущем периоде"}`
+        : `${progressLabel}: ${formatPercent(progressValue)}`;
+      const progressAriaLabel = summary.completedEarlier ? "Задача завершена ранее" : progressLabel;
       const completionBadge = summary.isComplete ? `<span class="badge complete">${escapeHtml(status.label)}</span>` : "";
       const completionMarkup = completionBadge
         ? `<div class="task-card-completion">${completionBadge}</div>`
         : "";
       const statusBadge = `<span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}" aria-label="${escapeHtml(status.label)}"></span>`;
-      const miniMetrics = showYearProgress
+      const miniMetrics = summary.completedEarlier
         ? `
-            <span>Выполнено<b>${formatNumber(summary.done)}</b></span>
-            <span>Год. план<b>${formatNumber(summary.yearPlan)}</b></span>
-            <span>Осталось<b>${formatNumber(summary.remaining)}</b></span>
+            <span>Итоговый факт<b>${formatQuantity(summary.completionDone)}</b></span>
+            <span>Завершена<b>${escapeHtml(summary.completionQuarter || "Ранее")}</b></span>
+          `
+        : showYearProgress
+        ? `
+            <span>Выполнено<b>${formatQuantity(summary.done)}</b></span>
+            <span>Год. план<b>${formatQuantity(summary.yearPlan)}</b></span>
+            <span>Осталось<b>${formatQuantity(summary.remaining)}</b></span>
           `
         : `
-            <span>За квартал<b>${formatNumber(summary.displayDone)}</b></span>
-            <span>Кв. план<b>${formatNumber(summary.quarterPlan)}</b></span>
-            <span>Осталось<b>${formatNumber(summary.remaining)}</b></span>
+            <span>За квартал<b>${formatQuantity(summary.displayDone)}</b></span>
+            <span>Кв. план<b>${formatQuantity(summary.quarterPlan)}</b></span>
+            <span>Осталось<b>${formatQuantity(summary.remaining)}</b></span>
           `;
       const hasDescription = Boolean(task.description);
       const description = hasDescription ? task.description : "";
-      const ownerMarkup = task.owner ? `<p class="task-owner">Ответственный: <b>${escapeHtml(task.owner)}</b></p>` : "";
-      const metadataMarkup = ownerMarkup
-        ? `<div class="task-card-meta">${ownerMarkup}</div>`
-        : "";
+      const ownerMarkup = `<p class="task-owner${task.owner ? "" : " missing"}">Ответственный: <b>${escapeHtml(task.owner || "не указан")}</b></p>`;
+      const metadataMarkup = `<div class="task-card-meta">${ownerMarkup}</div>`;
       return `
         <article
           class="task-card status-${escapeHtml(status.key)}${summary.isComplete ? " complete" : ""}${hasDescription ? " has-description" : ""}"
@@ -3603,12 +4799,12 @@
               </header>
               ${completionMarkup}
               ${metadataMarkup}
-              <p>${escapeHtml(progressLabel)}: ${formatPercent(progressValue)}</p>
-              <div class="progress" aria-label="${escapeHtml(progressLabel)}">
+              <p>${escapeHtml(progressText)}</p>
+              <div class="progress" aria-label="${escapeHtml(progressAriaLabel)}">
                 <div style="width:${progress}%"></div>
               </div>
               <p class="task-status-line status-${escapeHtml(status.key)}">${escapeHtml(status.detail)}</p>
-              <div class="mini">
+              <div class="mini${summary.completedEarlier ? " completed-earlier" : ""}">
                 ${miniMetrics}
               </div>
               ${hasDescription ? `<span class="task-card-hint">Нажмите, чтобы открыть описание</span>` : ""}
@@ -3621,6 +4817,85 @@
             ` : ""}
           </div>
         </article>
+      `;
+    }
+
+    function stageTaskCard(task, summary) {
+      const status = displayStatus(summary);
+      const progress = clamp(summary.quarterProgress, 0, 100);
+      const hasDescription = Boolean(task.description);
+      const ownerMarkup = `<p class="task-owner${task.owner ? "" : " missing"}">Ответственный: <b>${escapeHtml(task.owner || "не указан")}</b></p>`;
+      const completionBadge = summary.isComplete
+        ? `<div class="task-card-completion"><span class="badge complete">${escapeHtml(status.label)}</span></div>`
+        : "";
+      const statusBadge = `<span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}" aria-label="${escapeHtml(status.label)}"></span>`;
+
+      return `
+        <article
+          class="task-card stage-card status-${escapeHtml(status.key)}${summary.isComplete ? " complete" : ""}${hasDescription ? " has-description" : ""}"
+          ${hasDescription ? `data-flip-card tabindex="0" role="button" aria-label="Показать описание задачи ${escapeHtml(task.name)}"` : ""}
+        >
+          <div class="task-card-inner">
+            <div class="task-card-face task-card-front">
+              <header>
+                <strong>${escapeHtml(task.name)}</strong>
+                ${statusBadge}
+              </header>
+              ${completionBadge}
+              <div class="task-card-meta">${ownerMarkup}</div>
+              <p>Прогресс этапов: ${escapeHtml(formatPercent(summary.quarterProgress))}</p>
+              <div class="progress" aria-label="Прогресс этапов">
+                <div style="width:${progress}%"></div>
+              </div>
+              <p class="task-status-line status-${escapeHtml(status.key)}">${escapeHtml(status.detail)}</p>
+              <div class="mini">
+                <span>Выполнено<b>${escapeHtml(formatNumber(summary.displayDone))}</b></span>
+                <span>Всего этапов<b>${escapeHtml(formatNumber(summary.quarterPlan))}</b></span>
+                <span>Осталось<b>${escapeHtml(formatNumber(summary.remaining))}</b></span>
+              </div>
+              ${hasDescription ? `<span class="task-card-hint">Нажмите, чтобы открыть описание</span>` : ""}
+            </div>
+            ${hasDescription ? `
+              <div class="task-card-face task-card-back">
+                <p>${escapeHtml(task.description)}</p>
+                <span class="task-card-hint">Нажмите, чтобы вернуться</span>
+              </div>
+            ` : ""}
+          </div>
+        </article>
+      `;
+    }
+
+    function stageTable(rows) {
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Квартал</th>
+                <th>Неделя</th>
+                <th>Начало недели</th>
+                <th>Конец недели</th>
+                <th>План</th>
+                <th>Ход работ</th>
+                <th>Выполнено</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.quarter)}</td>
+                  <td>${escapeHtml(row.week)}</td>
+                  <td>${escapeHtml(row.weekStart)}</td>
+                  <td>${escapeHtml(row.weekEnd)}</td>
+                  <td class="text-cell">${escapeHtml(row.planText || "")}</td>
+                  <td class="text-cell">${escapeHtml(stageRowTexts(row).join(" · "))}</td>
+                  <td>${row.hasDone && cleanNumber(row.done) > 0 ? escapeHtml(formatStageQuantity(row.done)) : ""}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
       `;
     }
 
@@ -3700,14 +4975,14 @@
         datasets.push({
           label: "Годовой план",
           data: yearPlanValues,
-          backgroundColor: "#16a34a"
+          backgroundColor: "#d97706"
         });
       }
 
       datasets.push({
         label: includeYearPlan || state.quarter !== "all" ? "Выполнено за квартал" : "Выполнено",
         data: doneValues,
-        backgroundColor: "#d97706"
+        backgroundColor: "#16a34a"
       });
 
       return datasets;
@@ -3772,7 +5047,12 @@
       return lines;
     }
 
-    function chartOptions(percentScale, showDoneScale = false, wrapLabels = false, weekAxis = false) {
+    function chartDateLabel(row) {
+      if (row.weekStart && row.weekEnd) return `${row.weekStart} — ${row.weekEnd}`;
+      return row.weekStart || row.weekEnd || `Неделя ${row.week}`;
+    }
+
+    function chartOptions(percentScale, showDoneScale = false, wrapLabels = false, weekAxis = false, tooltipTitles = [], valueKind = "quantity") {
       const scales = {
         x: {
           ticks: {
@@ -3780,7 +5060,8 @@
             maxRotation: wrapLabels || weekAxis ? 0 : 35,
             minRotation: 0,
             ...(weekAxis ? {
-              autoSkip: false,
+              autoSkip: true,
+              autoSkipPadding: 10,
               font: { size: 10 },
               padding: 6
             } : {}),
@@ -3800,6 +5081,7 @@
           suggestedMax: percentScale ? 100 : undefined,
           ticks: {
             color: "#667085",
+            maxTicksLimit: 7,
             callback: value => percentScale ? `${value}%` : value
           },
           grid: { color: "rgba(217, 222, 232, 0.7)" }
@@ -3811,7 +5093,8 @@
           beginAtZero: true,
           position: "right",
           ticks: {
-            color: "#d97706",
+            color: "#16a34a",
+            maxTicksLimit: 7,
             callback: value => formatNumber(value)
           },
           grid: { drawOnChartArea: false }
@@ -3821,6 +5104,12 @@
       return {
         responsive: true,
         maintainAspectRatio: false,
+        resizeDelay: 100,
+        interaction: {
+          mode: "index",
+          axis: "x",
+          intersect: false
+        },
         layout: {
           padding: {
             bottom: weekAxis ? 16 : 0
@@ -3829,18 +5118,36 @@
         plugins: {
           axisLabelTooltip: { enabled: wrapLabels },
           weekAxisLabels: { enabled: weekAxis },
-          legend: { position: "bottom" },
+          legend: {
+            position: "bottom",
+            labels: {
+              boxWidth: 14,
+              boxHeight: 14,
+              padding: 14,
+              font: { size: 12 }
+            }
+          },
           tooltip: {
+            mode: "index",
+            intersect: false,
             callbacks: {
+              title: items => {
+                const item = items[0];
+                if (!item) return "";
+                return tooltipTitles[item.dataIndex] || item.label || "";
+              },
               label: context => {
                 const value = context.parsed.y ?? context.parsed;
                 const label = String(context.dataset.label || "").replace(/,\s*%$/, "");
                 if (context.dataset.yAxisID === "yDone") {
-                  return `${label}: ${formatNumber(value)}`;
+                  return `${label}: ${formatQuantity(value)}`;
+                }
+                if (!percentScale && valueKind === "stage") {
+                  return `${label}: ${formatStageQuantity(value)}`;
                 }
                 return percentScale
                   ? `${label}: ${formatPercent(value)}`
-                  : `${label}: ${formatNumber(value)}`;
+                  : `${label}: ${formatQuantity(value)}`;
               }
             }
           }
@@ -3849,20 +5156,40 @@
       };
     }
 
-    function makeBarChart(id, data, percentScale, wrapLabels = false, weekAxis = false) {
+    function makeBarChart(id, data, percentScale, wrapLabels = false, weekAxis = false, tooltipTitles = []) {
       const ctx = document.getElementById(id);
       if (!ctx) return;
+      const overviewFrame = wrapLabels ? ctx.closest(".overview-chart-frame") : null;
+      if (overviewFrame) {
+        const labelsCount = Array.isArray(data.labels) ? data.labels.length : 0;
+        overviewFrame.style.minWidth = `${labelsCount * 90}px`;
+      }
       state.charts.push(new Chart(ctx, {
         type: "bar",
         data,
-        options: chartOptions(percentScale, false, wrapLabels, weekAxis)
+        options: chartOptions(percentScale, false, wrapLabels, weekAxis, tooltipTitles)
       }));
     }
 
-    function makeLineChart(id, data, percentScale = false, showDoneScale = false) {
+    function makeStageBarChart(id, data) {
       const ctx = document.getElementById(id);
       if (!ctx) return;
-      const options = chartOptions(percentScale, showDoneScale, false, true);
+      const overviewFrame = ctx.closest(".overview-chart-frame");
+      if (overviewFrame) {
+        const labelsCount = Array.isArray(data.labels) ? data.labels.length : 0;
+        overviewFrame.style.minWidth = `${labelsCount * 90}px`;
+      }
+      state.charts.push(new Chart(ctx, {
+        type: "bar",
+        data,
+        options: chartOptions(false, false, true, false, [], "stage")
+      }));
+    }
+
+    function makeLineChart(id, data, percentScale = false, showDoneScale = false, tooltipTitles = []) {
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      const options = chartOptions(percentScale, showDoneScale, false, true, tooltipTitles);
       state.charts.push(new Chart(ctx, {
         type: "line",
         data,
@@ -3878,7 +5205,7 @@
     function showError(message) {
       errorBox.hidden = false;
       errorBox.textContent = message;
-      statusBox.textContent = "Ошибка чтения файла.";
+      pageSubtitle.textContent = message;
     }
 
     function hideError() {
