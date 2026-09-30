@@ -124,10 +124,17 @@
 
     .sidebar-settings {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      gap: 12px;
       margin-top: auto;
       padding-top: 18px;
       border-top: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .help-button {
+      font-family: inherit;
+      font-size: 21px;
+      font-weight: 800;
     }
 
     .settings-change-indicator {
@@ -729,12 +736,13 @@
       border-left-color: var(--primary);
     }
 
-    .stage-item.stage-review {
-      border-left-color: var(--amber);
-      background: #fffaf2;
+    .stage-item.stage-overdue {
+      border-left-color: var(--red);
+      background: #fff7f7;
     }
 
-    .stage-item.stage-planned {
+    .stage-item.stage-planned,
+    .stage-item.stage-note {
       border-left-color: #94a3b8;
     }
 
@@ -779,6 +787,20 @@
       font-weight: 750;
     }
 
+    .stage-result-value.stage-overdue {
+      color: var(--red);
+    }
+
+    .stage-result-value.stage-partial,
+    .stage-result-value.stage-active {
+      color: var(--primary-dark);
+    }
+
+    .stage-result-value.stage-invalid {
+      color: var(--red);
+      font-weight: 800;
+    }
+
     .stage-badge {
       justify-self: end;
       border-radius: 999px;
@@ -801,9 +823,14 @@
       color: #1d4ed8;
     }
 
-    .stage-badge.stage-review {
-      background: #ffedd5;
-      color: #c2410c;
+    .stage-badge.stage-overdue {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .stage-badge.stage-note {
+      background: #f1f5f9;
+      color: #475569;
     }
 
     .stage-empty {
@@ -981,34 +1008,58 @@
     .task-card header {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
+      align-items: center;
       gap: 8px;
       margin-bottom: 8px;
     }
 
-    .task-card strong {
-      display: -webkit-box;
-      min-height: 2.6em;
+    .task-card-title {
+      min-width: 0;
       overflow: hidden;
-      overflow-wrap: anywhere;
-      line-height: 1.3;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+      white-space: nowrap;
     }
 
-    .task-card.complete strong {
-      -webkit-line-clamp: 1;
+    .task-card-title strong {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.3;
+      transform: translateX(0);
+    }
+
+    .task-card-title.is-overflowing:hover strong {
+      width: max-content;
+      min-width: 100%;
+      overflow: visible;
+      text-overflow: clip;
+      animation: task-title-marquee var(--title-marquee-duration, 5s) linear 0.3s infinite alternate;
+      will-change: transform;
+    }
+
+    @keyframes task-title-marquee {
+      0%, 12% {
+        transform: translateX(0);
+      }
+
+      88%, 100% {
+        transform: translateX(calc(-1 * var(--title-marquee-distance, 0px)));
+      }
     }
 
     .task-card-completion {
       display: flex;
       align-items: flex-start;
       justify-content: flex-start;
-      height: 0;
-      margin: 0;
-      position: relative;
-      transform: translateY(-26px);
-      z-index: 1;
+      min-height: 24px;
+      margin: -2px 0 6px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .task-card-title.is-overflowing:hover strong {
+        animation: none;
+      }
     }
 
     .task-card-meta {
@@ -1305,6 +1356,65 @@
       padding: 20px;
     }
 
+    .help-modal-panel {
+      width: min(900px, 100%);
+    }
+
+    .help-intro {
+      margin-bottom: 18px;
+      color: #475467;
+    }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .help-section {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .help-section.full {
+      grid-column: 1 / -1;
+    }
+
+    .help-section h3 {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    .help-section ol,
+    .help-section ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #344054;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .help-section li + li {
+      margin-top: 7px;
+    }
+
+    .help-section strong {
+      color: var(--text);
+    }
+
+    .help-note {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
     .modal-close {
       border: 0;
       background: transparent;
@@ -1546,6 +1656,14 @@
       .form-grid {
         grid-template-columns: 1fr;
       }
+
+      .help-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .help-section.full {
+        grid-column: auto;
+      }
     }
 
     @media (max-width: 520px) {
@@ -1632,6 +1750,7 @@
         <section class="empty-sidebar-source" aria-labelledby="emptySidebarSourceTitle">
           <span id="emptySidebarSourceTitle" class="sidebar-section-title">Выбор дорожных карт</span>
           <button id="initialOpenRoadmapButton" class="sidebar-action primary" type="button">Выбрать Excel-файл</button>
+          <button id="initialChangeRoadmapFileButton" class="upload-file-change" type="button" hidden>Выбрать другой файл</button>
           <p id="initialRoadmapStatus">Загрузите рабочий файл с дорожными картами.</p>
         </section>
 
@@ -1641,7 +1760,10 @@
         </div>
       </div>
 
-      <div id="sidebarSettings" class="sidebar-settings" hidden>
+      <div id="sidebarSettings" class="sidebar-settings">
+        <button id="helpButton" class="settings-button help-button" type="button" aria-label="Как пользоваться инструментом" aria-haspopup="dialog" aria-controls="helpModal" title="Как пользоваться инструментом">
+          <span aria-hidden="true">?</span>
+        </button>
         <button id="settingsButton" class="settings-button" type="button" aria-label="Настройки и действия" aria-expanded="false" aria-controls="settingsDrawer" title="Настройки и действия" hidden>
           <span aria-hidden="true">⚙</span>
           <span id="settingsChangeIndicator" class="settings-change-indicator" hidden></span>
@@ -1703,6 +1825,71 @@
       <button id="bugReportButton" class="sidebar-action" type="button">Сообщить о проблеме</button>
     </section>
   </section>
+
+  <div id="helpModal" class="modal" hidden>
+    <div class="modal-panel help-modal-panel" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="helpModalTitle">Как пользоваться дорожными картами</h2>
+          <p>Краткая инструкция по работе с дашбордом и Excel-файлом</p>
+        </div>
+        <button id="closeHelpModal" class="modal-close" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="help-intro">Инструмент работает локально в браузере: загружает дорожные карты из Excel, показывает состояние задач и позволяет сохранить обновлённую копию книги.</p>
+
+        <div class="help-grid">
+          <section class="help-section full">
+            <h3>Быстрый старт</h3>
+            <ol>
+              <li><strong>Откройте Excel-файл.</strong> При первом запуске нажмите «Выбрать Excel-файл». После загрузки заменить источник можно через шестерёнку справа внизу.</li>
+              <li><strong>Посмотрите общую картину.</strong> «Дашборд всех карт» показывает прогресс, план, выполнение и задачи, требующие внимания.</li>
+              <li><strong>Откройте нужную карту.</strong> Используйте список «Дорожная карта» и поиск в левой панели.</li>
+              <li><strong>Выберите период.</strong> Справа сверху доступны все периоды, отдельный год или квартал. Если в файле только один год, будет показан вариант «Все кварталы».</li>
+              <li><strong>Внесите результат.</strong> Внутри карты нажмите карандаш в блоке статуса. Для количественной карты выберите неделю, для этапной — этап; затем укажите выполнение и при необходимости комментарий.</li>
+              <li><strong>Сохраните изменения.</strong> Откройте шестерёнку и нажмите «Скачать Excel». Исходный файл не перезаписывается — создаётся обновлённая копия.</li>
+            </ol>
+          </section>
+
+          <section class="help-section">
+            <h3>Количественные карты</h3>
+            <ul>
+              <li>Используются для задач, измеряемых в штуках или другом количестве.</li>
+              <li>В поле выполнения вводится <strong>накопительный итог</strong> на конец выбранной недели.</li>
+              <li>Для прошедшего периода факт сравнивается с итоговым планом, для текущего — с планом на текущую неделю, а будущий период получает статус «Запланировано».</li>
+              <li>При выборе года показываются значения только этого года; «Все периоды» показывает общий итог по многолетней карте.</li>
+            </ul>
+          </section>
+
+          <section class="help-section">
+            <h3>Этапные карты</h3>
+            <ul>
+              <li>В редакторе вводится процент от <strong>0 до 100</strong>: 100% означает полное выполнение, 50% — половину этапа.</li>
+              <li>Объединённый на несколько недель блок считается одним этапом; отметка сохраняется в верхнюю ячейку соответствующего объединённого диапазона Excel.</li>
+              <li>Прошедший этап с результатом меньше 100% считается просроченным.</li>
+              <li>Комментарий отображается для справки и не меняет статус этапа.</li>
+              <li>Значение выше 100% считается ошибкой исходных данных и показывается красным предупреждением.</li>
+            </ul>
+          </section>
+
+          <section class="help-section full">
+            <h3>Как читать статусы</h3>
+            <ul>
+              <li><strong>Зелёный</strong> — выполнено или работа идёт по плану.</li>
+              <li><strong>Синий</strong> — опережение плана, активная работа или частичное выполнение текущего этапа.</li>
+              <li><strong>Оранжевый/красный</strong> — отставание или просроченный этап.</li>
+              <li><strong>Серый</strong> — нет планового значения, недостаточно данных или этап ещё запланирован.</li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="help-note"><strong>Важно:</strong> изменения сначала существуют только в открытом дашборде. Чтобы передать их коллегам или сохранить для следующей работы, скачайте обновлённый Excel через меню настроек.</div>
+      </div>
+      <div class="modal-footer">
+        <button id="closeHelpModalButton" class="button primary" type="button">Понятно</button>
+      </div>
+    </div>
+  </div>
 
   <div id="roadmapModal" class="modal" hidden>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="roadmapModalTitle">
@@ -1794,6 +1981,7 @@
             <div class="form-field">
               <label id="progressDoneLabel" for="progressDone">Выполнено (накопительно)</label>
               <input id="progressDone" name="done" type="number" min="0" step="any" required>
+              <div id="progressDoneHelp" class="form-help"></div>
             </div>
             <div class="form-field full">
               <label for="progressComment">Комментарий</label>
@@ -1992,6 +2180,7 @@
     const taskNavigation = document.getElementById("taskNavigation");
     const emptySidebarState = document.getElementById("emptySidebarState");
     const initialOpenRoadmapButton = document.getElementById("initialOpenRoadmapButton");
+    const initialChangeRoadmapFileButton = document.getElementById("initialChangeRoadmapFileButton");
     const initialRoadmapStatus = document.getElementById("initialRoadmapStatus");
     const initialNewRoadmapButton = document.getElementById("initialNewRoadmapButton");
     const initialBugReportButton = document.getElementById("initialBugReportButton");
@@ -2003,11 +2192,15 @@
     const taskPickerSearch = document.getElementById("taskPickerSearch");
     const taskPickerEmpty = document.getElementById("taskPickerEmpty");
     const sidebarSettings = document.getElementById("sidebarSettings");
+    const helpButton = document.getElementById("helpButton");
     const settingsButton = document.getElementById("settingsButton");
     const settingsChangeIndicator = document.getElementById("settingsChangeIndicator");
     const settingsBackdrop = document.getElementById("settingsBackdrop");
     const settingsDrawer = document.getElementById("settingsDrawer");
     const closeSettingsDrawerButton = document.getElementById("closeSettingsDrawer");
+    const helpModal = document.getElementById("helpModal");
+    const closeHelpModal = document.getElementById("closeHelpModal");
+    const closeHelpModalButton = document.getElementById("closeHelpModalButton");
     const content = document.getElementById("content");
     const pageTitle = document.getElementById("pageTitle");
     const pageSubtitle = document.getElementById("pageSubtitle");
@@ -2027,6 +2220,7 @@
     const progressWeek = document.getElementById("progressWeek");
     const progressDone = document.getElementById("progressDone");
     const progressDoneLabel = document.getElementById("progressDoneLabel");
+    const progressDoneHelp = document.getElementById("progressDoneHelp");
     const progressComment = document.getElementById("progressComment");
     const progressModalSubtitle = document.getElementById("progressModalSubtitle");
     const closeProgressModal = document.getElementById("closeProgressModal");
@@ -2061,6 +2255,7 @@
     fileInput.addEventListener("change", handleFile);
     openRoadmapButton.addEventListener("click", openRoadmapFile);
     initialOpenRoadmapButton.addEventListener("click", openRoadmapFile);
+    initialChangeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
     changeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
     quarterFilter.addEventListener("change", () => {
       state.quarter = quarterFilter.value;
@@ -2073,9 +2268,15 @@
     });
     taskPickerButton.addEventListener("click", toggleTaskPicker);
     taskPickerSearch.addEventListener("input", filterTaskOptions);
+    helpButton.addEventListener("click", openHelpModalWindow);
     settingsButton.addEventListener("click", toggleSettingsDrawer);
     settingsBackdrop.addEventListener("click", closeSettingsDrawerWindow);
     closeSettingsDrawerButton.addEventListener("click", closeSettingsDrawerWindow);
+    closeHelpModal.addEventListener("click", closeHelpModalWindow);
+    closeHelpModalButton.addEventListener("click", closeHelpModalWindow);
+    helpModal.addEventListener("click", event => {
+      if (event.target === helpModal) closeHelpModalWindow();
+    });
     document.addEventListener("click", event => {
       if (!taskPicker.contains(event.target)) closeTaskPicker();
     });
@@ -2083,6 +2284,7 @@
       if (event.key === "Escape") {
         closeTaskPicker();
         closeSettingsDrawerWindow();
+        closeHelpModalWindow();
       }
     });
     newRoadmapButton.addEventListener("click", () => {
@@ -2449,12 +2651,16 @@
       const headers = (table[0] || []).slice(0, 10).map((header, index) => {
         return String(header || `Колонка ${index + 1}`).trim();
       });
+      const mergeRanges = worksheet["!merges"] || [];
 
       return table.slice(1).map((row, rowIndex) => {
         const record = {};
         const rawRow = rawTable[rowIndex + 1] || [];
-        record.__raw = {};
-        record.__sourceRow = rowIndex + 4;
+        Object.defineProperties(record, {
+          __raw: { value: {}, enumerable: false },
+          __sourceRow: { value: rowIndex + 4, enumerable: false },
+          __mergeRanges: { value: mergeRanges, enumerable: false }
+        });
         headers.forEach((header, index) => {
           record[header] = row[index] ?? "";
           record.__raw[header] = rawRow[index] ?? "";
@@ -2481,6 +2687,20 @@
       const cell = worksheet["A2"];
       const value = cell?.w ?? cell?.v ?? "";
       return String(value).trim();
+    }
+
+    function cellMergeSpan(rowNumber, columnIndex, mergeRanges = []) {
+      if (!Number.isInteger(columnIndex) || columnIndex < 0) {
+        return { startRow: rowNumber, endRow: rowNumber };
+      }
+      const rowIndex = rowNumber - 1;
+      const range = mergeRanges.find(item => {
+        return item.s.r <= rowIndex && rowIndex <= item.e.r
+          && item.s.c <= columnIndex && columnIndex <= item.e.c;
+      });
+      return range
+        ? { startRow: range.s.r + 1, endRow: range.e.r + 1 }
+        : { startRow: rowNumber, endRow: rowNumber };
     }
 
     function mapRows(rows) {
@@ -2552,6 +2772,7 @@
           quarterProgress: cleanPercent(quarterProgressRaw, quarterProgressDisplay),
           yearProgress: cleanPercent(yearProgressRaw, yearProgressDisplay),
           done: cleanNumber(doneRaw),
+          doneDisplay: textCell(row, columnMap.done),
           planText: isNumericLike(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
           progressText: isNumericLike(quarterProgressRaw) ? "" : textCell(row, columnMap.quarterProgress),
           doneText: isNumericLike(doneRaw) ? "" : textCell(row, columnMap.done),
@@ -2560,7 +2781,13 @@
           hasNumericYearPlan: isNumericLike(yearPlanRaw),
           hasNumericQuarterProgress: isNumericLike(quarterProgressRaw),
           hasNumericYearProgress: isNumericLike(yearProgressRaw),
-          hasDone: isNumericLike(doneRaw)
+          hasDone: isNumericLike(doneRaw),
+          mergeSpans: {
+            quarter: cellMergeSpan(row.__sourceRow, columnIndexes.quarter, row.__mergeRanges),
+            plan: cellMergeSpan(row.__sourceRow, columnIndexes.quarterPlan, row.__mergeRanges),
+            done: cellMergeSpan(row.__sourceRow, columnIndexes.done, row.__mergeRanges),
+            comment: cellMergeSpan(row.__sourceRow, columnIndexes.comment, row.__mergeRanges)
+          }
         };
         const meaningfulValues = [
           rawCell(row, columnMap.week),
@@ -2593,7 +2820,7 @@
       const hasNumericPlan = data.some(row => row.hasNumericQuarterPlan || row.hasNumericYearPlan);
       const type = hasTextPlan && !hasNumericPlan ? "stage" : "quantitative";
       const relevantMissing = type === "stage"
-        ? missing.filter(label => !["Годовой план", "Годовой прогресс"].includes(label))
+        ? missing.filter(label => !["Квартальный прогресс", "Годовой план", "Годовой прогресс"].includes(label))
         : missing;
 
       return { data, missing: relevantMissing, columnMap, columnIndexes, type };
@@ -2646,6 +2873,8 @@
     function updateRoadmapFileStatus() {
       if (!supportsSavedRoadmapAccess()) {
         changeRoadmapFileButton.hidden = true;
+        initialChangeRoadmapFileButton.hidden = true;
+        initialOpenRoadmapButton.textContent = "Выбрать Excel-файл";
         const message = "Выберите Excel-файл. Быстрое повторное открытие доступно в Google Chrome или Microsoft Edge.";
         roadmapFolderStatus.textContent = message;
         initialRoadmapStatus.textContent = message;
@@ -2654,6 +2883,10 @@
 
       const fileName = state.roadmapFileHandle?.name;
       changeRoadmapFileButton.hidden = !fileName;
+      initialChangeRoadmapFileButton.hidden = !fileName;
+      initialOpenRoadmapButton.textContent = fileName
+        ? "Открыть сохранённый файл"
+        : "Выбрать Excel-файл";
       const message = fileName
         ? `Сохранённый файл: «${fileName}».`
         : "Выберите рабочий Excel-файл. При следующем запуске он откроется одной кнопкой.";
@@ -2719,12 +2952,18 @@
 
       try {
         if (!await ensureReadPermission(state.roadmapFileHandle)) {
-          showError("Не получено разрешение на чтение сохранённого файла.");
+          const message = "Не получено разрешение на чтение сохранённого файла. Выберите другой файл или повторите открытие.";
+          showError(message);
+          roadmapFolderStatus.textContent = message;
+          initialRoadmapStatus.textContent = message;
           return;
         }
         await loadRoadmapFile(await state.roadmapFileHandle.getFile());
       } catch (error) {
-        showError("Не удалось открыть сохранённый файл. Нажмите «Сменить файл» и выберите его заново.");
+        const message = "Не удалось открыть сохранённый файл. Выберите другой файл или повторите открытие.";
+        showError(message);
+        roadmapFolderStatus.textContent = message;
+        initialRoadmapStatus.textContent = message;
       }
     }
 
@@ -2789,10 +3028,20 @@
     function buildQuarterFilter() {
       const quarters = [...new Set(state.tasks.flatMap(task => task.rows.map(row => String(row.quarter).trim()).filter(Boolean)))];
       quarters.sort(compareQuarters);
+      const years = [...new Set(quarters.map(quarter => quarterSortKey(quarter).year).filter(Boolean))].sort((a, b) => a - b);
+      const multipleYears = years.length > 1;
+      const groupedOptions = years.map(year => {
+        const yearQuarters = quarters.filter(quarter => quarterSortKey(quarter).year === year);
+        const yearOption = multipleYears ? `<option value="year:${year}">${year} — весь год</option>` : "";
+        const quarterOptions = yearQuarters
+          .map(quarter => `<option value="${escapeHtml(quarter)}">${escapeHtml(quarter)}</option>`)
+          .join("");
+        return multipleYears
+          ? `<optgroup label="${year}">${yearOption}${quarterOptions}</optgroup>`
+          : quarterOptions;
+      }).join("");
 
-      quarterFilter.innerHTML = `<option value="all">Все кварталы</option>` + quarters
-        .map(quarter => `<option value="${escapeHtml(quarter)}">${escapeHtml(quarter)}</option>`)
-        .join("");
+      quarterFilter.innerHTML = `<option value="all">${multipleYears ? "Все периоды" : "Все кварталы"}</option>${groupedOptions}`;
       quarterFilter.disabled = quarters.length === 0;
       quarterFilter.value = "all";
     }
@@ -2823,6 +3072,46 @@
       const rightYear = cleanNumber(right[2]);
       if (leftYear && rightYear && leftYear !== rightYear) return leftYear - rightYear;
       return cleanNumber(left[1]) - cleanNumber(right[1]);
+    }
+
+    function selectedYear(value = state.quarter) {
+      const yearSelection = String(value || "").match(/^year:(20\d{2})$/);
+      if (yearSelection) return cleanNumber(yearSelection[1]);
+      return quarterSortKey(value).year || 0;
+    }
+
+    function isAllPeriods(value = state.quarter) {
+      return value === "all";
+    }
+
+    function isYearPeriod(value = state.quarter) {
+      return /^year:20\d{2}$/.test(String(value || ""));
+    }
+
+    function isQuarterPeriod(value = state.quarter) {
+      return /^Q[1-4](?:\s+20\d{2})?$/i.test(String(value || ""));
+    }
+
+    function isAggregatePeriod(value = state.quarter) {
+      return isAllPeriods(value) || isYearPeriod(value);
+    }
+
+    function periodLabel(value = state.quarter) {
+      if (isAllPeriods(value)) {
+        const years = [...new Set(state.tasks.flatMap(task => task.rows.map(row => quarterSortKey(row.quarter).year).filter(Boolean)))];
+        return years.length > 1 ? "Все периоды" : "Все кварталы";
+      }
+      if (isYearPeriod(value)) return `${selectedYear(value)} — весь год`;
+      return String(value || "");
+    }
+
+    function compareSelectionToQuarter(selection, quarter) {
+      if (isAllPeriods(selection) || !quarter) return 0;
+      if (isYearPeriod(selection)) {
+        const completionYear = quarterSortKey(quarter).year;
+        return completionYear ? selectedYear(selection) - completionYear : 0;
+      }
+      return compareQuarterPeriods(selection, quarter);
     }
 
     function openRoadmapModal() {
@@ -2868,25 +3157,35 @@
     }
 
     function openProgressModal(task) {
-      const rows = task.rows.filter(row => row.sourceRow);
+      const stageTask = isStageTask(task);
+      const rows = stageTask
+        ? stageRowsForDisplay(task.rows).filter(row => row.sourceRow && row.planText)
+        : task.rows.filter(row => row.sourceRow);
       if (!rows.length || !task.columnMap?.done) {
-        showError("Для этой дорожной карты не найдена колонка «Выполнено».");
+        showError(stageTask
+          ? "Для этой дорожной карты не найдены редактируемые этапы или колонка «Выполнено»."
+          : "Для этой дорожной карты не найдена колонка «Выполнено».");
         return;
       }
 
       progressForm.dataset.taskId = task.id;
-      progressForm.dataset.taskType = isStageTask(task) ? "stage" : "quantitative";
+      progressForm.dataset.taskType = stageTask ? "stage" : "quantitative";
       progressWeek.innerHTML = rows.map(row => {
-        const label = [row.quarter, `Неделя ${row.week}`, row.weekStart && row.weekEnd ? `${row.weekStart}–${row.weekEnd}` : ""]
+        const label = [row.quarter, `Неделя ${row.week}`, row.weekStart && row.weekEnd ? `${row.weekStart}–${row.weekEnd}` : "", stageTask ? row.planText : ""]
           .filter(Boolean)
           .join(" · ");
         return `<option value="${row.sourceRow}">${escapeHtml(label)}</option>`;
       }).join("");
       progressWeek.value = String(defaultProgressRow(rows).sourceRow);
-      const stageTask = isStageTask(task);
-      progressDoneLabel.textContent = stageTask ? "Выполнено этапов за неделю" : "Выполнено (накопительно)";
+      progressDoneLabel.textContent = stageTask ? "Выполнение этапа, %" : "Выполнено (накопительно)";
+      progressDone.min = "0";
+      progressDone.max = stageTask ? "100" : "";
+      progressDone.step = "any";
+      progressDoneHelp.textContent = stageTask
+        ? "Введите процент выполнения от 0 до 100. Комментарий не меняет статус этапа."
+        : "Введите общий накопительный факт на конец выбранной недели.";
       progressModalSubtitle.textContent = stageTask
-        ? `Задача: ${task.name}. Укажите объём выполнения этапов за выбранную неделю.`
+        ? `Задача: ${task.name}. Выберите этап и укажите процент его выполнения.`
         : `Задача: ${task.name}. Введите общий факт на конец выбранной недели.`;
       fillProgressForm();
       progressModal.hidden = false;
@@ -2895,9 +3194,12 @@
 
     function fillProgressForm() {
       const task = state.tasks.find(item => item.id === progressForm.dataset.taskId);
-      const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
+      const stageTask = progressForm.dataset.taskType === "stage";
+      const row = stageTask
+        ? stageRowsForDisplay(task?.rows || []).find(item => String(item.sourceRow) === progressWeek.value && item.planText)
+        : task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
       if (!row) return;
-      progressDone.value = row.hasDone ? String(row.done) : "0";
+      progressDone.value = row.hasDone ? String(stageTask ? cleanNumber(row.done) * 100 : row.done) : "0";
       progressComment.value = row.comment || "";
     }
 
@@ -2910,20 +3212,39 @@
     function handleProgressSubmit(event) {
       event.preventDefault();
       const task = state.tasks.find(item => item.id === progressForm.dataset.taskId);
-      const row = task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
-      const done = cleanNumber(progressDone.value);
-      if (!task || !row || !Number.isFinite(done) || done < 0) {
-        showError(progressForm.dataset.taskType === "stage"
-          ? "Укажите корректное значение выполненных этапов за неделю."
+      const stageTask = progressForm.dataset.taskType === "stage";
+      const selectedRow = stageTask
+        ? stageRowsForDisplay(task?.rows || []).find(item => String(item.sourceRow) === progressWeek.value && item.planText)
+        : task?.rows.find(item => String(item.sourceRow) === progressWeek.value);
+      const inputDone = cleanNumber(progressDone.value);
+      if (!task || !selectedRow || !Number.isFinite(inputDone) || inputDone < 0 || (stageTask && inputDone > 100)) {
+        showError(stageTask
+          ? "Укажите процент выполнения этапа от 0 до 100."
           : "Укажите корректное накопительное значение выполнения.");
         return;
       }
 
-      row.done = done;
-      row.hasDone = true;
-      row.doneText = "";
-      row.comment = progressComment.value.trim();
-      row.edited = true;
+      const done = stageTask ? inputDone / 100 : inputDone;
+      const doneSourceRow = stageTask ? selectedRow.editDoneRow : selectedRow.sourceRow;
+      const commentSourceRow = stageTask ? selectedRow.editCommentRow : selectedRow.sourceRow;
+      const doneRow = task.rows.find(item => item.sourceRow === doneSourceRow);
+      const commentRow = task.rows.find(item => item.sourceRow === commentSourceRow);
+      if (!doneRow || (task.columnMap?.comment && !commentRow)) {
+        showError("Не удалось определить ячейки выбранного этапа. Перезагрузите исходный файл и повторите попытку.");
+        return;
+      }
+
+      doneRow.done = done;
+      doneRow.doneDisplay = stageTask ? formatPercent(done * 100) : formatNumber(done);
+      doneRow.hasDone = true;
+      doneRow.doneText = "";
+      doneRow.doneEdited = true;
+      doneRow.edited = true;
+      if (commentRow) {
+        commentRow.comment = progressComment.value.trim();
+        commentRow.commentEdited = true;
+        commentRow.edited = true;
+      }
       closeProgressModalWindow();
       updateExportButton();
       render();
@@ -2972,7 +3293,7 @@
     }
 
     function reportPeriodLabel() {
-      return state.quarter === "all" ? "Все кварталы" : state.quarter;
+      return periodLabel();
     }
 
     function buildExecutiveReport(options = {}) {
@@ -2995,8 +3316,8 @@
         return result;
       }, {});
       const progressValues = items
-        .filter(item => item.summary.rowsCount > 0 && !item.summary.completedEarlier)
-        .map(item => state.quarter === "all" ? item.summary.yearProgress : item.summary.quarterProgress)
+        .filter(item => item.summary.rowsCount > 0 && !item.summary.completedEarlier && item.status.key !== "no-data")
+        .map(item => isAggregatePeriod() ? item.summary.yearProgress : item.summary.quarterProgress)
         .filter(value => Number.isFinite(cleanNumber(value)));
       const averageProgress = progressValues.length ? average(progressValues) : 0;
       const attentionLimit = clamp(cleanNumber(options.attentionLimit) || 5, 1, 20);
@@ -3418,9 +3739,11 @@
     function generateWeeks(year) {
       const weeks = [];
       let start = new Date(year, 0, 1);
+      if (start.getDay() === 6) start.setDate(start.getDate() + 2);
+      if (start.getDay() === 0) start.setDate(start.getDate() + 1);
       for (let week = 1; week <= 52; week += 1) {
         const end = new Date(start);
-        end.setDate(start.getDate() + (week === 1 ? 1 : 4));
+        end.setDate(start.getDate() + Math.max(5 - start.getDay(), 0));
         const quarter = week <= 13 ? "Q1" : week <= 26 ? "Q2" : week <= 39 ? "Q3" : "Q4";
         const quarterStartWeek = quarter === "Q1" ? 1 : quarter === "Q2" ? 14 : quarter === "Q3" ? 27 : 40;
         weeks.push({
@@ -3706,8 +4029,11 @@
         if (!path || task.columnIndexes?.done < 0) return;
         let xml = archiveText(archive, path);
         task.rows.filter(row => row.edited).forEach(row => {
-          xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.done }), row.done, false);
-          if (task.columnIndexes?.comment >= 0) {
+          const legacyEdit = !row.doneEdited && !row.commentEdited;
+          if (row.doneEdited || legacyEdit) {
+            xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.done }), row.done, false);
+          }
+          if (task.columnIndexes?.comment >= 0 && (row.commentEdited || legacyEdit)) {
             xml = setSheetCell(xml, XLSX.utils.encode_cell({ r: row.sourceRow - 1, c: task.columnIndexes.comment }), row.comment, true);
           }
         });
@@ -3789,7 +4115,7 @@
       const hasTasks = state.tasks.length > 0;
       emptySidebarState.hidden = hasTasks;
       taskNavigation.hidden = !hasTasks;
-      sidebarSettings.hidden = !hasTasks;
+      sidebarSettings.hidden = false;
       settingsButton.hidden = !hasTasks;
       if (!hasTasks) closeSettingsDrawerWindow();
     }
@@ -3826,6 +4152,19 @@
       settingsButton.setAttribute("aria-expanded", "false");
       settingsBackdrop.hidden = true;
       settingsButton.focus();
+    }
+
+    function openHelpModalWindow() {
+      closeTaskPicker();
+      closeSettingsDrawerWindow();
+      helpModal.hidden = false;
+      closeHelpModal.focus();
+    }
+
+    function closeHelpModalWindow() {
+      if (helpModal.hidden) return;
+      helpModal.hidden = true;
+      helpButton.focus();
     }
 
     function toggleTaskPicker() {
@@ -3888,7 +4227,11 @@
     }
 
     function filteredRows(task) {
-      if (state.quarter === "all") return task.rows;
+      if (isAllPeriods()) return task.rows;
+      if (isYearPeriod()) {
+        const year = selectedYear();
+        return task.rows.filter(row => quarterSortKey(row.quarter).year === year);
+      }
       return task.rows.filter(row => String(row.quarter).trim() === state.quarter);
     }
 
@@ -3905,41 +4248,154 @@
         .filter(Boolean))];
     }
 
-    function stageRowNeedsReview(row) {
-      return stageRowTexts(row).some(text => /пересмотр|актуализ|переплан/i.test(text));
+    function stageMergeSpan(row, field) {
+      return row.mergeSpans?.[field] || { startRow: row.sourceRow, endRow: row.sourceRow };
+    }
+
+    function stageSpansOverlap(left, right) {
+      return Math.max(left.startRow, right.startRow) <= Math.min(left.endRow, right.endRow);
+    }
+
+    function stageSpanOverlapSize(left, right) {
+      if (!stageSpansOverlap(left, right)) return 0;
+      return Math.min(left.endRow, right.endRow) - Math.max(left.startRow, right.startRow) + 1;
+    }
+
+    function stageEntryForSpan(row, span, rows) {
+      const coveredRows = rows.filter(item => span.startRow <= item.sourceRow && item.sourceRow <= span.endRow);
+      const firstRow = coveredRows[0] || row;
+      const lastRow = coveredRows[coveredRows.length - 1] || row;
+      const week = String(firstRow.week) === String(lastRow.week)
+        ? firstRow.week
+        : `${firstRow.week}–${lastRow.week}`;
+      return {
+        ...row,
+        quarter: firstRow.quarter || row.quarter,
+        week,
+        weekStart: firstRow.weekStart || row.weekStart,
+        weekEnd: lastRow.weekEnd || row.weekEnd,
+        stageSpan: span
+      };
+    }
+
+    function buildStageEntries(rows) {
+      const plannedEntries = rows.filter(row => row.planText).map(row => {
+        const planSpan = stageMergeSpan(row, "plan");
+        const entry = stageEntryForSpan(row, planSpan, rows);
+        const bestTargetRow = field => {
+          const uniqueSpans = new Map();
+          rows.forEach(item => {
+            const span = stageMergeSpan(item, field);
+            if (stageSpansOverlap(span, planSpan)) uniqueSpans.set(`${span.startRow}:${span.endRow}`, span);
+          });
+          const bestSpan = [...uniqueSpans.values()].sort((left, right) => {
+            const overlapDifference = stageSpanOverlapSize(planSpan, right) - stageSpanOverlapSize(planSpan, left);
+            return overlapDifference || (right.endRow - right.startRow) - (left.endRow - left.startRow);
+          })[0];
+          return bestSpan?.startRow || planSpan.startRow;
+        };
+        entry.editDoneRow = bestTargetRow("done");
+        entry.editCommentRow = bestTargetRow("comment");
+        const doneRows = rows.filter(item => {
+          return item.hasDone && stageSpansOverlap(stageMergeSpan(item, "done"), planSpan);
+        });
+        if (doneRows.length) {
+          entry.done = doneRows.reduce((sum, item) => sum + cleanNumber(item.done), 0);
+          entry.hasDone = true;
+          entry.doneDisplay = doneRows.length === 1
+            ? doneRows[0].doneDisplay
+            : formatNumber(entry.done);
+          entry.doneText = "";
+          entry.editDoneRow = Math.min(...doneRows.map(item => stageMergeSpan(item, "done").startRow));
+        }
+        entry.comment = "";
+        return entry;
+      });
+
+      const commentBlocks = [];
+      const seenComments = new Set();
+      rows.filter(row => row.comment).forEach(row => {
+        const span = stageMergeSpan(row, "comment");
+        const key = `${span.startRow}:${span.endRow}:${row.comment}`;
+        if (seenComments.has(key)) return;
+        seenComments.add(key);
+        commentBlocks.push({ row, span, text: row.comment });
+      });
+
+      const orphanComments = [];
+      commentBlocks.forEach(block => {
+        const candidates = plannedEntries
+          .map(entry => ({ entry, overlap: stageSpanOverlapSize(entry.stageSpan, block.span) }))
+          .filter(item => item.overlap > 0)
+          .sort((left, right) => right.overlap - left.overlap || left.entry.sourceRow - right.entry.sourceRow);
+        if (candidates.length) {
+          const entry = candidates[0].entry;
+          entry.comment = [...new Set([entry.comment, block.text].filter(Boolean))].join(" · ");
+          entry.editCommentRow = block.span.startRow;
+          return;
+        }
+        orphanComments.push(stageEntryForSpan({ ...block.row, planText: "", hasDone: false }, block.span, rows));
+      });
+
+      const orphanDoneRows = rows.filter(row => {
+        if (!row.hasDone || cleanNumber(row.done) <= 0 || row.planText) return false;
+        const doneSpan = stageMergeSpan(row, "done");
+        return !plannedEntries.some(entry => stageSpansOverlap(entry.stageSpan, doneSpan));
+      });
+
+      const legacyTextRows = rows.filter(row => {
+        if (row.planText || row.comment || (!row.progressText && !row.doneText)) return false;
+        return !orphanDoneRows.includes(row);
+      });
+
+      return [...plannedEntries, ...orphanComments, ...orphanDoneRows, ...legacyTextRows]
+        .sort((left, right) => left.sourceRow - right.sourceRow);
     }
 
     function stageRowsForDisplay(rows) {
-      return rows.filter(row => row.planText
+      return buildStageEntries(rows).filter(row => row.planText
         || stageRowTexts(row).length
         || (row.hasDone && cleanNumber(row.done) > 0));
     }
 
     function summarizeStageRows(rows, allRows = rows) {
-      const planned = rows.filter(row => row.planText).length;
-      const done = rows
-        .filter(row => row.hasDone && cleanNumber(row.done) > 0)
-        .reduce((sum, row) => sum + cleanNumber(row.done), 0);
-      const allPlanned = allRows.filter(row => row.planText).length;
-      const allDone = allRows
-        .filter(row => row.hasDone && cleanNumber(row.done) > 0)
-        .reduce((sum, row) => sum + cleanNumber(row.done), 0);
       const displayRows = stageRowsForDisplay(rows);
-      const hasActivity = displayRows.some(row => stageRowTexts(row).length || (row.hasDone && cleanNumber(row.done) > 0));
-      const needsReview = displayRows.some(stageRowNeedsReview);
-      const completionRow = [...allRows].reverse().find(row => {
-        return [row.comment, row.doneText, row.progressText].some(hasCompletionMarker);
+      const allDisplayRows = rows === allRows ? displayRows : stageRowsForDisplay(allRows);
+      const plannedRows = displayRows.filter(row => row.planText);
+      const allPlannedRows = allDisplayRows.filter(row => row.planText);
+      const planned = plannedRows.length;
+      const invalidRows = plannedRows.filter(row => row.hasDone && cleanNumber(row.done) > 1);
+      const completed = plannedRows.filter(row => {
+        const value = row.hasDone ? cleanNumber(row.done) : 0;
+        return value >= 1 && value <= 1;
+      }).length;
+      const partiallyCompleted = plannedRows.filter(row => {
+        const value = row.hasDone ? cleanNumber(row.done) : 0;
+        return value > 0 && value < 1;
+      }).length;
+      const done = plannedRows.reduce((sum, row) => {
+        const value = row.hasDone ? cleanNumber(row.done) : 0;
+        return sum + (value > 1 ? 0 : clamp(value, 0, 1));
+      }, 0);
+      const allPlanned = allPlannedRows.length;
+      const allCompleted = allPlannedRows.filter(row => {
+        const value = row.hasDone ? cleanNumber(row.done) : 0;
+        return value >= 1 && value <= 1;
+      }).length;
+      const rowStates = plannedRows.map(row => ({ row, state: stageRowState(row) }));
+      const overdueRows = rowStates.filter(item => item.state.key === "overdue");
+      const hasCurrentStage = rowStates.some(item => item.state.key === "active");
+      const hasProgress = done > 0;
+      const completionRow = [...allDisplayRows].reverse().find(row => {
+        const value = row.hasDone ? cleanNumber(row.done) : 0;
+        return row.planText && value >= 1 && value <= 1;
       });
-      const explicitComplete = Boolean(completionRow) && (
-        state.quarter === "all"
-        || compareQuarterPeriods(state.quarter, completionRow.quarter) >= 0
-      );
-      const isComplete = explicitComplete || (planned > 0 && done >= planned);
-      const remaining = Math.max(planned - done, 0);
+      const isComplete = planned > 0 && completed >= planned;
+      const remaining = Math.max(planned - completed, 0);
       const progress = planned > 0 ? Math.max((done / planned) * 100, 0) : 0;
       let stageStatus;
 
-      if (!planned && !hasActivity) {
+      if (!planned) {
         stageStatus = {
           key: "no-data",
           label: "Нет этапов",
@@ -3948,31 +4404,44 @@
           fact: done,
           plan: null
         };
+      } else if (invalidRows.length) {
+        stageStatus = {
+          key: "behind",
+          label: "Ошибка в данных",
+          detail: `Отметок выполнения выше 100%: ${invalidRows.length}. Исправьте значения в Excel.`,
+          delta: null,
+          fact: done,
+          plan: planned
+        };
       } else if (isComplete) {
         stageStatus = {
           key: "complete",
           label: "Выполнено",
-          detail: state.quarter === "all" ? "Все этапы выполнены." : "Все этапы выбранного периода выполнены.",
-          delta: done - planned,
-          fact: done,
+          detail: isAllPeriods() ? "Все этапы выполнены." : "Все этапы выбранного периода выполнены.",
+          delta: completed - planned,
+          fact: completed,
           plan: planned
         };
-      } else if (needsReview) {
+      } else if (overdueRows.length) {
+        const startedOverdue = overdueRows.filter(item => item.row.hasDone && cleanNumber(item.row.done) > 0).length;
+        const startedDetail = startedOverdue
+          ? ` С частичным выполнением: ${formatStageQuantity(startedOverdue)}.`
+          : " Без отметки выполнения.";
         stageStatus = {
           key: "behind",
-          label: "На пересмотре",
-          detail: "В Excel есть отметка о пересмотре или актуализации дорожной карты.",
-          delta: done - planned,
-          fact: done,
+          label: "Есть просроченные этапы",
+          detail: `Просрочено ${formatStageQuantity(overdueRows.length)}.${startedDetail}`,
+          delta: completed - planned,
+          fact: completed,
           plan: planned
         };
-      } else if (hasActivity) {
+      } else if (hasProgress || hasCurrentStage) {
         stageStatus = {
           key: "on-track",
           label: "В работе",
-          detail: `Выполнено ${formatStageQuantity(done)} из ${formatStageQuantity(planned)}.`,
-          delta: done - planned,
-          fact: done,
+          detail: `Выполнено: ${formatStageQuantity(completed)}. Всего: ${formatStageQuantity(planned)}.${partiallyCompleted ? ` Частично: ${formatStageQuantity(partiallyCompleted)}.` : ""}`,
+          delta: completed - planned,
+          fact: completed,
           plan: planned
         };
       } else {
@@ -3990,7 +4459,9 @@
         stage: true,
         done,
         quarterDone: done,
-        displayDone: done,
+        displayDone: completed,
+        completedStages: completed,
+        partiallyCompletedStages: partiallyCompleted,
         remaining,
         quarterPlan: planned,
         yearPlan: planned,
@@ -4000,7 +4471,7 @@
         completedEarlier: false,
         completionQuarter: completionRow?.quarter || "",
         completionDate: completionRow?.weekEnd || completionRow?.weekStart || "",
-        completionDone: allDone,
+        completionDone: allCompleted,
         completionYearPlan: allPlanned,
         planStatus: stageStatus,
         stageStatus,
@@ -4029,20 +4500,35 @@
       return /^\s*(?:\[\s*завершено\s*\]|завершено(?:[.!:;,]|$))/i.test(String(comment || ""));
     }
 
+    function cumulativeBaseline(rows, allRows, field, hasField) {
+      const firstRow = rows[0];
+      const startIndex = allRows.indexOf(firstRow);
+      if (startIndex <= 0) return 0;
+      const previous = allRows.slice(0, startIndex).filter(hasField);
+      if (!previous.length) return 0;
+      if (field === "done") return cleanNumber(previous[previous.length - 1].done);
+      return Math.max(...previous.map(row => cleanNumber(row[field])), 0);
+    }
+
+    function cumulativeDoneForPeriod(rows, allRows) {
+      const doneRows = rows.filter(row => row.hasDone);
+      if (!doneRows.length) return 0;
+      const baseline = cumulativeBaseline(rows, allRows, "done", row => row.hasDone);
+      return Math.max(cleanNumber(doneRows[doneRows.length - 1].done) - baseline, 0);
+    }
+
     function summarizeRows(rows, completionRows = rows) {
       const rowsWithDone = rows.filter(row => row.hasDone);
       const activeRows = rowsWithDone.length ? rowsWithDone : rows;
       const lastDoneRow = [...rowsWithDone].pop();
       const rowLevelDone = usesRowLevelDone(rows);
-      const done = doneTotal(rows);
+      const cumulativeDone = doneTotal(rows);
       const quarterDoneSeries = rowLevelDone ? [] : quarterDoneValues(rows, completionRows);
       const lastQuarterDone = [...quarterDoneSeries].reverse().find(value => value !== null && value !== undefined);
-      const quarterDone = rowLevelDone || lastQuarterDone === undefined ? done : lastQuarterDone;
+      const quarterDone = rowLevelDone || lastQuarterDone === undefined ? cumulativeDone : lastQuarterDone;
       const numericQuarterPlans = rows.filter(row => row.hasNumericQuarterPlan).map(row => cleanNumber(row.quarterPlan));
       const numericYearPlans = rows.filter(row => row.hasNumericYearPlan).map(row => cleanNumber(row.yearPlan));
       const textPlans = rows.filter(row => row.planText);
-      const numericQuarterProgressRows = activeRows.filter(row => row.hasNumericQuarterProgress);
-      const numericYearProgressRows = activeRows.filter(row => row.hasNumericYearProgress);
       const inferredYearPlans = activeRows
         .filter(row => row.hasDone && row.hasNumericYearProgress)
         .map(row => {
@@ -4052,19 +4538,24 @@
         .filter(value => Number.isFinite(value) && value > 0);
 
       const quarterPlan = numericQuarterPlans.length ? Math.max(...numericQuarterPlans, 0) : textPlans.length;
-      // Колонка «Годовой план» — первичный источник. Обратный расчёт по
-      // проценту нужен только для старых листов, где этой колонки нет.
-      const yearPlan = numericYearPlans.length
+      const rawYearPlan = numericYearPlans.length
         ? Math.max(...numericYearPlans, 0)
         : inferredYearPlans.length
           ? Math.max(...inferredYearPlans, 0)
           : quarterPlan;
-      const lastQuarterProgress = [...numericQuarterProgressRows].pop();
-      const lastYearProgress = [...numericYearProgressRows].pop();
-      const progressDone = state.quarter === "all" ? done : quarterDone;
-      const derivedProgress = quarterPlan > 0 ? Math.max((progressDone / quarterPlan) * 100, 0) : 0;
-      const quarterProgress = lastQuarterProgress ? lastQuarterProgress.quarterProgress : derivedProgress;
-      const yearProgress = lastYearProgress ? lastYearProgress.yearProgress : quarterProgress;
+      const yearPlanBaseline = isYearPeriod()
+        ? cumulativeBaseline(rows, completionRows, "yearPlan", row => row.hasNumericYearPlan)
+        : 0;
+      const yearPlan = Math.max(rawYearPlan - yearPlanBaseline, 0);
+      const selectedDone = isAllPeriods()
+        ? cumulativeDone
+        : isYearPeriod()
+          ? cumulativeDoneForPeriod(rows, completionRows)
+          : quarterDone;
+      const selectedPlan = isAggregatePeriod() ? yearPlan : quarterPlan;
+      const derivedProgress = selectedPlan > 0 ? Math.max((selectedDone / selectedPlan) * 100, 0) : 0;
+      const quarterProgress = isQuarterPeriod() ? derivedProgress : derivedProgress;
+      let yearProgress = isAggregatePeriod() ? derivedProgress : quarterProgress;
       const completionRowsWithDone = completionRows.filter(row => row.hasDone);
       const completionActiveRows = completionRowsWithDone.length ? completionRowsWithDone : completionRows;
       const completionDone = doneTotal(completionRows);
@@ -4092,19 +4583,18 @@
       const completionDate = hasCompletion
         ? completionLastDoneRow?.weekEnd || completionLastDoneRow?.weekStart || ""
         : "";
-      const selectedPeriodRelation = state.quarter === "all" || !completionQuarter
+      const selectedPeriodRelation = isAllPeriods() || !completionQuarter
         ? 0
-        : compareQuarterPeriods(state.quarter, completionQuarter);
-      const completedEarlier = hasCompletion && state.quarter !== "all" && selectedPeriodRelation > 0;
-      const isComplete = hasCompletion && (state.quarter === "all" || selectedPeriodRelation >= 0);
-      const displayDone = state.quarter === "all" ? done : quarterDone;
-      const remaining = state.quarter === "all"
-        ? Math.max(yearPlan - done, 0)
-        : Math.max(quarterPlan - quarterDone, 0);
-      const planStatus = buildPlanStatus(rows, lastDoneRow, displayDone);
+        : compareSelectionToQuarter(state.quarter, completionQuarter);
+      const completedEarlier = hasCompletion && !isAllPeriods() && selectedPeriodRelation > 0;
+      const isComplete = hasCompletion && (isAllPeriods() || selectedPeriodRelation >= 0);
+      if (isComplete) yearProgress = Math.max(yearProgress, 100);
+      const displayDone = selectedDone;
+      const remaining = Math.max(selectedPlan - selectedDone, 0);
+      const planStatus = buildPlanStatus(rows, lastDoneRow, displayDone, completionRows);
 
       return {
-        done,
+        done: selectedDone,
         quarterDone,
         displayDone,
         remaining,
@@ -4143,7 +4633,33 @@
       return started.length ? started[started.length - 1].row : null;
     }
 
-    function buildPlanStatus(rows, lastDoneRow, factValue) {
+    function periodDateState(rows) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const currentYear = today.getFullYear();
+      const selectionYear = selectedYear();
+      if (isYearPeriod() && selectionYear) {
+        if (selectionYear > currentYear) return "future";
+        if (selectionYear < currentYear) return "past";
+      }
+      if (isQuarterPeriod() && selectionYear) {
+        const selectionKey = quarterSortKey(state.quarter);
+        const currentQuarter = Math.floor(today.getMonth() / 3) + 1;
+        if (selectionKey.year > currentYear || (selectionKey.year === currentYear && selectionKey.quarter > currentQuarter)) return "future";
+        if (selectionKey.year < currentYear || (selectionKey.year === currentYear && selectionKey.quarter < currentQuarter)) return "past";
+      }
+
+      const dates = rows.map(row => ({
+        start: rowDate(row.weekStart),
+        end: rowDate(row.weekEnd)
+      })).filter(item => item.start && item.end);
+      if (!dates.length) return "unknown";
+      if (today < dates[0].start) return "future";
+      if (today > dates[dates.length - 1].end) return "past";
+      return "current";
+    }
+
+    function buildPlanStatus(rows, lastDoneRow, factValue, allRows = rows) {
       if (!rows.length) {
         return {
           key: "no-data",
@@ -4155,31 +4671,44 @@
         };
       }
 
-      const useYearPlan = state.quarter === "all";
-      const planRow = useYearPlan
-        ? planComparisonRow(rows, lastDoneRow)
-        : rows.reduce((bestRow, row) => {
-            if (!row.hasNumericQuarterPlan) return bestRow;
-            if (!bestRow || cleanNumber(row.quarterPlan) > cleanNumber(bestRow.quarterPlan)) return row;
-            return bestRow;
-          }, null);
-      if (!planRow) {
+      const useYearPlan = isAggregatePeriod();
+      const dateState = periodDateState(rows);
+      if (!isAllPeriods() && dateState === "future") {
         return {
           key: "no-data",
-          label: "Нет данных",
-          detail: useYearPlan ? "Выбранный период еще не начался." : "Нет итогового квартального плана.",
+          label: "Запланировано",
+          detail: "Выбранный период ещё не начался.",
           delta: null,
           fact: factValue,
           plan: null
         };
       }
 
-      const hasPlan = useYearPlan
-        ? planRow.hasNumericYearPlan
-        : planRow.hasNumericQuarterPlan;
-      const planValue = hasPlan
-        ? cleanNumber(useYearPlan ? rowYearPlanValue(planRow) : rowQuarterPlanValue(planRow))
-        : null;
+      const planField = useYearPlan ? "yearPlan" : "quarterPlan";
+      const hasPlanField = useYearPlan ? "hasNumericYearPlan" : "hasNumericQuarterPlan";
+      const planRow = dateState === "past" && !isAllPeriods()
+        ? rows.reduce((bestRow, row) => {
+            if (!row[hasPlanField]) return bestRow;
+            if (!bestRow || cleanNumber(row[planField]) > cleanNumber(bestRow[planField])) return row;
+            return bestRow;
+          }, null)
+        : planComparisonRow(rows, lastDoneRow);
+      if (!planRow) {
+        return {
+          key: "no-data",
+          label: "Нет данных",
+          detail: "Нет планового значения для выбранного периода.",
+          delta: null,
+          fact: factValue,
+          plan: null
+        };
+      }
+
+      const hasPlan = planRow[hasPlanField];
+      const baseline = useYearPlan && isYearPeriod()
+        ? cumulativeBaseline(rows, allRows, "yearPlan", row => row.hasNumericYearPlan)
+        : 0;
+      const planValue = hasPlan ? Math.max(cleanNumber(planRow[planField]) - baseline, 0) : null;
 
       if (planValue === null) {
         return {
@@ -4200,7 +4729,7 @@
         return {
           key: "on-track",
           label: "Идем по плану",
-          detail: `${useYearPlan ? "План на сейчас" : "Итоговый план квартала"}: ${formatNumber(planValue)}.`,
+          detail: `${dateState === "past" ? "Итоговый план периода" : "План на текущую неделю"}: ${formatNumber(planValue)}.`,
           delta,
           fact,
           plan: planValue
@@ -4211,7 +4740,7 @@
         return {
           key: "ahead",
           label: "Перевыполняем",
-          detail: `${useYearPlan ? "Опережение текущего плана" : "Опережение квартального плана"}: ${formatNumber(absDelta)}.`,
+          detail: `${dateState === "past" ? "Опережение итогового плана" : "Опережение текущего плана"}: ${formatNumber(absDelta)}.`,
           delta,
           fact,
           plan: planValue
@@ -4221,7 +4750,7 @@
       return {
         key: "behind",
         label: "Отстаем",
-        detail: `${useYearPlan ? "Отставание от текущего плана" : "Отставание от квартального плана"}: ${formatNumber(absDelta)}.`,
+        detail: `${dateState === "past" ? "Отставание от итогового плана" : "Отставание от текущего плана"}: ${formatNumber(absDelta)}.`,
         delta,
         fact,
         plan: planValue
@@ -4247,7 +4776,7 @@
           return {
             key: "complete",
             label: "Перевыполнено",
-            detail: `Годовой план превышен на ${formatNumber(overage)}.`
+            detail: `${aggregatePlanLabel()} превышен на ${formatNumber(overage)}.`
           };
         }
         return {
@@ -4268,22 +4797,37 @@
     }
 
     function activeQuarterText() {
-      return state.quarter === "all" ? "все кварталы" : state.quarter;
+      return periodLabel().toLowerCase();
     }
 
     function activeQuarterBadge() {
-      return state.quarter === "all" ? "Все кварталы" : `Квартал: ${state.quarter}`;
+      if (isAllPeriods()) return periodLabel();
+      if (isYearPeriod()) return `Год: ${selectedYear()}`;
+      return `Квартал: ${state.quarter}`;
     }
 
     function activePeriodDescription() {
-      return state.quarter === "all"
-        ? "Показаны данные по всем кварталам."
-        : `Показаны только данные за ${state.quarter}.`;
+      if (isAllPeriods()) return `Показаны данные: ${periodLabel().toLowerCase()}.`;
+      if (isYearPeriod()) return `Показаны все кварталы ${selectedYear()} года.`;
+      return `Показаны только данные за ${state.quarter}.`;
+    }
+
+    function hasMultipleYears() {
+      const years = new Set(state.tasks.flatMap(task => task.rows.map(row => quarterSortKey(row.quarter).year).filter(Boolean)));
+      return years.size > 1;
+    }
+
+    function aggregatePlanLabel() {
+      return isAllPeriods() && hasMultipleYears() ? "Общий план" : "Годовой план";
+    }
+
+    function aggregateProgressLabel() {
+      return isAllPeriods() && hasMultipleYears() ? "Общий прогресс" : "Годовой прогресс";
     }
 
     function quarterProgressLabel(prefix = "") {
-      const label = state.quarter === "all"
-        ? `${prefix ? `${prefix} ` : ""}квартальный прогресс`
+      const label = isAggregatePeriod()
+        ? `${prefix ? `${prefix} ` : ""}${aggregateProgressLabel().toLowerCase()}`
         : `${prefix ? `${prefix} ` : ""}прогресс за ${state.quarter}`;
       return label.charAt(0).toUpperCase() + label.slice(1);
     }
@@ -4318,8 +4862,8 @@
       const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
       const quantitativeSummaries = summaries.filter(item => !isStageTask(item.task));
       const stageSummaries = summaries.filter(item => isStageTask(item.task));
-      const showYearProgress = state.quarter === "all";
-      const showYearPlan = state.quarter === "all";
+      const showYearProgress = isAggregatePeriod();
+      const showYearPlan = isAggregatePeriod();
       const overviewYearPlanValues = showYearPlan
         ? quantitativeSummaries.map(item => {
             const hasYearPlan = filteredRows(item.task).some(row => row.hasNumericYearPlan);
@@ -4328,7 +4872,7 @@
         : [];
       const overviewProgressDatasets = [
         {
-          label: `${showYearProgress ? "Годовой прогресс" : quarterProgressLabel()}, %`,
+          label: `${showYearProgress ? aggregateProgressLabel() : quarterProgressLabel()}, %`,
           data: summaries.map(item => item.summary.completedEarlier
             ? null
             : showYearProgress ? item.summary.yearProgress : item.summary.quarterProgress),
@@ -4348,9 +4892,9 @@
 
       if (showYearPlan && hasPlottableValues(overviewYearPlanValues)) {
         overviewDoneDatasets.push({
-          label: "Годовой план",
+          label: aggregatePlanLabel(),
           data: overviewYearPlanValues,
-          backgroundColor: "#d97706"
+          backgroundColor: "#2563eb"
         });
       }
 
@@ -4415,6 +4959,7 @@
         </div>
       `;
       setupFlipCards();
+      setupTaskTitleMarquees();
 
       makeBarChart("overviewProgressChart", {
         labels: summaries.map(item => item.task.name),
@@ -4449,20 +4994,20 @@
         renderCompletedEarlierTask(task, summary, status);
         return;
       }
-      const showYearProgress = state.quarter === "all";
+      const showYearProgress = isAggregatePeriod();
       const quarterPlanValues = rows.map(rowQuarterPlanValue);
-      const yearPlanValues = showYearProgress ? rows.map(rowYearPlanValue) : [];
+      const yearPlanValues = showYearProgress ? aggregatePlanValues(rows, task.rows) : [];
       const progressDatasets = [];
 
       if (showYearProgress) {
         if (hasPlottableValues(yearPlanValues)) {
           progressDatasets.push({
-            label: "Годовой план",
+            label: aggregatePlanLabel(),
             data: yearPlanValues,
             yAxisID: "y",
-            borderColor: "#d97706",
-            backgroundColor: "rgba(217, 119, 6, 0.1)",
-            pointBackgroundColor: "#d97706",
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.1)",
+            pointBackgroundColor: "#2563eb",
             tension: 0.25,
             fill: false,
             spanGaps: false
@@ -4484,7 +5029,7 @@
 
       progressDatasets.push({
         label: showYearProgress ? "Выполнено" : "Выполнено за квартал",
-        data: showYearProgress ? rows.map(row => row.hasDone ? row.done : null) : quarterDoneValues(rows, task.rows),
+        data: showYearProgress ? aggregateDoneValues(rows, task.rows) : quarterDoneValues(rows, task.rows),
         yAxisID: "y",
         borderColor: "#16a34a",
         backgroundColor: "rgba(22, 163, 74, 0.14)",
@@ -4503,22 +5048,10 @@
         <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести правки" title="Внести правки">✎</button>
       `;
 
-      const doneChartsMarkup = showYearProgress
-        ? `
-        <div class="grid charts quarter-charts">
-          ${BASE_QUARTERS.map(quarter => `
-            <section class="panel">
-              <h3>${quarter}: выполнено и план</h3>
-              <div class="chart-frame">
-                <canvas id="${doneChartId(quarter)}"></canvas>
-              </div>
-            </section>
-          `).join("")}
-        </div>`
-        : `
+      const doneChartsMarkup = `
         <div class="grid charts">
           <section class="panel">
-            <h3>Выполнено и план по неделям</h3>
+            <h3>${showYearProgress ? "Выполнено и план по выбранному периоду" : "Выполнено и план по неделям"}</h3>
             <div class="chart-frame">
               <canvas id="taskDoneChart"></canvas>
             </div>
@@ -4529,8 +5062,8 @@
         <div class="grid cards">
           ${metric("Статус плана", status.label, status.detail, `status-${status.key}`, editAction)}
           ${metric(showYearProgress ? "Выполнено" : "Выполнено за квартал", formatQuantity(summary.displayDone))}
-          ${showYearProgress ? metric("Годовой план", formatQuantity(summary.yearPlan)) : metric("Квартальный план", formatQuantity(summary.quarterPlan))}
-          ${showYearProgress ? metric("Годовой прогресс", formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
+          ${showYearProgress ? metric(aggregatePlanLabel(), formatQuantity(summary.yearPlan)) : metric("Квартальный план", formatQuantity(summary.quarterPlan))}
+          ${showYearProgress ? metric(aggregateProgressLabel(), formatPercent(summary.yearProgress)) : metric(quarterProgressLabel(), formatPercent(summary.quarterProgress))}
         </div>
 
         <div class="grid charts">
@@ -4568,28 +5101,34 @@
         datasets: progressDatasets
       }, false, false, rows.map(chartDateLabel));
 
-      if (showYearProgress) {
-        rowsByBaseQuarter(rows).forEach(({ quarter, rows: quarterRows }) => {
-          makeBarChart(doneChartId(quarter), {
-            labels: quarterRows.map(row => String(row.week)),
-            datasets: donePlanDatasets(quarterRows, true, task.rows)
-          }, false, false, true, quarterRows.map(chartDateLabel));
-        });
-      } else {
-        makeBarChart("taskDoneChart", {
-          labels: rows.map(row => String(row.week)),
-            datasets: donePlanDatasets(rows, false, task.rows)
-        }, false, false, true, rows.map(chartDateLabel));
-      }
+      makeBarChart("taskDoneChart", {
+        labels: rows.map(row => String(row.week)),
+        datasets: donePlanDatasets(rows, showYearProgress, task.rows)
+      }, false, false, true, rows.map(chartDateLabel));
     }
 
     function stageRowState(row) {
-      if (stageRowNeedsReview(row)) return { key: "review", label: "На пересмотре" };
       const done = row.hasDone ? cleanNumber(row.done) : 0;
+      if (done > 1) return { key: "overdue", label: "Ошибка данных" };
       if (done >= 1) return { key: "complete", label: "Выполнено" };
-      if (done > 0) return { key: "partial", label: "Частично" };
-      if (stageRowTexts(row).length) return { key: "active", label: "В работе" };
+      if (!row.planText) return { key: "note", label: "Комментарий" };
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const start = rowDate(row.weekStart);
+      const end = rowDate(row.weekEnd);
+      if (end && end < today) return { key: "overdue", label: "Просрочено" };
+      const span = row.stageSpan || stageMergeSpan(row, "plan");
+      const spansMultipleRows = span.endRow > span.startRow;
+      if (done > 0 && spansMultipleRows) return { key: "partial", label: "Частично" };
+      if (start && end && start <= today && today <= end) return { key: "active", label: "В работе" };
+      if (done > 0) return { key: "active", label: "В работе" };
       return { key: "planned", label: "Запланировано" };
+    }
+
+    function formatStageDoneValue(value) {
+      const done = cleanNumber(value);
+      return formatPercent(done * 100);
     }
 
     function stageItem(row) {
@@ -4599,8 +5138,9 @@
         ? `${row.weekStart} — ${row.weekEnd}`
         : row.weekStart || row.weekEnd || "";
       const activity = stageRowTexts(row);
+      const invalidDone = row.hasDone && cleanNumber(row.done) > 1;
       const doneValue = row.hasDone && cleanNumber(row.done) > 0
-        ? `<div class="stage-result-value">Отметка выполнения: ${escapeHtml(formatStageQuantity(row.done))}</div>`
+        ? `<div class="stage-result-value stage-${escapeHtml(rowState.key)}${invalidDone ? " stage-invalid" : ""}">Отметка выполнения: ${escapeHtml(formatStageDoneValue(row.done))}${invalidDone ? " — проверьте значение в Excel" : ""}</div>`
         : "";
       const planMarkup = row.planText
         ? `
@@ -4613,7 +5153,7 @@
       const activityMarkup = activity.length
         ? `
           <div>
-            <span class="stage-entry-label">Ход работ</span>
+            <span class="stage-entry-label">Комментарий</span>
             ${activity.map(text => `<div class="stage-entry-text">${escapeHtml(text)}</div>`).join("")}
           </div>
         `
@@ -4639,15 +5179,19 @@
       const rows = filteredRows(task);
       const summary = summarizeStageRows(rows, task.rows);
       const status = displayStatus(summary);
+      const invalidStageMarks = summary.displayRows.filter(row => row.hasDone && cleanNumber(row.done) > 1).length;
       const missingText = task.missing.length
         ? `Не найдены колонки: ${task.missing.join(", ")}.`
+        : "";
+      const invalidText = invalidStageMarks
+        ? `Обнаружены отметки выполнения выше 100%: ${invalidStageMarks}. Проверьте исходный Excel.`
         : "";
       const editAction = !task.columnMap?.done ? "" : `
         <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести отметку выполнения" title="Внести отметку выполнения">✎</button>
       `;
 
       pageTitle.textContent = task.name;
-      pageSubtitle.textContent = [missingText, "Этапная дорожная карта.", activePeriodDescription()].filter(Boolean).join(" ");
+      pageSubtitle.textContent = [missingText, invalidText, "Этапная дорожная карта.", activePeriodDescription()].filter(Boolean).join(" ");
       content.innerHTML = `
         <div class="grid cards">
           ${metric("Статус этапов", status.label, status.detail, `status-${status.key}`, editAction)}
@@ -4659,15 +5203,15 @@
         <section class="panel stage-panel">
           <div class="stage-panel-header">
             <div>
-              <h3>План и ход работ</h3>
-              <p>Текстовые этапы и отметки выполнения по неделям.</p>
+              <h3>План, выполнение и комментарии</h3>
+              <p>Этапы, числовые отметки выполнения и справочные комментарии по неделям.</p>
             </div>
             <span class="badge">${escapeHtml(activeQuarterBadge())}</span>
           </div>
           <div class="stage-list">
             ${summary.displayRows.length
               ? summary.displayRows.map(stageItem).join("")
-              : `<div class="stage-empty">В выбранном периоде нет этапов или отметок о ходе работ.</div>`}
+              : `<div class="stage-empty">В выбранном периоде нет этапов, выполнения или комментариев.</div>`}
           </div>
         </section>
 
@@ -4680,7 +5224,7 @@
             </span>
           </summary>
           <div class="sheet-data-body">
-            ${summary.displayRows.length ? stageTable(summary.displayRows) : `<p>Нет строк для выбранного периода.</p>`}
+            ${rows.length ? stageTable(rows) : `<p>Нет строк для выбранного периода.</p>`}
           </div>
         </details>
       `;
@@ -4749,22 +5293,39 @@
       });
     }
 
+    function setupTaskTitleMarquees() {
+      const titles = [...content.querySelectorAll(".task-card-title")];
+      const updateTitle = title => {
+        const text = title.querySelector("strong");
+        if (!text) return;
+        title.classList.remove("is-overflowing");
+        title.style.removeProperty("--title-marquee-distance");
+        title.style.removeProperty("--title-marquee-duration");
+        const overflow = Math.ceil(text.scrollWidth - title.clientWidth);
+        if (overflow <= 1) return;
+        title.classList.add("is-overflowing");
+        title.style.setProperty("--title-marquee-distance", `${overflow}px`);
+        title.style.setProperty("--title-marquee-duration", `${Math.max(4, overflow / 28 + 2).toFixed(1)}s`);
+      };
+
+      requestAnimationFrame(() => titles.forEach(updateTitle));
+      titles.forEach(title => title.addEventListener("pointerenter", () => updateTitle(title)));
+    }
+
     function taskCard(task, summary) {
       if (isStageTask(task)) return stageTaskCard(task, summary);
 
-      const showYearProgress = state.quarter === "all";
+      const showYearProgress = isAggregatePeriod();
       const status = displayStatus(summary);
       const progressValue = showYearProgress ? summary.yearProgress : summary.quarterProgress;
       const progress = summary.completedEarlier ? 100 : clamp(progressValue, 0, 100);
-      const progressLabel = showYearProgress ? "Годовой прогресс" : quarterProgressLabel();
+      const progressLabel = showYearProgress ? aggregateProgressLabel() : quarterProgressLabel();
       const progressText = summary.completedEarlier
         ? `Завершена в ${summary.completionQuarter || "предыдущем периоде"}`
         : `${progressLabel}: ${formatPercent(progressValue)}`;
       const progressAriaLabel = summary.completedEarlier ? "Задача завершена ранее" : progressLabel;
       const completionBadge = summary.isComplete ? `<span class="badge complete">${escapeHtml(status.label)}</span>` : "";
-      const completionMarkup = completionBadge
-        ? `<div class="task-card-completion">${completionBadge}</div>`
-        : "";
+      const completionMarkup = `<div class="task-card-completion">${completionBadge}</div>`;
       const statusBadge = `<span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}" aria-label="${escapeHtml(status.label)}"></span>`;
       const miniMetrics = summary.completedEarlier
         ? `
@@ -4774,7 +5335,7 @@
         : showYearProgress
         ? `
             <span>Выполнено<b>${formatQuantity(summary.done)}</b></span>
-            <span>Год. план<b>${formatQuantity(summary.yearPlan)}</b></span>
+            <span>${escapeHtml(aggregatePlanLabel())}<b>${formatQuantity(summary.yearPlan)}</b></span>
             <span>Осталось<b>${formatQuantity(summary.remaining)}</b></span>
           `
         : `
@@ -4794,7 +5355,7 @@
           <div class="task-card-inner">
             <div class="task-card-face task-card-front">
               <header>
-                <strong>${escapeHtml(task.name)}</strong>
+                <div class="task-card-title" title="${escapeHtml(task.name)}"><strong>${escapeHtml(task.name)}</strong></div>
                 ${statusBadge}
               </header>
               ${completionMarkup}
@@ -4826,7 +5387,7 @@
       const hasDescription = Boolean(task.description);
       const ownerMarkup = `<p class="task-owner${task.owner ? "" : " missing"}">Ответственный: <b>${escapeHtml(task.owner || "не указан")}</b></p>`;
       const completionBadge = summary.isComplete
-        ? `<div class="task-card-completion"><span class="badge complete">${escapeHtml(status.label)}</span></div>`
+        ? `<span class="badge complete">${escapeHtml(status.label)}</span>`
         : "";
       const statusBadge = `<span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}" aria-label="${escapeHtml(status.label)}"></span>`;
 
@@ -4838,10 +5399,10 @@
           <div class="task-card-inner">
             <div class="task-card-face task-card-front">
               <header>
-                <strong>${escapeHtml(task.name)}</strong>
+                <div class="task-card-title" title="${escapeHtml(task.name)}"><strong>${escapeHtml(task.name)}</strong></div>
                 ${statusBadge}
               </header>
-              ${completionBadge}
+              <div class="task-card-completion">${completionBadge}</div>
               <div class="task-card-meta">${ownerMarkup}</div>
               <p>Прогресс этапов: ${escapeHtml(formatPercent(summary.quarterProgress))}</p>
               <div class="progress" aria-label="Прогресс этапов">
@@ -4877,26 +5438,35 @@
                 <th>Начало недели</th>
                 <th>Конец недели</th>
                 <th>План</th>
-                <th>Ход работ</th>
                 <th>Выполнено</th>
+                <th>Комментарий</th>
               </tr>
             </thead>
             <tbody>
               ${rows.map(row => `
                 <tr>
-                  <td>${escapeHtml(row.quarter)}</td>
+                  ${stageTableCell(row, "quarter", escapeHtml(row.quarter))}
                   <td>${escapeHtml(row.week)}</td>
                   <td>${escapeHtml(row.weekStart)}</td>
                   <td>${escapeHtml(row.weekEnd)}</td>
-                  <td class="text-cell">${escapeHtml(row.planText || "")}</td>
-                  <td class="text-cell">${escapeHtml(stageRowTexts(row).join(" · "))}</td>
-                  <td>${row.hasDone && cleanNumber(row.done) > 0 ? escapeHtml(formatStageQuantity(row.done)) : ""}</td>
+                  ${stageTableCell(row, "plan", escapeHtml(row.planText || ""), "text-cell")}
+                  ${stageTableCell(row, "done", row.hasDone ? escapeHtml(row.doneDisplay || formatNumber(row.done)) : escapeHtml(row.doneText || ""), row.doneText ? "text-cell" : "")}
+                  ${stageTableCell(row, "comment", escapeHtml(row.comment || ""), "text-cell")}
                 </tr>
               `).join("")}
             </tbody>
           </table>
         </div>
       `;
+    }
+
+    function stageTableCell(row, field, content, className = "") {
+      const span = stageMergeSpan(row, field);
+      if (row.sourceRow !== span.startRow) return "";
+      const rowSpan = Math.max(span.endRow - span.startRow + 1, 1);
+      const classAttribute = className ? ` class="${escapeHtml(className)}"` : "";
+      const rowSpanAttribute = rowSpan > 1 ? ` rowspan="${rowSpan}"` : "";
+      return `<td${classAttribute}${rowSpanAttribute}>${content}</td>`;
     }
 
     function table(rows) {
@@ -4955,15 +5525,33 @@
       }));
     }
 
+    function aggregatePlanValues(rows, allRows = rows) {
+      const baseline = isYearPeriod()
+        ? cumulativeBaseline(rows, allRows, "yearPlan", row => row.hasNumericYearPlan)
+        : 0;
+      return rows.map(row => row.hasNumericYearPlan
+        ? Math.max(cleanNumber(row.yearPlan) - baseline, 0)
+        : null);
+    }
+
+    function aggregateDoneValues(rows, allRows = rows) {
+      const baseline = isYearPeriod()
+        ? cumulativeBaseline(rows, allRows, "done", row => row.hasDone)
+        : 0;
+      return rows.map(row => row.hasDone
+        ? Math.max(cleanNumber(row.done) - baseline, 0)
+        : null);
+    }
+
     function donePlanDatasets(rows, includeYearPlan = false, allRows = rows) {
       const quarterPlanValues = rows.map(rowQuarterPlanValue);
-      const yearPlanValues = includeYearPlan ? rows.map(rowYearPlanValue) : [];
-      const doneValues = includeYearPlan || state.quarter !== "all"
-        ? quarterDoneValues(rows, allRows)
-        : rows.map(row => row.hasDone ? row.done : null);
+      const yearPlanValues = includeYearPlan ? aggregatePlanValues(rows, allRows) : [];
+      const doneValues = includeYearPlan
+        ? aggregateDoneValues(rows, allRows)
+        : quarterDoneValues(rows, allRows);
       const datasets = [];
 
-      if (hasPlottableValues(quarterPlanValues)) {
+      if (!includeYearPlan && hasPlottableValues(quarterPlanValues)) {
         datasets.push({
           label: "Квартальный план",
           data: quarterPlanValues,
@@ -4973,14 +5561,14 @@
 
       if (includeYearPlan && hasPlottableValues(yearPlanValues)) {
         datasets.push({
-          label: "Годовой план",
+          label: aggregatePlanLabel(),
           data: yearPlanValues,
-          backgroundColor: "#d97706"
+          backgroundColor: "#2563eb"
         });
       }
 
       datasets.push({
-        label: includeYearPlan || state.quarter !== "all" ? "Выполнено за квартал" : "Выполнено",
+        label: includeYearPlan ? "Выполнено" : "Выполнено за квартал",
         data: doneValues,
         backgroundColor: "#16a34a"
       });
