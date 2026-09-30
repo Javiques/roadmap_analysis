@@ -1847,6 +1847,7 @@
               <li><strong>Откройте нужную карту.</strong> Используйте список «Дорожная карта» и поиск в левой панели.</li>
               <li><strong>Выберите период.</strong> Справа сверху доступны все периоды, отдельный год или квартал. Если в файле только один год, будет показан вариант «Все кварталы».</li>
               <li><strong>Внесите результат.</strong> Внутри карты нажмите карандаш в блоке статуса. Для количественной карты выберите неделю, для этапной — этап; затем укажите выполнение и при необходимости комментарий.</li>
+              <li><strong>Создайте новую карту.</strong> В окне «Новая дорожная карта» выберите шаблон «Количественная» или «Этапная» — инструмент сам использует подходящий исходный лист и его объединения.</li>
               <li><strong>Сохраните изменения.</strong> Откройте шестерёнку и нажмите «Скачать Excel». Исходный файл не перезаписывается — создаётся обновлённая копия.</li>
             </ol>
           </section>
@@ -1867,7 +1868,7 @@
               <li>В редакторе вводится процент от <strong>0 до 100</strong>: 100% означает полное выполнение, 50% — половину этапа.</li>
               <li>Объединённый на несколько недель блок считается одним этапом; отметка сохраняется в верхнюю ячейку соответствующего объединённого диапазона Excel.</li>
               <li>Прошедший этап с результатом меньше 100% считается просроченным.</li>
-              <li>Комментарий отображается для справки и не меняет статус этапа.</li>
+              <li>Комментарий не показывается в основной ленте этапов: он доступен только в нижнем блоке «Данные этапной карты» и не меняет статус.</li>
               <li>Значение выше 100% считается ошибкой исходных данных и показывается красным предупреждением.</li>
             </ul>
           </section>
@@ -1912,11 +1913,11 @@
               <input id="roadmapOwner" name="owner" placeholder="Фамилия И. О.">
             </div>
             <div id="roadmapTemplateField" class="form-field full" hidden>
-              <label for="roadmapTemplate">Лист-образец формул</label>
+              <label for="roadmapTemplate">Шаблон дорожной карты</label>
               <select id="roadmapTemplate" name="template"></select>
-              <div class="form-help">Доступны две основные ДК с проверенными формулами. Новый лист скопирует их структуру и оформление.</div>
+              <div class="form-help">«Количественная» и «Этапная» используют проверенную структуру соответствующего листа исходной книги.</div>
             </div>
-            <div class="form-field">
+            <div id="roadmapTypeField" class="form-field">
               <label for="roadmapType">Тип карты</label>
               <select id="roadmapType" name="type">
                 <option value="quantitative">Количественная</option>
@@ -2213,6 +2214,8 @@
     const roadmapForm = document.getElementById("roadmapForm");
     const roadmapTemplateField = document.getElementById("roadmapTemplateField");
     const roadmapTemplate = document.getElementById("roadmapTemplate");
+    const roadmapTypeField = document.getElementById("roadmapTypeField");
+    const roadmapType = document.getElementById("roadmapType");
     const closeRoadmapModal = document.getElementById("closeRoadmapModal");
     const cancelRoadmapButton = document.getElementById("cancelRoadmapButton");
     const progressModal = document.getElementById("progressModal");
@@ -2305,6 +2308,14 @@
     exportWorkbookButton.addEventListener("click", exportWorkbook);
     closeRoadmapModal.addEventListener("click", closeRoadmapModalWindow);
     cancelRoadmapButton.addEventListener("click", closeRoadmapModalWindow);
+    roadmapTemplate.addEventListener("change", () => {
+      const option = roadmapTemplate.selectedOptions[0];
+      if (option?.dataset.type) roadmapType.value = option.dataset.type;
+    });
+    roadmapType.addEventListener("change", () => {
+      const option = [...roadmapTemplate.options].find(item => item.dataset.type === roadmapType.value);
+      if (option) roadmapTemplate.value = option.value;
+    });
     roadmapForm.addEventListener("submit", handleRoadmapSubmit);
     closeProgressModal.addEventListener("click", closeProgressModalWindow);
     cancelProgressButton.addEventListener("click", closeProgressModalWindow);
@@ -3117,15 +3128,24 @@
     function openRoadmapModal() {
       roadmapForm.reset();
       document.getElementById("roadmapYear").value = new Date().getFullYear();
-      // Пока формулы проверены только в первых двух исходных ДК. В дальнейшем
-      // сюда можно добавить отдельные образцы для других типов дорожных карт.
-      const templates = state.tasks.filter(task => !task.created && task.name).slice(0, 2);
-      const activeTemplate = templates.find(task => task.id === state.activeTab)?.name || templates[0]?.name || "";
+      const templateTypes = [
+        { type: "quantitative", label: "Количественная" },
+        { type: "stage", label: "Этапная" }
+      ];
+      const templates = templateTypes.map(template => ({
+        ...template,
+        task: state.tasks.find(task => !task.created && task.name && task.type === template.type)
+      })).filter(template => template.task);
+      const activeTask = state.tasks.find(task => task.id === state.activeTab);
+      const activeType = activeTask?.type || templates[0]?.type || "quantitative";
+      const activeTemplate = templates.find(template => template.type === activeType) || templates[0];
       roadmapTemplateField.hidden = templates.length === 0;
-      roadmapTemplate.innerHTML = templates.map(task => {
-        const selected = task.name === activeTemplate ? " selected" : "";
-        return `<option value="${escapeHtml(task.name)}"${selected}>${escapeHtml(task.name)}</option>`;
+      roadmapTypeField.hidden = templates.length === templateTypes.length;
+      roadmapTemplate.innerHTML = templates.map(template => {
+        const selected = template.task.name === activeTemplate?.task.name ? " selected" : "";
+        return `<option value="${escapeHtml(template.task.name)}" data-type="${template.type}"${selected}>${template.label}</option>`;
       }).join("");
+      roadmapType.value = activeTemplate?.type || activeType;
       roadmapModal.hidden = false;
       document.getElementById("roadmapName").focus();
     }
@@ -3240,10 +3260,13 @@
       doneRow.doneText = "";
       doneRow.doneEdited = true;
       doneRow.edited = true;
+      const editGroup = `${task.id}:${selectedRow.sourceRow}`;
+      doneRow.editGroup = editGroup;
       if (commentRow) {
         commentRow.comment = progressComment.value.trim();
         commentRow.commentEdited = true;
         commentRow.edited = true;
+        commentRow.editGroup = editGroup;
       }
       closeProgressModalWindow();
       updateExportButton();
@@ -3255,12 +3278,16 @@
       hideError();
 
       const formData = new FormData(roadmapForm);
+      const selectedTemplate = roadmapTemplateField.hidden ? null : roadmapTemplate.selectedOptions[0];
+      const selectedType = selectedTemplate?.dataset.type || (formData.get("type") === "stage" ? "stage" : "quantitative");
       const draft = {
         name: uniqueSheetName(formData.get("name")),
         owner: String(formData.get("owner") || "").trim(),
         description: String(formData.get("description") || "").trim(),
-        templateSheetName: roadmapTemplateField.hidden ? "" : String(formData.get("template") || "").trim(),
-        type: formData.get("type") === "stage" ? "stage" : "quantitative",
+        templateSheetName: selectedTemplate && selectedTemplate.dataset.type === selectedType
+          ? String(formData.get("template") || "").trim()
+          : "",
+        type: selectedType,
         year: clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035),
         plans: {
           Q1: Math.max(cleanNumber(formData.get("q1")), 0),
@@ -3324,7 +3351,8 @@
       const behind = items
         .filter(item => item.status.key === "behind")
         .sort((left, right) => cleanNumber(left.summary.planStatus.delta) - cleanNumber(right.summary.planStatus.delta));
-      const noData = items.filter(item => item.status.key === "no-data");
+      const planned = items.filter(item => item.status.key === "no-data" && item.status.label === "Запланировано");
+      const noData = items.filter(item => item.status.key === "no-data" && item.status.label !== "Запланировано");
       const attentionItems = [...behind, ...noData].slice(0, attentionLimit);
       const now = new Intl.DateTimeFormat("ru-RU", {
         day: "2-digit",
@@ -3349,7 +3377,8 @@
         `Выполняются по плану: ${counts["on-track"] || 0}.`,
         `Опережают план: ${counts.ahead || 0}.`,
         `Отстают от плана: ${counts.behind || 0}.`,
-        `Недостаточно данных для оценки: ${counts["no-data"] || 0}.`,
+        `Запланированы на будущий период: ${planned.length}.`,
+        `Недостаточно данных для оценки: ${noData.length}.`,
         `Средний указанный прогресс: ${formatPercent(averageProgress)}.`,
         "",
         "РИСКИ И СЛЕДУЮЩИЕ ДЕЙСТВИЯ"
@@ -3676,6 +3705,7 @@
 
     function createRoadmapTask(draft) {
       const rows = generateRoadmapRows(draft);
+      const templateTask = state.tasks.find(task => task.name === draft.templateSheetName);
       return {
         id: slugify(draft.name),
         name: draft.name,
@@ -3685,7 +3715,8 @@
         type: draft.type,
         missing: [],
         created: true,
-        columnMap: { done: "Выполнено", comment: "Комментарий" },
+        columnMap: templateTask?.columnMap || { done: "Выполнено", comment: "Комментарий" },
+        columnIndexes: templateTask?.columnIndexes,
         draft
       };
     }
@@ -3699,7 +3730,7 @@
       }, {});
       let stageIndex = 0;
 
-      return weeks.map((week, index) => {
+      const generatedRows = weeks.map((week, index) => {
         const isLastQuarterWeek = index === weeks.length - 1 || weeks[index + 1].quarter !== week.quarter;
         const quarterPlan = draft.type === "quantitative"
           ? plannedValueForWeek(draft.plans[week.quarter], week.weekInQuarter, quarterCounts[week.quarter], isLastQuarterWeek)
@@ -3734,6 +3765,31 @@
           hasDone: false
         };
       });
+
+      if (draft.type !== "stage") return generatedRows;
+      const templateTask = state.tasks.find(task => task.name === draft.templateSheetName && task.type === "stage");
+      if (!templateTask) return generatedRows;
+
+      const templateRowsBySource = new Map(templateTask.rows.map(row => [row.sourceRow, row]));
+      generatedRows.forEach(row => {
+        const templateRow = templateRowsBySource.get(row.sourceRow);
+        row.mergeSpans = templateRow?.mergeSpans;
+        row.planText = "";
+      });
+      const plannedTemplateEntries = stageRowsForDisplay(templateTask.rows).filter(row => row.planText);
+      const occupiedRows = new Set(plannedTemplateEntries.flatMap(entry => {
+        const span = entry.stageSpan || stageMergeSpan(entry, "plan");
+        return Array.from({ length: span.endRow - span.startRow + 1 }, (_, index) => span.startRow + index);
+      }));
+      const fallbackSlots = generatedRows
+        .filter(row => !occupiedRows.has(row.sourceRow))
+        .map(row => row.sourceRow);
+      const stageSlots = [...plannedTemplateEntries.map(entry => entry.sourceRow), ...fallbackSlots];
+      draft.stages.forEach((stage, index) => {
+        const targetRow = generatedRows.find(row => row.sourceRow === stageSlots[index]);
+        if (targetRow) targetRow.planText = stage;
+      });
+      return generatedRows;
     }
 
     function generateWeeks(year) {
@@ -3769,9 +3825,11 @@
     function updateExportButton() {
       exportWorkbookButton.disabled = !state.tasks.length;
       emailReportButton.disabled = !state.tasks.length;
-      const updatedRows = state.tasks.reduce((count, task) => {
-        return count + task.rows.filter(row => row.edited).length;
-      }, 0);
+      const editGroups = new Set();
+      state.tasks.forEach(task => task.rows.filter(row => row.edited).forEach(row => {
+        editGroups.add(row.editGroup || `${task.id}:${row.sourceRow}`);
+      }));
+      const updatedRows = editGroups.size;
       const changes = [
         state.createdTasks.length ? `новых: ${state.createdTasks.length}` : "",
         updatedRows ? `правок: ${updatedRows}` : ""
@@ -3978,16 +4036,30 @@
       xml = setTemplateCellValue(xml, "A1", task.description || task.name, true);
       xml = setTemplateCellValue(xml, "A2", task.owner || "", true);
       const totalPlan = BASE_QUARTERS.reduce((sum, quarter) => sum + cleanNumber(task.draft.plans[quarter]), 0);
-      const helperPlans = {
-        M6: task.draft.plans.Q1,
-        M7: task.draft.plans.Q2,
-        M8: task.draft.plans.Q3,
-        M9: task.draft.plans.Q4,
-        M10: totalPlan
+      if (task.type === "quantitative") {
+        const helperPlans = {
+          M6: task.draft.plans.Q1,
+          M7: task.draft.plans.Q2,
+          M8: task.draft.plans.Q3,
+          M9: task.draft.plans.Q4,
+          M10: totalPlan
+        };
+        Object.entries(helperPlans).forEach(([address, value]) => {
+          xml = setTemplateCellValue(xml, address, value, false);
+        });
+      }
+      const templateTask = state.tasks.find(item => item.name === task.draft.templateSheetName);
+      const templateIndexes = templateTask?.columnIndexes || {};
+      const addressFor = (field, rowNumber, fallbackIndex) => {
+        const columnIndex = Number.isInteger(templateIndexes[field]) && templateIndexes[field] >= 0
+          ? templateIndexes[field]
+          : fallbackIndex;
+        return columnIndex >= 0 ? XLSX.utils.encode_cell({ r: rowNumber - 1, c: columnIndex }) : "";
       };
-      Object.entries(helperPlans).forEach(([address, value]) => {
-        xml = setTemplateCellValue(xml, address, value, false);
-      });
+      const setField = (field, rowNumber, fallbackIndex, value, isText) => {
+        const address = addressFor(field, rowNumber, fallbackIndex);
+        if (address) xml = setTemplateCellValue(xml, address, value, isText);
+      };
       let lastQuarter = "";
 
       task.rows.forEach((row, index) => {
@@ -3995,14 +4067,16 @@
         const quarter = row.quarter === lastQuarter ? "" : row.quarter;
         lastQuarter = row.quarter;
         const quarterPlan = row.planText || row.quarterPlan || "";
-        xml = setTemplateCellValue(xml, `A${rowNumber}`, quarter, true);
-        xml = setTemplateCellValue(xml, `B${rowNumber}`, row.week, false);
-        xml = setTemplateCellValue(xml, `C${rowNumber}`, excelDateSerial(row.weekStart), false);
-        xml = setTemplateCellValue(xml, `D${rowNumber}`, excelDateSerial(row.weekEnd), false);
-        xml = setTemplateCellValue(xml, `E${rowNumber}`, quarterPlan, !isNumericLike(quarterPlan));
-        xml = setTemplateCellValue(xml, `F${rowNumber}`, row.hasNumericYearPlan ? row.yearPlan : "", false);
-        xml = setTemplateCellValue(xml, `I${rowNumber}`, row.hasDone ? row.done : 0, false);
-        xml = setTemplateCellValue(xml, `J${rowNumber}`, row.comment || "", true);
+        setField("quarter", rowNumber, 0, quarter, true);
+        setField("week", rowNumber, 1, row.week, false);
+        setField("weekStart", rowNumber, 2, excelDateSerial(row.weekStart), false);
+        setField("weekEnd", rowNumber, 3, excelDateSerial(row.weekEnd), false);
+        setField("quarterPlan", rowNumber, 4, quarterPlan, !isNumericLike(quarterPlan));
+        if (task.type === "quantitative") {
+          setField("yearPlan", rowNumber, 5, row.hasNumericYearPlan ? row.yearPlan : "", false);
+        }
+        setField("done", rowNumber, task.type === "stage" ? 6 : 8, row.hasDone ? row.done : task.type === "stage" ? "" : 0, false);
+        setField("comment", rowNumber, task.type === "stage" ? 7 : 9, row.comment || "", true);
       });
       return xml;
     }
@@ -4354,7 +4428,6 @@
 
     function stageRowsForDisplay(rows) {
       return buildStageEntries(rows).filter(row => row.planText
-        || stageRowTexts(row).length
         || (row.hasDone && cleanNumber(row.done) > 0));
     }
 
@@ -4554,7 +4627,7 @@
           : quarterDone;
       const selectedPlan = isAggregatePeriod() ? yearPlan : quarterPlan;
       const derivedProgress = selectedPlan > 0 ? Math.max((selectedDone / selectedPlan) * 100, 0) : 0;
-      const quarterProgress = isQuarterPeriod() ? derivedProgress : derivedProgress;
+      const quarterProgress = derivedProgress;
       let yearProgress = isAggregatePeriod() ? derivedProgress : quarterProgress;
       const completionRowsWithDone = completionRows.filter(row => row.hasDone);
       const completionActiveRows = completionRowsWithDone.length ? completionRowsWithDone : completionRows;
@@ -5137,7 +5210,6 @@
       const dates = row.weekStart && row.weekEnd
         ? `${row.weekStart} — ${row.weekEnd}`
         : row.weekStart || row.weekEnd || "";
-      const activity = stageRowTexts(row);
       const invalidDone = row.hasDone && cleanNumber(row.done) > 1;
       const doneValue = row.hasDone && cleanNumber(row.done) > 0
         ? `<div class="stage-result-value stage-${escapeHtml(rowState.key)}${invalidDone ? " stage-invalid" : ""}">Отметка выполнения: ${escapeHtml(formatStageDoneValue(row.done))}${invalidDone ? " — проверьте значение в Excel" : ""}</div>`
@@ -5150,15 +5222,6 @@
           </div>
         `
         : "";
-      const activityMarkup = activity.length
-        ? `
-          <div>
-            <span class="stage-entry-label">Комментарий</span>
-            ${activity.map(text => `<div class="stage-entry-text">${escapeHtml(text)}</div>`).join("")}
-          </div>
-        `
-        : "";
-
       return `
         <article class="stage-item stage-${rowState.key}">
           <div class="stage-meta">
@@ -5167,7 +5230,6 @@
           </div>
           <div class="stage-content">
             ${planMarkup}
-            ${activityMarkup}
             ${doneValue}
           </div>
           <span class="stage-badge stage-${rowState.key}">${escapeHtml(rowState.label)}</span>
@@ -5203,15 +5265,15 @@
         <section class="panel stage-panel">
           <div class="stage-panel-header">
             <div>
-              <h3>План, выполнение и комментарии</h3>
-              <p>Этапы, числовые отметки выполнения и справочные комментарии по неделям.</p>
+              <h3>План и выполнение</h3>
+              <p>Этапы и числовые отметки выполнения по неделям.</p>
             </div>
             <span class="badge">${escapeHtml(activeQuarterBadge())}</span>
           </div>
           <div class="stage-list">
             ${summary.displayRows.length
               ? summary.displayRows.map(stageItem).join("")
-              : `<div class="stage-empty">В выбранном периоде нет этапов, выполнения или комментариев.</div>`}
+              : `<div class="stage-empty">В выбранном периоде нет этапов или отметок выполнения.</div>`}
           </div>
         </section>
 
@@ -5246,7 +5308,7 @@
       `;
 
       pageTitle.textContent = task.name;
-      pageSubtitle.textContent = [missingText, `Задача завершена до начала ${state.quarter}.`].filter(Boolean).join(" ");
+      pageSubtitle.textContent = [missingText, `Задача завершена до начала периода «${periodLabel()}».`].filter(Boolean).join(" ");
       content.innerHTML = `
         <div class="grid cards">
           ${metric("Статус", status.label, status.detail, "status-complete", editAction)}
@@ -5257,7 +5319,7 @@
 
         <section class="panel completed-period-panel">
           <h3>В выбранном периоде задача уже завершена</h3>
-          <p>Данные ${state.quarter} не отображаются, поскольку задача была закрыта в ${escapeHtml(completionPeriod)}. Для просмотра результата выберите период завершения или «Все кварталы».</p>
+          <p>Данные периода «${escapeHtml(periodLabel())}» не отображаются, поскольку задача была закрыта в ${escapeHtml(completionPeriod)}. Для просмотра результата выберите период завершения или «${escapeHtml(periodLabel("all"))}».</p>
         </section>
       `;
 
