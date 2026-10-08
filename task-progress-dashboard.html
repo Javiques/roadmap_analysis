@@ -1712,7 +1712,9 @@
         grid-row: 3;
       }
     }
-  </style>
+    .builder-fields-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.builder-fields{display:grid;gap:8px}.builder-field-row{display:grid;grid-template-columns:minmax(130px,1.5fr) minmax(110px,1fr) minmax(110px,1fr) auto;gap:8px;align-items:center}.builder-field-row input,.builder-field-row select{min-width:0}.builder-remove-field{padding:6px 10px}.custom-data-table-wrap{overflow:auto;max-height:560px}.custom-data-table{width:100%;border-collapse:collapse;min-width:640px}.custom-data-table th,.custom-data-table td{padding:8px;border-bottom:1px solid var(--border,#e5e7eb);text-align:left;vertical-align:middle}.custom-data-table th{position:sticky;top:0;background:#f8fafc;z-index:1}.custom-data-table input,.custom-data-table select{width:100%;min-width:90px}.custom-period{white-space:nowrap;font-weight:600}.custom-legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.custom-legend span{padding:4px 9px;border-radius:999px;background:#f1f5f9;font-size:12px}@media(max-width:700px){.builder-field-row{grid-template-columns:1fr 1fr}.builder-field-row input:first-child{grid-column:1/-1}}
+    .stage-draft-header{display:flex;justify-content:space-between;align-items:center;gap:16px}.stage-draft-list{display:grid;gap:8px;margin:12px 0}.stage-draft-card{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid #dfe5ee;border-radius:12px;background:#fff}.stage-draft-number{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#edf2ff;color:#3157a4;font-weight:700}.stage-draft-main{display:grid;gap:3px;min-width:0}.stage-draft-main span{color:#667085;font-size:12px}.stage-draft-empty{padding:14px;border:1px dashed #cbd5e1;border-radius:12px;color:#667085}.stage-shift-setting{display:flex;align-items:center;gap:8px;margin-right:auto}.flex-stage-calendar{display:grid;gap:16px}.flex-stage-quarter{border:1px solid #e1e7ef;border-radius:14px;overflow:hidden}.flex-stage-quarter h4{margin:0;padding:10px 14px;background:#f5f7fb}.flex-stage-weeks{display:grid;grid-template-columns:repeat(7,minmax(105px,1fr));gap:6px;padding:8px;overflow:auto}.stage-week-cell{min-height:92px;padding:7px;border:1px dashed #d2d9e4;border-radius:9px;background:#fbfcfe}.stage-week-cell.is-drop-target{background:#edf4ff;border-color:#4c7ee8}.stage-week-label{font-size:11px;color:#667085;margin-bottom:6px}.stage-week-task{padding:6px 7px;margin:4px 0;border-radius:7px;background:#edf2ff;color:#203960;font-size:12px;cursor:grab;user-select:none}.stage-week-task:active{cursor:grabbing}.stage-week-task small{display:block;color:#667085;margin-top:3px}.stage-calendar-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.stage-calendar-tools label{display:flex;align-items:center;gap:8px}@media(max-width:900px){.flex-stage-weeks{grid-template-columns:repeat(4,minmax(120px,1fr))}}@media(max-width:600px){.stage-draft-card{grid-template-columns:32px 1fr}.stage-draft-card button{grid-row:2}.flex-stage-weeks{grid-template-columns:repeat(2,minmax(135px,1fr))}.stage-calendar-tools{align-items:flex-start;flex-direction:column}}
+</style>
 </head>
 <body>
   <div class="app">
@@ -1756,6 +1758,9 @@
 
         <div class="empty-sidebar-actions">
           <button id="initialNewRoadmapButton" class="sidebar-action" type="button">Новая дорожная карта</button>
+    <button id="initialBuilderButton" class="sidebar-action" type="button">Конструктор карт</button>
+    <button id="initialImportExcelMapButton" class="sidebar-action" type="button">Импортировать таблицу Excel</button>
+    <button id="initialImportCustomMapsButton" class="sidebar-action" type="button">Загрузить файл конструктора</button>
           <button id="initialBugReportButton" class="sidebar-action" type="button">Сообщить о проблеме</button>
         </div>
       </div>
@@ -1804,6 +1809,12 @@
       <span id="roadmapActionsTitle" class="sidebar-section-title">Работа с картами</span>
       <div class="tool-actions">
         <button id="newRoadmapButton" class="sidebar-action primary" type="button">Новая дорожная карта</button>
+      <button id="builderButton" class="sidebar-action" type="button">Конструктор карт</button>
+      <button id="importExcelMapButton" class="sidebar-action" type="button">Импортировать таблицу Excel</button>
+      <input id="customExcelFileInput" type="file" accept=".xlsx,.xls,.xlsm,.csv" hidden>
+      <button id="exportCustomMapsButton" class="sidebar-action" type="button">Сохранить файл конструктора</button>
+      <button id="importCustomMapsButton" class="sidebar-action" type="button">Загрузить файл конструктора</button>
+      <input id="customMapsFileInput" type="file" accept="application/json,.json" hidden>
         <button id="emailReportButton" class="sidebar-action" type="button" disabled>Отчёт для руководителя</button>
         <button id="exportWorkbookButton" class="sidebar-action" type="button" disabled>Скачать Excel</button>
       </div>
@@ -1847,9 +1858,22 @@
               <li><strong>Откройте нужную карту.</strong> Используйте список «Дорожная карта» и поиск в левой панели.</li>
               <li><strong>Выберите период.</strong> Справа сверху доступны все периоды, отдельный год или квартал. Если в файле только один год, будет показан вариант «Все кварталы».</li>
               <li><strong>Внесите результат.</strong> Внутри карты нажмите карандаш в блоке статуса. Для количественной карты выберите неделю, для этапной — этап; затем укажите выполнение и при необходимости комментарий.</li>
-              <li><strong>Создайте новую карту.</strong> В окне «Новая дорожная карта» выберите шаблон «Количественная» или «Этапная» — инструмент сам использует подходящий исходный лист и его объединения.</li>
+              <li><strong>Создайте новую карту.</strong> В окне «Новая дорожная карта» выберите количественный или этапный формат. В этапном формате каждый этап добавляется отдельно: укажите дату начала, длительность и при необходимости повторение.</li>
+              <li><strong>Создайте собственную структуру.</strong> Откройте «Конструктор карт», задайте поля, период и измеритель прогресса. Новые карты доступны рядом с Excel-картами.</li>
+              <li><strong>Подключите готовую таблицу Excel.</strong> Выберите «Импортировать таблицу Excel», укажите лист, строку заголовков и столбец периода, затем сопоставьте остальные столбцы и роли.</li>
               <li><strong>Сохраните изменения.</strong> Откройте шестерёнку и нажмите «Скачать Excel». Исходный файл не перезаписывается — создаётся обновлённая копия.</li>
             </ol>
+          </section>
+
+          <section class="help-section full">
+            <h3>Универсальные карты</h3>
+            <ul>
+              <li>В конструкторе задаются собственные поля разных типов и временная шкала по неделям, месяцам или кварталам.</li>
+              <li>Числовые поля отображаются на графике динамики. Роль «План» и «Факт» позволяет автоматически считать прогресс; либо задайте поле «Прогресс» в процентах.</li>
+              <li>Значения редактируются в таблице карты и сохраняются в этом браузере. Для переноса на другой компьютер используйте «Сохранить файл конструктора» и затем «Загрузить файл конструктора».</li>
+              <li>Готовую таблицу можно импортировать кнопкой «Импортировать таблицу Excel»: выберите лист, строку заголовков, поле периода и назначьте типы и роли столбцов.</li>
+              <li>Для переноса универсальных карт между браузерами сохраните JSON-файл и загрузите его на другом компьютере. Excel-книга исходных карт не изменяется.</li>
+            </ul>
           </section>
 
           <section class="help-section">
@@ -1865,6 +1889,10 @@
           <section class="help-section">
             <h3>Этапные карты</h3>
             <ul>
+              <li>Новые этапные карты строятся из отдельных задач. Если начинать с текущего квартала, первая дата приходится на первую неделю этого квартала.</li>
+              <li>Для каждого этапа отдельно задаются дата, длительность в днях, неделях или месяцах, частота повторения и число повторов. Порядковый номер назначается автоматически по сроку.</li>
+              <li>В календаре этапы можно перетаскивать на другую неделю. Переключатель определяет, сдвигать ли вслед за выбранным этапом все последующие; через «Управление этапами» можно добавлять, менять и удалять этапы даже после создания карты.</li>
+              <li>План сохраняется в загружаемую Excel-копию; при повторном открытии созданной таким способом книги этапы остаются редактируемыми.</li>
               <li>В редакторе вводится процент от <strong>0 до 100</strong>: 100% означает полное выполнение, 50% — половину этапа.</li>
               <li>Объединённый на несколько недель блок считается одним этапом; отметка сохраняется в верхнюю ячейку соответствующего объединённого диапазона Excel.</li>
               <li>Прошедший этап с результатом меньше 100% считается просроченным.</li>
@@ -1928,19 +1956,19 @@
               <label for="roadmapYear">Год</label>
               <input id="roadmapYear" name="year" type="number" min="2020" max="2035" value="2026" required>
             </div>
-            <div class="form-field">
+            <div class="form-field" data-quantitative-only>
               <label for="roadmapQ1">План Q1</label>
               <input id="roadmapQ1" name="q1" type="number" min="0" step="1">
             </div>
-            <div class="form-field">
+            <div class="form-field" data-quantitative-only>
               <label for="roadmapQ2">План Q2</label>
               <input id="roadmapQ2" name="q2" type="number" min="0" step="1">
             </div>
-            <div class="form-field">
+            <div class="form-field" data-quantitative-only>
               <label for="roadmapQ3">План Q3</label>
               <input id="roadmapQ3" name="q3" type="number" min="0" step="1">
             </div>
-            <div class="form-field">
+            <div class="form-field" data-quantitative-only>
               <label for="roadmapQ4">План Q4</label>
               <input id="roadmapQ4" name="q4" type="number" min="0" step="1">
             </div>
@@ -1948,10 +1976,14 @@
               <label for="roadmapDescription">Описание задачи</label>
               <textarea id="roadmapDescription" name="description" placeholder="Цель и ожидаемый результат"></textarea>
             </div>
-            <div class="form-field full">
+            <div class="form-field full" id="roadmapStageTextField" data-quantitative-only>
               <label for="roadmapStages">Этапы или комментарии по неделям</label>
               <textarea id="roadmapStages" name="stages" placeholder="Каждая строка попадет в ближайшую неделю как комментарий/этап"></textarea>
               <div class="form-help">Для количественной карты строки попадут в колонку «Комментарий». Для этапной карты - в колонку «План».</div>
+            </div>
+            <div class="form-field full" id="roadmapStageBuilderField" hidden>
+              <div class="stage-draft-header"><div><strong>Этапы плана</strong><div class="form-help">У каждого этапа свой срок, длительность и повторение. Нумерация назначается автоматически.</div></div><button id="addRoadmapStageButton" class="button primary" type="button">+ Добавить этап</button></div>
+              <div id="roadmapStageDraftList" class="stage-draft-list"></div>
             </div>
           </div>
         </div>
@@ -1959,6 +1991,68 @@
           <button id="cancelRoadmapButton" class="button" type="button">Отмена</button>
           <button class="button primary" type="submit">Создать</button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="stageItemModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="stageItemTitle">
+      <div class="modal-header"><div><h2 id="stageItemTitle">Новый этап</h2><p>Настройте срок и повторение этого этапа отдельно.</p></div><button id="closeStageItemModal" class="modal-close" type="button" aria-label="Закрыть">×</button></div>
+      <form id="stageItemForm" class="roadmap-form"><div class="modal-body"><div class="form-grid">
+        <div class="form-field full"><label for="stageItemName">Название этапа</label><input id="stageItemName" required maxlength="240" placeholder="Например, согласовать макет"></div>
+        <div class="form-field"><label for="stageItemStart">Дата начала</label><input id="stageItemStart" type="date" required></div>
+        <div class="form-field"><label for="stageItemDuration">Длительность</label><input id="stageItemDuration" type="number" min="1" max="3650" value="1" required></div>
+        <div class="form-field"><label for="stageItemDurationUnit">Единица длительности</label><select id="stageItemDurationUnit"><option value="days">Дни</option><option value="weeks" selected>Недели</option><option value="months">Месяцы</option></select></div>
+        <div class="form-field"><label for="stageItemFrequency">Повторять</label><select id="stageItemFrequency"><option value="once">Не повторять</option><option value="weekly">Каждую неделю</option><option value="biweekly">Раз в две недели</option><option value="monthly">Каждый месяц</option><option value="quarterly">Каждый квартал</option></select></div>
+        <div class="form-field" id="stageItemRepeatCountField"><label for="stageItemRepeatCount">Число повторов</label><input id="stageItemRepeatCount" type="number" min="2" max="260" value="2"></div>
+      </div></div><div class="modal-footer"><button id="cancelStageItemModal" class="button" type="button">Отмена</button><button class="button primary" type="submit">Сохранить этап</button></div></form>
+    </div>
+  </div>
+
+  <div id="stageManagerModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="stageManagerTitle">
+      <div class="modal-header"><div><h2 id="stageManagerTitle">Редактирование этапов</h2><p>Добавляйте, меняйте сроки, частоту или удаляйте этапы.</p></div><button id="closeStageManagerModal" class="modal-close" type="button" aria-label="Закрыть">×</button></div>
+      <div class="modal-body"><div id="stageManagerList" class="stage-draft-list"></div><button id="addManagedStageButton" class="button primary" type="button">+ Добавить этап</button></div>
+      <div class="modal-footer"><label class="stage-shift-setting"><input id="managerAutoShift" type="checkbox"> Автосмещать следующие этапы при переносе</label><button id="closeStageManagerFooter" class="button" type="button">Готово</button></div>
+    </div>
+  </div>
+
+  <div id="builderModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="builderTitle">
+      <div class="modal-header"><div><h2 id="builderTitle">Конструктор дорожной карты</h2><p>Опишите структуру и правила расчёта. Поля и значения можно будет менять в самой карте.</p></div><button id="closeBuilderModal" class="modal-close" type="button" aria-label="Закрыть">×</button></div>
+      <form id="builderForm" class="roadmap-form">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field"><label for="builderName">Название карты</label><input id="builderName" required maxlength="100" placeholder="Например, Запуск продукта"></div>
+            <div class="form-field"><label for="builderOwner">Ответственный</label><input id="builderOwner" maxlength="120" placeholder="Фамилия И. О."></div>
+            <div class="form-field"><label for="builderGranularity">Шаг временной шкалы</label><select id="builderGranularity"><option value="week">Неделя</option><option value="month" selected>Месяц</option><option value="quarter">Квартал</option></select></div>
+            <div class="form-field"><label for="builderYear">Год начала</label><input id="builderYear" type="number" min="2000" max="2100" required></div>
+            <div class="form-field"><label for="builderEndYear">Год окончания</label><input id="builderEndYear" type="number" min="2000" max="2100" required></div>
+            <div class="form-field full"><label for="builderDescription">Описание / цель</label><textarea id="builderDescription" placeholder="Цель и ожидаемый результат"></textarea></div>
+            <div class="form-field full"><div class="builder-fields-heading"><strong>Поля данных</strong><button id="addBuilderField" class="button" type="button">Добавить поле</button></div><div id="builderFields" class="builder-fields"></div><div class="form-help">Для прогресса назначьте числовым полям роли «План» и «Факт» или добавьте поле «Прогресс, %». Другие числовые поля тоже попадут в график.</div></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button id="cancelBuilderModal" class="button" type="button">Отмена</button><button class="button primary" type="submit">Создать карту</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="customExcelImportModal" class="modal" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="customExcelImportTitle">
+      <div class="modal-header"><div><h2 id="customExcelImportTitle">Импорт Excel как дорожной карты</h2><p>Сопоставьте столбцы таблицы с периодом и полями карты.</p></div><button id="closeCustomExcelImport" class="modal-close" type="button" aria-label="Закрыть">×</button></div>
+      <form id="customExcelImportForm" class="roadmap-form">
+        <div class="modal-body"><div class="form-grid">
+          <div class="form-field"><label for="customExcelMapName">Название карты</label><input id="customExcelMapName" required maxlength="100"></div>
+          <div class="form-field"><label for="customExcelOwner">Ответственный</label><input id="customExcelOwner" maxlength="120"></div>
+          <div class="form-field"><label for="customExcelSheet">Лист</label><select id="customExcelSheet"></select></div>
+          <div class="form-field"><label for="customExcelHeaderRow">Строка заголовков</label><input id="customExcelHeaderRow" type="number" min="1" step="1" value="1"></div>
+          <div class="form-field"><label for="customExcelGranularity">Шаг периода</label><select id="customExcelGranularity"><option value="week">Неделя</option><option value="month" selected>Месяц</option><option value="quarter">Квартал</option></select></div>
+          <div class="form-field"><label for="customExcelPeriodColumn">Столбец периода</label><select id="customExcelPeriodColumn" required></select></div>
+          <div class="form-field"><label for="customExcelYearColumn">Столбец года, если год отдельно</label><select id="customExcelYearColumn"><option value="">Не используется</option></select></div>
+          <div class="form-field full"><label for="customExcelDescription">Описание</label><textarea id="customExcelDescription"></textarea></div>
+          <div class="form-field full"><strong>Поля данных</strong><div id="customExcelMappings" class="builder-fields"></div><div class="form-help">Снимите флажки у ненужных столбцов. Для расчёта прогресса выберите роли «План» и «Факт» либо «Прогресс, %».</div></div>
+        </div></div>
+        <div class="modal-footer"><button id="cancelCustomExcelImport" class="button" type="button">Отмена</button><button class="button primary" type="submit">Импортировать карту</button></div>
       </form>
     </div>
   </div>
@@ -2163,11 +2257,13 @@
       sourceBuffer: null,
       fileName: "",
       createdTasks: [],
+      customMaps: [],
       bugDirectoryHandle: null,
       roadmapFileHandle: null
     };
 
     const BASE_QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+    const CUSTOM_MAPS_STORAGE_KEY = "roadmap-dashboard-custom-maps-v1";
     const FILE_ACCESS_DB = "task-progress-dashboard-file-access";
     const FILE_ACCESS_STORE = "settings";
     const ROADMAP_FILE_KEY = "roadmap-file";
@@ -2216,8 +2312,45 @@
     const roadmapTemplate = document.getElementById("roadmapTemplate");
     const roadmapTypeField = document.getElementById("roadmapTypeField");
     const roadmapType = document.getElementById("roadmapType");
+    const roadmapStageBuilderField = document.getElementById("roadmapStageBuilderField");
+    const roadmapStageDraftList = document.getElementById("roadmapStageDraftList");
+    const addRoadmapStageButton = document.getElementById("addRoadmapStageButton");
+    const roadmapStageTextField = document.getElementById("roadmapStageTextField");
+    const stageItemModal = document.getElementById("stageItemModal");
+    const stageItemForm = document.getElementById("stageItemForm");
+    const stageManagerModal = document.getElementById("stageManagerModal");
+    const stageManagerList = document.getElementById("stageManagerList");
+    const managerAutoShift = document.getElementById("managerAutoShift");
+    let roadmapStageDraftItems = [];
+    let stageEditingTaskId = "";
+    let stageItemEditingId = "";
     const closeRoadmapModal = document.getElementById("closeRoadmapModal");
     const cancelRoadmapButton = document.getElementById("cancelRoadmapButton");
+    const builderButton = document.getElementById("builderButton");
+    const initialBuilderButton = document.getElementById("initialBuilderButton");
+    const initialImportExcelMapButton = document.getElementById("initialImportExcelMapButton");
+    const builderModal = document.getElementById("builderModal");
+    const builderForm = document.getElementById("builderForm");
+    const builderFields = document.getElementById("builderFields");
+    const closeBuilderModal = document.getElementById("closeBuilderModal");
+    const cancelBuilderModal = document.getElementById("cancelBuilderModal");
+    const addBuilderField = document.getElementById("addBuilderField");
+    const exportCustomMapsButton = document.getElementById("exportCustomMapsButton");
+    const importCustomMapsButton = document.getElementById("importCustomMapsButton");
+    const initialImportCustomMapsButton = document.getElementById("initialImportCustomMapsButton");
+    const customMapsFileInput = document.getElementById("customMapsFileInput");
+    const importExcelMapButton = document.getElementById("importExcelMapButton");
+    const customExcelFileInput = document.getElementById("customExcelFileInput");
+    const customExcelImportModal = document.getElementById("customExcelImportModal");
+    const customExcelImportForm = document.getElementById("customExcelImportForm");
+    const customExcelSheet = document.getElementById("customExcelSheet");
+    const customExcelHeaderRow = document.getElementById("customExcelHeaderRow");
+    const customExcelPeriodColumn = document.getElementById("customExcelPeriodColumn");
+    const customExcelYearColumn = document.getElementById("customExcelYearColumn");
+    const customExcelMappings = document.getElementById("customExcelMappings");
+    const closeCustomExcelImport = document.getElementById("closeCustomExcelImport");
+    const cancelCustomExcelImport = document.getElementById("cancelCustomExcelImport");
+    let customExcelImportWorkbook = null;
     const progressModal = document.getElementById("progressModal");
     const progressForm = document.getElementById("progressForm");
     const progressWeek = document.getElementById("progressWeek");
@@ -2288,6 +2421,10 @@
         closeTaskPicker();
         closeSettingsDrawerWindow();
         closeHelpModalWindow();
+        closeBuilderModalWindow();
+        closeCustomExcelImportWindow();
+        if (!stageItemModal.hidden) closeStageItemModalWindow();
+        else if (!stageManagerModal.hidden) closeStageManagerModalWindow();
       }
     });
     newRoadmapButton.addEventListener("click", () => {
@@ -2311,12 +2448,54 @@
     roadmapTemplate.addEventListener("change", () => {
       const option = roadmapTemplate.selectedOptions[0];
       if (option?.dataset.type) roadmapType.value = option.dataset.type;
+      updateRoadmapTypeFields();
     });
     roadmapType.addEventListener("change", () => {
       const option = [...roadmapTemplate.options].find(item => item.dataset.type === roadmapType.value);
       if (option) roadmapTemplate.value = option.value;
+      updateRoadmapTypeFields();
     });
+    addRoadmapStageButton.addEventListener("click", () => openStageItemModal());
+    roadmapStageDraftList.addEventListener("click", handleStageDraftListClick);
+    stageItemForm.addEventListener("submit", handleStageItemSubmit);
+    document.getElementById("stageItemFrequency").addEventListener("change", updateStageRepeatCountField);
+    document.getElementById("closeStageItemModal").addEventListener("click", closeStageItemModalWindow);
+    document.getElementById("cancelStageItemModal").addEventListener("click", closeStageItemModalWindow);
+    document.getElementById("closeStageManagerModal").addEventListener("click", closeStageManagerModalWindow);
+    document.getElementById("closeStageManagerFooter").addEventListener("click", closeStageManagerModalWindow);
+    document.getElementById("addManagedStageButton").addEventListener("click", () => openStageItemModal());
+    stageManagerList.addEventListener("click", handleStageManagerListClick);
     roadmapForm.addEventListener("submit", handleRoadmapSubmit);
+    builderButton.addEventListener("click", () => { closeSettingsDrawerWindow(); openBuilderModal(); });
+    initialBuilderButton.addEventListener("click", openBuilderModal);
+    importExcelMapButton.addEventListener("click", () => { closeSettingsDrawerWindow(); customExcelFileInput.click(); });
+    initialImportExcelMapButton.addEventListener("click", () => customExcelFileInput.click());
+    customExcelFileInput.addEventListener("change", handleCustomExcelFile);
+    customExcelSheet.addEventListener("change", renderCustomExcelMappings);
+    customExcelHeaderRow.addEventListener("change", renderCustomExcelMappings);
+    customExcelPeriodColumn.addEventListener("change", () => {
+      if (customExcelYearColumn.value === customExcelPeriodColumn.value) customExcelYearColumn.value = "";
+      customExcelMappings.querySelectorAll(".excel-map-row").forEach(row => {
+        const isPeriod = Number(row.dataset.column) === Number(customExcelPeriodColumn.value);
+        const isYear = customExcelYearColumn.value !== "" && Number(row.dataset.column) === Number(customExcelYearColumn.value);
+        const checkbox = row.querySelector("[data-excel-include]");
+        if (isPeriod || isYear) checkbox.checked = false;
+        else if (checkbox.disabled) checkbox.checked = row.dataset.hasHeader === "true";
+        checkbox.disabled = isPeriod || isYear;
+      });
+    });
+    customExcelYearColumn.addEventListener("change", () => customExcelPeriodColumn.dispatchEvent(new Event("change")));
+    customExcelImportForm.addEventListener("submit", handleCustomExcelImportSubmit);
+    closeCustomExcelImport.addEventListener("click", closeCustomExcelImportWindow);
+    cancelCustomExcelImport.addEventListener("click", closeCustomExcelImportWindow);
+    closeBuilderModal.addEventListener("click", closeBuilderModalWindow);
+    cancelBuilderModal.addEventListener("click", closeBuilderModalWindow);
+    addBuilderField.addEventListener("click", () => addBuilderFieldRow());
+    builderForm.addEventListener("submit", handleBuilderSubmit);
+    exportCustomMapsButton.addEventListener("click", exportCustomMaps);
+    importCustomMapsButton.addEventListener("click", () => customMapsFileInput.click());
+    initialImportCustomMapsButton.addEventListener("click", () => customMapsFileInput.click());
+    customMapsFileInput.addEventListener("change", importCustomMaps);
     closeProgressModal.addEventListener("click", closeProgressModalWindow);
     cancelProgressButton.addEventListener("click", closeProgressModalWindow);
     progressWeek.addEventListener("change", fillProgressForm);
@@ -2336,6 +2515,7 @@
     // REPORT_FILTERS_END
 
     validateRuntimeDependencies();
+    loadCustomMaps();
     restoreRoadmapFileAccess();
 
     const axisLabelTooltipPlugin = {
@@ -2995,6 +3175,7 @@
           const worksheet = workbook.Sheets[sheetName];
           const rows = readAnalysisRows(worksheet);
           const mapped = mapRows(rows);
+          const flexStageModel = mapped.type === "stage" ? readFlexibleStageMetadata(worksheet, mapped.data) : null;
           return {
             id: slugify(sheetName),
             name: sheetName,
@@ -3004,7 +3185,8 @@
             type: mapped.type,
             missing: mapped.missing,
             columnMap: mapped.columnMap,
-            columnIndexes: mapped.columnIndexes
+            columnIndexes: mapped.columnIndexes,
+            ...(flexStageModel ? { flexStages: flexStageModel.stages, autoShiftStages: flexStageModel.autoShiftStages } : {})
           };
         }).filter(task => task.rows.length);
 
@@ -3012,7 +3194,7 @@
           throw new Error("В файле не найдено листов с данными для построения диаграмм.");
         }
 
-        state.tasks = tasks;
+        state.tasks = [...tasks, ...state.customMaps];
         state.workbook = workbook;
         state.sourceBuffer = buffer.slice(0);
         state.fileName = file.name;
@@ -3028,6 +3210,636 @@
         showError(error.message || "Не удалось прочитать файл.");
       }
     }
+
+    function readFlexibleStageMetadata(worksheet, mappedRows) {
+      const header = [];
+      for (let column = 10; column < 20; column += 1) header.push(String(worksheet[XLSX.utils.encode_cell({ r: 2, c: column })]?.v || ""));
+      const names = ["ID этапа", "Название этапа", "Номер повтора", "Длительность", "Единица длительности", "Частота", "Число повторов", "Дата начала серии", "Порядок", "Автосмещение"];
+      if (!names.every((name, index) => header[index] === name)) return null;
+      const columnByName = new Map(names.map((name, index) => [name, index + 10]));
+      const getValue = (rowIndex, name) => worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnByName.get(name) })]?.v;
+      const stages = new Map();
+      let autoShiftStages = true;
+      for (const row of mappedRows) {
+        const worksheetRow = row.sourceRow - 1;
+        const stageId = String(getValue(worksheetRow, "ID этапа") || "");
+        if (!stageId) continue;
+        const occurrenceIndex = Math.max(1, cleanNumber(getValue(worksheetRow, "Номер повтора")) || 1);
+        const startCell = getValue(worksheetRow, "Дата начала серии");
+        let startDate = startCell instanceof Date ? toISODate(startCell) : String(startCell || "");
+        if (!parseISODate(startDate)) startDate = toISODate(rowDate(startDate) || new Date());
+        const item = {
+          id: stageId,
+          name: String(getValue(worksheetRow, "Название этапа") || row.planText || "Этап"),
+          startDate,
+          duration: Math.max(1, cleanNumber(getValue(worksheetRow, "Длительность")) || 1),
+          durationUnit: String(getValue(worksheetRow, "Единица длительности") || "weeks"),
+          frequency: String(getValue(worksheetRow, "Частота") || "once"),
+          repeatCount: Math.max(1, cleanNumber(getValue(worksheetRow, "Число повторов")) || 1),
+          order: Math.max(1, cleanNumber(getValue(worksheetRow, "Порядок")) || stages.size + 1)
+        };
+        stages.set(stageId, item);
+        row.flexStage = { id: stageId, occurrenceIndex, stageNumber: item.order, name: item.name };
+        if (String(getValue(worksheetRow, "Автосмещение") || "true").toLowerCase() === "false") autoShiftStages = false;
+      }
+      return stages.size ? { stages: [...stages.values()].sort((left, right) => left.order - right.order), autoShiftStages } : null;
+    }
+
+    function loadCustomMaps() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CUSTOM_MAPS_STORAGE_KEY) || "[]");
+        state.customMaps = Array.isArray(saved) ? saved.filter(map => map && map.type === "custom" && Array.isArray(map.customSchema?.fields) && Array.isArray(map.rows)) : [];
+      } catch (error) {
+        state.customMaps = [];
+      }
+    }
+
+    function saveCustomMaps() {
+      try {
+        localStorage.setItem(CUSTOM_MAPS_STORAGE_KEY, JSON.stringify(state.customMaps));
+        return true;
+      } catch (error) {
+        showError("Не удалось сохранить универсальные карты в хранилище браузера. Скачайте файл конструктора, чтобы сохранить данные отдельно.");
+        return false;
+      }
+    }
+
+    function addBuilderFieldRow(field = {}) {
+      const row = document.createElement("div");
+      row.className = "builder-field-row";
+      row.dataset.fieldId = field.id || "";
+      row.innerHTML = `
+        <input data-field-name required maxlength="60" placeholder="Название поля" value="${escapeHtml(field.name || "")}">
+        <select data-field-type aria-label="Тип поля">
+          <option value="number" ${field.type === "number" ? "selected" : ""}>Число</option>
+          <option value="percent" ${field.type === "percent" ? "selected" : ""}>Процент</option>
+          <option value="text" ${field.type === "text" || !field.type ? "selected" : ""}>Текст</option>
+          <option value="date" ${field.type === "date" ? "selected" : ""}>Дата</option>
+          <option value="status" ${field.type === "status" ? "selected" : ""}>Статус</option>
+        </select>
+        <select data-field-role aria-label="Роль поля">
+          <option value="none">Без роли</option>
+          <option value="plan" ${field.role === "plan" ? "selected" : ""}>План</option>
+          <option value="actual" ${field.role === "actual" ? "selected" : ""}>Факт</option>
+          <option value="progress" ${field.role === "progress" ? "selected" : ""}>Прогресс, %</option>
+        </select>
+        <button class="button builder-remove-field" type="button" aria-label="Удалить поле">×</button>`;
+      row.querySelector("[data-field-type]").addEventListener("change", event => {
+        if (!['number', 'percent'].includes(event.target.value)) row.querySelector("[data-field-role]").value = "none";
+      });
+      row.querySelector(".builder-remove-field").addEventListener("click", () => {
+        if (builderFields.children.length <= 1) return;
+        row.remove();
+      });
+      builderFields.appendChild(row);
+      return row;
+    }
+
+    function openBuilderModal(editTask = null) {
+      builderForm.reset();
+      builderForm.dataset.taskId = editTask?.id || "";
+      document.getElementById("builderYear").value = editTask?.customSchema?.year || new Date().getFullYear();
+      document.getElementById("builderEndYear").value = editTask?.customSchema?.endYear || editTask?.customSchema?.year || new Date().getFullYear();
+      document.getElementById("builderName").value = editTask?.name || "";
+      document.getElementById("builderOwner").value = editTask?.owner || "";
+      document.getElementById("builderDescription").value = editTask?.description || "";
+      document.getElementById("builderGranularity").value = editTask?.customSchema?.granularity || "month";
+      document.getElementById("builderTitle").textContent = editTask ? "Изменить структуру карты" : "Конструктор дорожной карты";
+      builderForm.querySelector('button[type="submit"]').textContent = editTask ? "Сохранить структуру" : "Создать карту";
+      builderFields.innerHTML = "";
+      const fields = editTask?.customSchema?.fields || [
+        { name: "План", type: "number", role: "plan" },
+        { name: "Факт", type: "number", role: "actual" },
+        { name: "Комментарий", type: "text" }
+      ];
+      fields.forEach(field => addBuilderFieldRow(field));
+      builderModal.hidden = false;
+      document.getElementById("builderName").focus();
+    }
+
+    function closeBuilderModalWindow() {
+      builderModal.hidden = true;
+    }
+
+    async function handleCustomExcelFile(event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      try {
+        customExcelImportWorkbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+        if (!customExcelImportWorkbook.SheetNames.length) throw new Error("В книге нет листов для импорта.");
+        customExcelSheet.innerHTML = customExcelImportWorkbook.SheetNames.map(name => `<option>${escapeHtml(name)}</option>`).join("");
+        document.getElementById("customExcelMapName").value = file.name.replace(/\.[^.]+$/, "");
+        document.getElementById("customExcelOwner").value = "";
+        document.getElementById("customExcelDescription").value = "";
+        customExcelHeaderRow.value = "1";
+        customExcelYearColumn.value = "";
+        customExcelImportModal.hidden = false;
+        renderCustomExcelMappings();
+      } catch (error) {
+        showError(error.message || "Не удалось прочитать Excel-файл.");
+      }
+    }
+
+    function customExcelSourceRows() {
+      const sheet = customExcelImportWorkbook?.Sheets[customExcelSheet.value];
+      if (!sheet) return { rows: [], headers: [] };
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: true, blankrows: true });
+      const sheetRange = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]) : { s: { r: 0 } };
+      const headerIndex = Math.max(0, Number(customExcelHeaderRow.value || 1) - sheetRange.s.r - 1);
+      const headers = (rows[headerIndex] || []).map(value => String(value ?? "").trim());
+      return { rows, headers, headerIndex };
+    }
+
+    function renderCustomExcelMappings() {
+      if (!customExcelImportWorkbook) return;
+      const { rows, headers, headerIndex } = customExcelSourceRows();
+      if (!headers.length) {
+        customExcelMappings.innerHTML = `<p class="form-help">В выбранной строке заголовков нет столбцов. Проверьте номер строки.</p>`;
+        customExcelPeriodColumn.innerHTML = "";
+        return;
+      }
+      const normalized = headers.map(name => normalizeHeader(name));
+      const guessedPeriod = normalized.findIndex(name => /период|дата|квартал|недел|месяц|year|date|quarter|week|month/.test(name));
+      customExcelPeriodColumn.innerHTML = headers.map((name, index) => `<option value="${index}" ${index === (guessedPeriod < 0 ? 0 : guessedPeriod) ? "selected" : ""}>${index + 1}. ${escapeHtml(name || `Столбец ${index + 1}`)}</option>`).join("");
+      customExcelYearColumn.innerHTML = `<option value="">Не используется</option>${headers.map((name, index) => `<option value="${index}">${index + 1}. ${escapeHtml(name || `Столбец ${index + 1}`)}</option>`).join("")}`;
+      const guessedYear = normalized.findIndex(name => /год|year/.test(name));
+      customExcelYearColumn.value = guessedYear >= 0 ? String(guessedYear) : "";
+      customExcelMappings.innerHTML = headers.map((name, index) => {
+        const sample = rows.slice(headerIndex + 1).map(row => row[index]).find(value => value !== "" && value !== null && value !== undefined);
+        const numeric = typeof sample === "number" || isNumericLike(sample);
+        const normalizedName = normalized[index];
+        const role = /прогресс|progress|выполнен\s*%|percent/.test(normalizedName) ? "progress"
+          : /план|plan/.test(normalizedName) ? "plan"
+            : /факт|выполнено|actual|done/.test(normalizedName) ? "actual" : "none";
+        const type = role === "progress" ? "percent" : numeric ? "number" : /дата|date/.test(normalizedName) ? "date" : /статус|status/.test(normalizedName) ? "status" : "text";
+        const hasHeader = Boolean(name);
+        const label = name || `Столбец ${index + 1}`;
+        return `<div class="builder-field-row excel-map-row" data-column="${index}" data-has-header="${hasHeader}"><label><input data-excel-include type="checkbox" ${hasHeader ? "checked" : ""}> ${escapeHtml(label)}</label><select data-excel-type aria-label="Тип столбца ${escapeHtml(label)}"><option value="number" ${type === "number" ? "selected" : ""}>Число</option><option value="percent" ${type === "percent" ? "selected" : ""}>Процент</option><option value="text" ${type === "text" ? "selected" : ""}>Текст</option><option value="date" ${type === "date" ? "selected" : ""}>Дата</option><option value="status" ${type === "status" ? "selected" : ""}>Статус</option></select><select data-excel-role aria-label="Роль столбца ${escapeHtml(label)}"><option value="none">Без роли</option><option value="plan" ${role === "plan" ? "selected" : ""}>План</option><option value="actual" ${role === "actual" ? "selected" : ""}>Факт</option><option value="progress" ${role === "progress" ? "selected" : ""}>Прогресс, %</option></select><span></span></div>`;
+      }).join("");
+      customExcelPeriodColumn.dispatchEvent(new Event("change"));
+      customExcelMappings.querySelectorAll("[data-excel-type]").forEach(select => select.addEventListener("change", event => {
+        if (!["number", "percent"].includes(event.target.value)) event.target.closest(".excel-map-row").querySelector("[data-excel-role]").value = "none";
+      }));
+    }
+
+    function closeCustomExcelImportWindow() {
+      customExcelImportModal.hidden = true;
+      customExcelImportWorkbook = null;
+    }
+
+    function importedPeriod(value, granularity, fallbackYear, rowIndex) {
+      let date = null;
+      let label = "";
+      let quarter = "";
+      if (value instanceof Date && !Number.isNaN(value.getTime())) date = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      else if (typeof value === "number" && value > 15000) {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (parsed) date = new Date(parsed.y, parsed.m - 1, parsed.d);
+      }
+      const raw = String(value ?? "").trim();
+      const quarterMatch = raw.match(/\bQ([1-4])(?:\s*[-/]?\s*(20\d{2}))?\b/i);
+      if (!date && quarterMatch) {
+        const year = Number(quarterMatch[2] || fallbackYear);
+        quarter = `Q${quarterMatch[1]} ${year}`;
+        label = quarter;
+      }
+      if (!date && !label && typeof value === "number" && value >= 1 && value <= 53) {
+        const week = Math.round(value);
+        const year = fallbackYear;
+        quarter = `Q${Math.min(Math.ceil(week / 13), 4)} ${year}`;
+        label = `Неделя ${week} · ${year}`;
+      }
+      if (!date && !label && raw) {
+        const textDate = rowDate(raw);
+        const isoDate = /^\d{4}-\d{1,2}-\d{1,2}$/.test(raw) ? new Date(`${raw}T00:00:00`) : null;
+        date = textDate || (isoDate && !Number.isNaN(isoDate.getTime()) ? isoDate : null);
+        if (!date) {
+          const yearMatch = raw.match(/\b(20\d{2})\b/);
+          const monthNames = ["январ", "феврал", "март", "апрел", "ма[йя]", "июн", "июл", "август", "сентябр", "октябр", "ноябр", "декабр"];
+          const monthIndex = monthNames.findIndex(name => new RegExp(name, "i").test(raw));
+          if (monthIndex >= 0) date = new Date(Number(yearMatch?.[1] || fallbackYear), monthIndex, 1);
+        }
+      }
+      if (date) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        quarter = `Q${Math.floor(month / 3) + 1} ${year}`;
+        label = granularity === "quarter" ? quarter
+          : granularity === "month" ? `${date.toLocaleDateString("ru-RU", { month: "long" })} ${year}`
+            : `Неделя ${Math.ceil((date - new Date(year, 0, 1)) / 604800000) + 1} · ${date.toLocaleDateString("ru-RU")}`;
+      }
+      if (!label) {
+        label = raw || `Период ${rowIndex + 1}`;
+        const year = Number(raw.match(/\b(20\d{2})\b/)?.[1] || fallbackYear);
+        quarter = `Q1 ${year}`;
+      }
+      return { period: label, quarter: quarter || `Q1 ${fallbackYear}` };
+    }
+
+    function importedFieldValue(value, field) {
+      if (value === "" || value === null || value === undefined) return "";
+      if (field.type === "number") return cleanNumber(value);
+      if (field.type === "percent") {
+        if (typeof value === "number") return value >= 0 && value <= 1 ? value * 100 : value;
+        return cleanNumber(value);
+      }
+      if (field.type === "date") {
+        const date = value instanceof Date ? value : rowDate(String(value));
+        return date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : String(value);
+      }
+      return String(value);
+    }
+
+    function handleCustomExcelImportSubmit(event) {
+      event.preventDefault();
+      const { rows, headers, headerIndex } = customExcelSourceRows();
+      if (!headers.length) return;
+      const periodColumn = Number(customExcelPeriodColumn.value);
+      const yearColumn = customExcelYearColumn.value === "" ? -1 : Number(customExcelYearColumn.value);
+      const granularity = document.getElementById("customExcelGranularity").value;
+      const fallbackYear = new Date().getFullYear();
+      const fields = [...customExcelMappings.querySelectorAll(".excel-map-row")]
+        .filter(row => Number(row.dataset.column) !== periodColumn && Number(row.dataset.column) !== yearColumn && row.querySelector("[data-excel-include]").checked)
+        .map(row => ({
+          id: `f-excel-${row.dataset.column}`,
+          name: headers[Number(row.dataset.column)],
+          type: row.querySelector("[data-excel-type]").value,
+          role: row.querySelector("[data-excel-role]").value
+        }));
+      fields.forEach(field => { if (field.role === "progress") field.type = "percent"; });
+      if (!fields.length) {
+        showError("Выберите хотя бы один столбец данных для карты.");
+        return;
+      }
+      const roles = fields.map(field => field.role).filter(role => role !== "none");
+      if (new Set(roles).size !== roles.length) {
+        showError("В импорте можно назначить каждую роль только одному полю.");
+        return;
+      }
+      if (fields.some(field => ["plan", "actual"].includes(field.role) && field.type !== "number")) {
+        showError("Роли «План» и «Факт» требуют числовой тип поля.");
+        return;
+      }
+      const dataRows = rows.slice(headerIndex + 1);
+      const outputRows = [];
+      dataRows.forEach((source, index) => {
+        if (!source.some(value => value !== "" && value !== null && value !== undefined)) return;
+        const suppliedYear = yearColumn >= 0 ? Number.parseInt(String(source[yearColumn] ?? "").match(/20\d{2}/)?.[0] || "", 10) : 0;
+        const period = importedPeriod(source[periodColumn], granularity, suppliedYear || fallbackYear, index);
+        const values = {};
+        fields.forEach(field => { values[field.id] = importedFieldValue(source[Number(field.id.replace("f-excel-", ""))], field); });
+        outputRows.push({ ...period, week: index + 1, values });
+      });
+      if (!outputRows.length) {
+        showError("После строки заголовков не найдено строк с данными.");
+        return;
+      }
+      const years = outputRows.map(row => quarterSortKey(row.quarter).year).filter(Boolean);
+      const year = years.length ? Math.min(...years) : fallbackYear;
+      const endYear = years.length ? Math.max(...years) : year;
+      const task = {
+        id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        type: "custom",
+        name: document.getElementById("customExcelMapName").value.trim(),
+        owner: document.getElementById("customExcelOwner").value.trim(),
+        description: document.getElementById("customExcelDescription").value.trim(),
+        customSchema: { version: 1, source: "excel-mapping", granularity, year, endYear, fields },
+        rows: outputRows,
+        missing: [], created: true
+      };
+      state.customMaps.push(task);
+      state.tasks = [...state.tasks.filter(item => !isCustomTask(item)), ...state.customMaps];
+      state.activeTab = task.id;
+      state.quarter = "all";
+      saveCustomMaps();
+      closeCustomExcelImportWindow();
+      updateSidebarMode();
+      buildQuarterFilter();
+      buildTabs();
+      updateExportButton();
+      render();
+    }
+
+    function createCustomPeriods(year, granularity, endYear = year) {
+      const rows = [];
+      const months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+      for (let currentYear = year; currentYear <= endYear; currentYear += 1) {
+        if (granularity === "quarter") {
+          BASE_QUARTERS.forEach((quarter, index) => rows.push({ quarter: `${quarter} ${currentYear}`, week: index + 1, period: `${quarter} ${currentYear}`, values: {} }));
+        } else if (granularity === "month") {
+          months.forEach((month, index) => rows.push({ quarter: `Q${Math.floor(index / 3) + 1} ${currentYear}`, week: index + 1, period: `${month} ${currentYear}`, values: {} }));
+        } else {
+          generateWeeks(currentYear).forEach(item => rows.push({
+            quarter: `${item.quarter} ${currentYear}`, week: item.week,
+            period: `Неделя ${item.week} · ${item.start.toLocaleDateString("ru-RU")}–${item.end.toLocaleDateString("ru-RU")}`,
+            values: {}
+          }));
+        }
+      }
+      return rows;
+    }
+
+    function handleBuilderSubmit(event) {
+      event.preventDefault();
+      const fields = [...builderFields.querySelectorAll(".builder-field-row")].map(row => ({
+        id: row.dataset.fieldId || `f-${Math.random().toString(36).slice(2, 10)}`,
+        name: row.querySelector("[data-field-name]").value.trim(),
+        type: row.querySelector("[data-field-type]").value,
+        role: row.querySelector("[data-field-role]").value
+      })).filter(field => field.name);
+      if (!fields.length) return;
+      const roles = fields.map(field => field.role).filter(role => role !== "none");
+      if (new Set(roles).size !== roles.length) {
+        showError("Для каждой роли (План, Факт, Прогресс) можно назначить только одно поле.");
+        return;
+      }
+      for (const field of fields) {
+        if (field.role === "progress") field.type = "percent";
+        if (["plan", "actual"].includes(field.role) && field.type !== "number") {
+          showError("Роли «План» и «Факт» назначаются числовым полям. Проценты задаются ролью «Прогресс, %».");
+          return;
+        }
+      }
+      const year = Number(document.getElementById("builderYear").value);
+      const endYear = Number(document.getElementById("builderEndYear").value);
+      const granularity = document.getElementById("builderGranularity").value;
+      if (endYear < year || endYear - year > 20) {
+        showError("Год окончания должен быть не раньше начала; диапазон карты — не более 21 года.");
+        return;
+      }
+      const name = document.getElementById("builderName").value.trim();
+      const editTask = state.customMaps.find(item => item.id === builderForm.dataset.taskId);
+      const priorFields = new Map((editTask?.customSchema?.fields || []).map(field => [`${field.name.toLowerCase()}|${field.type}|${field.role}`, field]));
+      fields.forEach(field => {
+        const existing = priorFields.get(`${field.name.toLowerCase()}|${field.type}|${field.role}`);
+        if (existing) field.id = existing.id;
+      });
+      const retainedFieldIds = new Set(fields.map(field => field.id));
+      const newPeriodLabels = new Set(createCustomPeriods(year, granularity, endYear).map(row => row.period));
+      const removesData = editTask && (
+        editTask.customSchema.fields.some(field => !retainedFieldIds.has(field.id)) ||
+        (granularity !== editTask.customSchema.granularity && editTask.rows.some(row => Object.values(row.values || {}).some(value => value !== "" && value !== null && value !== undefined))) ||
+        editTask.rows.some(row => !newPeriodLabels.has(row.period) && Object.values(row.values || {}).some(value => value !== "" && value !== null && value !== undefined))
+      );
+      if (removesData && !confirm("Изменение структуры удалит часть введённых значений. Продолжить?")) return;
+      const newPeriods = createCustomPeriods(year, granularity, endYear);
+      const priorRows = new Map((editTask?.rows || []).map(row => [row.period, row]));
+      const periodRows = newPeriods.map((row, index) => {
+        const old = priorRows.get(row.period) || (editTask?.customSchema?.granularity === granularity && editTask.customSchema.year === year ? editTask.rows[index] : null);
+        if (!old) return row;
+        fields.forEach(field => {
+          if (retainedFieldIds.has(field.id) && Object.prototype.hasOwnProperty.call(old.values || {}, field.id)) row.values[field.id] = old.values[field.id];
+        });
+        return row;
+      });
+      const task = {
+        ...(editTask || {}),
+        id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        type: "custom", name,
+        owner: document.getElementById("builderOwner").value.trim(),
+        description: document.getElementById("builderDescription").value.trim(),
+        customSchema: { version: 1, granularity, year, endYear, fields },
+        rows: periodRows,
+        missing: [], created: true
+      };
+      if (editTask) {
+        task.id = editTask.id;
+        state.customMaps = state.customMaps.map(item => item.id === editTask.id ? task : item);
+      } else {
+        state.customMaps.push(task);
+      }
+      state.tasks = [...state.tasks.filter(item => !isCustomTask(item)), ...state.customMaps];
+      state.activeTab = task.id;
+      state.quarter = "all";
+      saveCustomMaps();
+      closeBuilderModalWindow();
+      updateSidebarMode();
+      buildQuarterFilter();
+      buildTabs();
+      updateExportButton();
+      render();
+    }
+
+    function exportCustomMaps() {
+      if (!state.customMaps.length) {
+        showError("Пока нет универсальных карт для сохранения.");
+        return;
+      }
+      const blob = new Blob([JSON.stringify({ format: "roadmap-dashboard", version: 1, maps: state.customMaps }, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "roadmap-maps.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importCustomMaps(event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        const maps = Array.isArray(parsed) ? parsed : parsed.maps;
+        if (!Array.isArray(maps) || maps.some(map => !map || map.type !== "custom" || !Array.isArray(map.customSchema?.fields) || !Array.isArray(map.rows))) {
+          throw new Error("Файл не содержит корректных универсальных карт.");
+        }
+        state.customMaps = maps;
+        state.tasks = [...state.tasks.filter(item => !isCustomTask(item)), ...state.customMaps];
+        saveCustomMaps();
+        updateSidebarMode();
+        buildQuarterFilter();
+        buildTabs();
+        updateExportButton();
+        render();
+      } catch (error) {
+        showError(error.message || "Не удалось прочитать файл конструктора.");
+      }
+    }
+
+    function customNumericFields(task) {
+      return task.customSchema.fields.filter(field => ["number", "percent"].includes(field.type));
+    }
+
+    function summarizeCustomMap(task, rows) {
+      const fields = task.customSchema.fields;
+      const roleField = role => fields.find(field => field.role === role);
+      const planField = roleField("plan");
+      const actualField = roleField("actual");
+      const progressField = roleField("progress");
+      const progress = progressField
+        ? (rows.length ? rows.reduce((sum, row) => sum + cleanNumber(row.values?.[progressField.id]), 0) / rows.length : 0)
+        : planField && actualField
+          ? (rows.reduce((sum, row) => sum + cleanNumber(row.values?.[actualField.id]), 0) / (rows.reduce((sum, row) => sum + cleanNumber(row.values?.[planField.id]), 0) || 1)) * 100
+          : 0;
+      const plan = planField ? rows.reduce((sum, row) => sum + cleanNumber(row.values?.[planField.id]), 0) : null;
+      const actual = actualField ? rows.reduce((sum, row) => sum + cleanNumber(row.values?.[actualField.id]), 0) : null;
+      const valid = Boolean(progressField || (planField && actualField));
+      const delta = actual !== null && plan !== null ? actual - plan : null;
+      const customStatus = !valid || !rows.length
+        ? { key: "no-data", label: "Нет данных", detail: "Добавьте значения в поля прогресса." }
+        : progress >= 100
+          ? { key: "complete", label: "Выполнено", detail: `Прогресс: ${formatPercent(progress)}.` }
+          : progress === 0
+            ? { key: "no-data", label: "Нет данных", detail: "Прогресс пока не указан." }
+            : delta !== null && delta > 0
+              ? { key: "ahead", label: "Выше плана", detail: `${formatNumber(delta)} сверх плана.` }
+              : delta !== null && delta < 0
+                ? { key: "behind", label: "Ниже плана", detail: `${formatNumber(Math.abs(delta))} до плана.` }
+                : { key: "on-track", label: "В работе", detail: `Прогресс: ${formatPercent(progress)}.` };
+      return {
+        custom: true, customStatus, isComplete: progress >= 100 && valid,
+        quarterProgress: progress, yearProgress: progress, customPlan: plan,
+        customActual: actual, customDelta: delta, rowsCount: rows.length,
+        planStatus: { delta, plan, fact: actual }
+      };
+    }
+
+    function customTaskCard(task, summary) {
+      const status = displayStatus(summary);
+      const progress = clamp(summary.quarterProgress, 0, 100);
+      const metrics = task.customSchema.fields.filter(field => field.role === "plan" || field.role === "actual").map(field => {
+        const value = field.role === "plan" ? summary.customPlan : summary.customActual;
+        return `<span>${escapeHtml(field.name)}<b>${formatNumber(value)}</b></span>`;
+      }).join("");
+      return `<article class="task-card status-${escapeHtml(status.key)}"><div class="task-card-inner"><div class="task-card-face task-card-front"><header><div class="task-card-title"><strong>${escapeHtml(task.name)}</strong></div><span class="badge status-dot status-${escapeHtml(status.key)}" title="${escapeHtml(status.label)}"></span></header><p class="task-owner${task.owner ? "" : " missing"}">Ответственный: <b>${escapeHtml(task.owner || "не указан")}</b></p><p>Прогресс: ${formatPercent(summary.quarterProgress)}</p><div class="progress"><div style="width:${progress}%"></div></div><p class="task-status-line status-${escapeHtml(status.key)}">${escapeHtml(status.label)}</p><div class="mini">${metrics}</div></div></div></article>`;
+    }
+
+    function customInput(field, row, index) {
+      const value = row.values?.[field.id] ?? "";
+      const common = `data-custom-row="${index}" data-custom-field="${escapeHtml(field.id)}" aria-label="${escapeHtml(field.name)} — ${escapeHtml(row.period)}"`;
+      if (field.type === "status") {
+        const statuses = ["Запланировано", "В работе", "На паузе", "Просрочено", "Выполнено"];
+        if (value && !statuses.includes(value)) statuses.unshift(value);
+        return `<select ${common}><option value="">—</option>${statuses.map(item => `<option ${item === value ? "selected" : ""}>${escapeHtml(item)}</option>`).join("")}</select>`;
+      }
+      const inputType = field.type === "number" || field.type === "percent" ? "number" : field.type === "date" ? "date" : "text";
+      const step = field.type === "percent" ? `min="0" max="100" step="any"` : field.type === "number" ? `step="any"` : "";
+      return `<input type="${inputType}" ${step} value="${escapeHtml(value)}" ${common}>`;
+    }
+
+    function renderCustomTask(task) {
+      const rows = filteredRows(task);
+      const summary = summarizeCustomMap(task, rows);
+      const status = displayStatus(summary);
+      const fields = task.customSchema.fields;
+      const numericFields = customNumericFields(task);
+      const tableRows = rows.map(row => {
+        const index = task.rows.indexOf(row);
+        return `<tr><td class="custom-period">${escapeHtml(row.period)}</td>${fields.map(field => `<td>${customInput(field, row, index)}</td>`).join("")}</tr>`;
+      }).join("");
+      pageTitle.textContent = task.name;
+      pageSubtitle.textContent = [task.description, activePeriodDescription()].filter(Boolean).join(" · ");
+      content.innerHTML = `
+        <div class="custom-map-actions"><button id="editCustomMapButton" class="button" type="button">Изменить структуру</button><button id="deleteCustomMapButton" class="button" type="button">Удалить карту</button></div>
+        <div class="grid cards">${metric("Статус", status.label, status.detail, `status-${status.key}`)}${metric("Прогресс", formatPercent(summary.quarterProgress))}${summary.customPlan !== null ? metric("План", formatNumber(summary.customPlan)) : ""}${summary.customActual !== null ? metric("Факт", formatNumber(summary.customActual)) : ""}</div>
+        ${numericFields.length ? `<div class="grid charts">${numericFields.map((field, index) => `<section class="panel"><h3>${escapeHtml(field.name)} · ${task.customSchema.granularity === "week" ? "по неделям" : task.customSchema.granularity === "month" ? "по месяцам" : "по кварталам"}</h3><div class="chart-frame"><canvas id="customChart${index}"></canvas></div></section>`).join("")}</div>` : `<section class="panel"><p>Добавьте числовые поля, чтобы строить графики по ним.</p></section>`}
+        <section class="panel"><h3>Данные карты</h3><div class="custom-data-table-wrap"><table class="custom-data-table"><thead><tr><th>Период</th>${fields.map(field => `<th>${escapeHtml(field.name)}${field.role !== "none" ? ` · ${escapeHtml(field.role === "plan" ? "план" : field.role === "actual" ? "факт" : "прогресс")}` : ""}</th>`).join("")}</tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
+      numericFields.forEach((field, index) => {
+        const values = rows.map(row => {
+          const value = row.values?.[field.id];
+          return value === "" || value === null || value === undefined ? null : cleanNumber(value);
+        });
+        makeLineChart(`customChart${index}`, { labels: rows.map(row => row.period), datasets: [{
+          label: field.name, data: values, borderColor: ["#2563eb", "#16a34a", "#f97316", "#9333ea", "#0891b2"][index % 5],
+          backgroundColor: "rgba(37, 99, 235, 0.12)", pointBackgroundColor: ["#2563eb", "#16a34a", "#f97316", "#9333ea", "#0891b2"][index % 5], tension: 0.25, fill: false, spanGaps: true
+        }] }, field.type === "percent", false, [], false);
+      });
+    }
+
+    content.addEventListener("change", event => {
+      const input = event.target.closest("[data-custom-row][data-custom-field]");
+      if (!input) return;
+      const task = state.tasks.find(item => item.id === state.activeTab && isCustomTask(item));
+      if (!task) return;
+      const row = task.rows[Number(input.dataset.customRow)];
+      if (!row) return;
+      row.values[input.dataset.customField] = input.value;
+      saveCustomMaps();
+      updateTaskPickerStatuses();
+      render();
+    });
+
+    content.addEventListener("click", event => {
+      const task = state.tasks.find(item => item.id === state.activeTab && isCustomTask(item));
+      if (!task) return;
+      if (event.target.closest("#editCustomMapButton")) openBuilderModal(task);
+      if (event.target.closest("#deleteCustomMapButton") && confirm(`Удалить карту «${task.name}» и все введённые в неё данные?`)) {
+        state.customMaps = state.customMaps.filter(item => item.id !== task.id);
+        state.tasks = state.tasks.filter(item => item.id !== task.id);
+        saveCustomMaps();
+        state.activeTab = "overview";
+        updateSidebarMode();
+        buildQuarterFilter();
+        buildTabs();
+        updateExportButton();
+        render();
+      }
+    });
+
+    content.addEventListener("click", event => {
+      const task = state.tasks.find(item => item.id === state.activeTab && item.flexStages);
+      if (!task) return;
+      if (event.target.closest("#stageManagerButton")) openStageManagerModal(task);
+    });
+
+    content.addEventListener("change", event => {
+      if (event.target.id !== "flexStageAutoShift") return;
+      const task = state.tasks.find(item => item.id === state.activeTab && item.flexStages);
+      if (task) task.autoShiftStages = event.target.checked;
+    });
+
+    content.addEventListener("dragstart", event => {
+      const stageCard = event.target.closest("[data-flex-stage-id]");
+      if (!stageCard) return;
+      event.dataTransfer.setData("text/plain", stageCard.dataset.flexStageId);
+      event.dataTransfer.setData("application/x-roadmap-occurrence", stageCard.dataset.flexOccurrence || "1");
+    });
+
+    content.addEventListener("dragover", event => {
+      const weekCell = event.target.closest("[data-drop-date]");
+      if (!weekCell) return;
+      event.preventDefault();
+      weekCell.classList.add("is-drop-target");
+    });
+
+    content.addEventListener("dragleave", event => {
+      const weekCell = event.target.closest("[data-drop-date]");
+      if (weekCell && !weekCell.contains(event.relatedTarget)) weekCell.classList.remove("is-drop-target");
+    });
+
+    content.addEventListener("drop", event => {
+      const weekCell = event.target.closest("[data-drop-date]");
+      if (!weekCell) return;
+      event.preventDefault();
+      weekCell.classList.remove("is-drop-target");
+      const task = state.tasks.find(item => item.id === state.activeTab && item.flexStages);
+      const stageId = event.dataTransfer.getData("text/plain");
+      const occurrenceIndex = Number(event.dataTransfer.getData("application/x-roadmap-occurrence")) || 1;
+      const stageIndex = task?.flexStages.findIndex(item => item.id === stageId) ?? -1;
+      const stage = task?.flexStages[stageIndex];
+      const occurrence = stage && stageOccurrenceDates(stage)[occurrenceIndex - 1];
+      const targetDate = parseISODate(weekCell.dataset.dropDate);
+      if (!task || !stage || !occurrence || !targetDate) return;
+      const deltaDays = Math.round((targetDate - occurrence.start) / 86400000);
+      if (!deltaDays) return;
+      const shiftAll = task.autoShiftStages !== false;
+      task.flexStages = task.flexStages.map((item, index) => {
+        if (index === stageIndex || (shiftAll && index > stageIndex)) {
+          const current = parseISODate(item.startDate);
+          current.setDate(current.getDate() + deltaDays);
+          return { ...item, startDate: toISODate(current) };
+        }
+        return item;
+      });
+      const previousRows = task.rows;
+      task.rows = generateFlexibleStageRows({ stageItems: task.flexStages }, previousRows);
+      task.stagePlanEdited = true;
+      if (task.draft) task.draft.stageItems = task.flexStages.map(item => ({ ...item }));
+      updateExportButton();
+      render();
+    });
 
     function slugify(value) {
       return String(value)
@@ -3127,6 +3939,8 @@
 
     function openRoadmapModal() {
       roadmapForm.reset();
+      roadmapStageDraftItems = [];
+      stageEditingTaskId = "";
       document.getElementById("roadmapYear").value = new Date().getFullYear();
       const templateTypes = [
         { type: "quantitative", label: "Количественная" },
@@ -3146,12 +3960,144 @@
         return `<option value="${escapeHtml(template.task.name)}" data-type="${template.type}"${selected}>${template.label}</option>`;
       }).join("");
       roadmapType.value = activeTemplate?.type || activeType;
+      renderStageDraftList(roadmapStageDraftList);
+      updateRoadmapTypeFields();
       roadmapModal.hidden = false;
       document.getElementById("roadmapName").focus();
     }
 
     function closeRoadmapModalWindow() {
       roadmapModal.hidden = true;
+    }
+
+    function updateRoadmapTypeFields() {
+      const stageMode = roadmapType.value === "stage";
+      document.querySelectorAll("[data-quantitative-only]").forEach(element => { element.hidden = stageMode; });
+      roadmapStageBuilderField.hidden = !stageMode;
+    }
+
+    function currentQuarterFirstWeekDate(year = new Date().getFullYear()) {
+      const today = new Date();
+      const quarter = Math.floor(today.getMonth() / 3) + 1;
+      const candidate = generateWeeks(year).find(week => week.quarter === `Q${quarter}`);
+      return candidate ? toISODate(candidate.start) : `${year}-01-01`;
+    }
+
+    function stageFrequencyLabel(stage) {
+      return ({ once: "один раз", weekly: "еженедельно", biweekly: "раз в две недели", monthly: "ежемесячно", quarterly: "ежеквартально" })[stage.frequency] || "один раз";
+    }
+
+    function stageDurationLabel(stage) {
+      const unit = ({ days: "дн.", weeks: "нед.", months: "мес." })[stage.durationUnit] || "нед.";
+      return `${stage.duration} ${unit}`;
+    }
+
+    function renderStageDraftList(container = roadmapStageDraftList) {
+      if (!roadmapStageDraftItems.length) {
+        container.innerHTML = `<div class="stage-draft-empty">Этапов пока нет. Нажмите «+ Добавить этап».</div>`;
+        return;
+      }
+      container.innerHTML = roadmapStageDraftItems.map((stage, index) => {
+        const date = parseISODate(stage.startDate);
+        const end = stageOccurrenceDates(stage)[0]?.end;
+        return `<article class="stage-draft-card"><div class="stage-draft-number">${index + 1}</div><div class="stage-draft-main"><strong>${escapeHtml(stage.name)}</strong><span>${date ? formatRuDate(date) : "Дата не выбрана"}${end ? ` — ${formatRuDate(end)}` : ""} · ${stageDurationLabel(stage)} · ${stageFrequencyLabel(stage)}${stage.frequency !== "once" ? ` × ${stage.repeatCount}` : ""}</span></div><button class="button" type="button" data-stage-edit="${escapeHtml(stage.id)}">Изменить</button><button class="button" type="button" data-stage-delete="${escapeHtml(stage.id)}" aria-label="Удалить этап">Удалить</button></article>`;
+      }).join("");
+    }
+
+    function openStageItemModal(stage = null) {
+      stageItemForm.reset();
+      stageItemEditingId = stage?.id || "";
+      document.getElementById("stageItemTitle").textContent = stage ? "Изменить этап" : "Новый этап";
+      document.getElementById("stageItemForm").querySelector('button[type="submit"]').textContent = stage ? "Сохранить изменения" : "Добавить этап";
+      document.getElementById("stageItemName").value = stage?.name || "";
+      const targetYear = stageEditingTaskId
+        ? state.tasks.find(task => task.id === stageEditingTaskId)?.draft?.year || new Date().getFullYear()
+        : Number(document.getElementById("roadmapYear").value) || new Date().getFullYear();
+      document.getElementById("stageItemStart").value = stage?.startDate || currentQuarterFirstWeekDate(targetYear);
+      document.getElementById("stageItemDuration").value = stage?.duration || 1;
+      document.getElementById("stageItemDurationUnit").value = stage?.durationUnit || "weeks";
+      document.getElementById("stageItemFrequency").value = stage?.frequency || "once";
+      document.getElementById("stageItemRepeatCount").value = stage?.repeatCount || 2;
+      updateStageRepeatCountField();
+      stageItemModal.hidden = false;
+      document.getElementById("stageItemName").focus();
+    }
+
+    function closeStageItemModalWindow() {
+      stageItemModal.hidden = true;
+    }
+
+    function updateStageRepeatCountField() {
+      document.getElementById("stageItemRepeatCountField").hidden = document.getElementById("stageItemFrequency").value === "once";
+    }
+
+    function handleStageItemSubmit(event) {
+      event.preventDefault();
+      const frequency = document.getElementById("stageItemFrequency").value;
+      const item = {
+        id: stageItemEditingId || `stage-${Math.random().toString(36).slice(2, 10)}`,
+        name: document.getElementById("stageItemName").value.trim(),
+        startDate: document.getElementById("stageItemStart").value,
+        duration: clamp(Math.round(cleanNumber(document.getElementById("stageItemDuration").value) || 1), 1, 3650),
+        durationUnit: document.getElementById("stageItemDurationUnit").value,
+        frequency,
+        repeatCount: frequency === "once" ? 1 : clamp(Math.round(cleanNumber(document.getElementById("stageItemRepeatCount").value) || 2), 2, 260)
+      };
+      if (!item.name || !parseISODate(item.startDate)) return;
+      const index = roadmapStageDraftItems.findIndex(stage => stage.id === stageItemEditingId);
+      if (index >= 0) roadmapStageDraftItems[index] = item;
+      else roadmapStageDraftItems.push(item);
+      const target = stageEditingTaskId ? stageManagerList : roadmapStageDraftList;
+      renderStageDraftList(target);
+      closeStageItemModalWindow();
+    }
+
+    function handleStageDraftListClick(event) {
+      const editButton = event.target.closest("[data-stage-edit]");
+      const deleteButton = event.target.closest("[data-stage-delete]");
+      if (editButton) {
+        const stage = roadmapStageDraftItems.find(item => item.id === editButton.dataset.stageEdit);
+        if (stage) openStageItemModal(stage);
+      } else if (deleteButton && confirm("Удалить этот этап и его повторы?")) {
+        roadmapStageDraftItems = roadmapStageDraftItems.filter(item => item.id !== deleteButton.dataset.stageDelete);
+        renderStageDraftList(stageEditingTaskId ? stageManagerList : roadmapStageDraftList);
+      }
+    }
+
+    function openStageManagerModal(task) {
+      if (!task.flexStages) return;
+      stageEditingTaskId = task.id;
+      roadmapStageDraftItems = task.flexStages.map(item => ({ ...item }));
+      managerAutoShift.checked = task.autoShiftStages !== false;
+      renderStageDraftList(stageManagerList);
+      stageManagerModal.hidden = false;
+    }
+
+    function closeStageManagerModalWindow() {
+      const task = state.tasks.find(item => item.id === stageEditingTaskId && item.flexStages);
+      if (task) {
+        const previousRows = task.rows;
+        task.flexStages = roadmapStageDraftItems.map(item => ({ ...item }));
+        task.autoShiftStages = managerAutoShift.checked;
+        task.rows = generateFlexibleStageRows({ stageItems: task.flexStages }, previousRows);
+        task.stagePlanEdited = true;
+        updateExportButton();
+      }
+      stageEditingTaskId = "";
+      stageManagerModal.hidden = true;
+      render();
+    }
+
+    function handleStageManagerListClick(event) {
+      const editButton = event.target.closest("[data-stage-edit]");
+      const deleteButton = event.target.closest("[data-stage-delete]");
+      if (editButton) {
+        const stage = roadmapStageDraftItems.find(item => item.id === editButton.dataset.stageEdit);
+        if (stage) openStageItemModal(stage);
+      } else if (deleteButton && confirm("Удалить этот этап и его повторы?")) {
+        roadmapStageDraftItems = roadmapStageDraftItems.filter(item => item.id !== deleteButton.dataset.stageDelete);
+        renderStageDraftList(stageManagerList);
+      }
     }
 
     function rowDate(value) {
@@ -3284,7 +4230,7 @@
         name: uniqueSheetName(formData.get("name")),
         owner: String(formData.get("owner") || "").trim(),
         description: String(formData.get("description") || "").trim(),
-        templateSheetName: selectedTemplate && selectedTemplate.dataset.type === selectedType
+        templateSheetName: selectedType !== "stage" && selectedTemplate && selectedTemplate.dataset.type === selectedType
           ? String(formData.get("template") || "").trim()
           : "",
         type: selectedType,
@@ -3298,11 +4244,16 @@
         stages: String(formData.get("stages") || "")
           .split(/\r?\n/)
           .map(item => item.trim())
-          .filter(Boolean)
+          .filter(Boolean),
+        stageItems: selectedType === "stage" ? roadmapStageDraftItems.map(item => ({ ...item })) : []
       };
 
       if (!draft.name) {
         showError("Укажите название дорожной карты.");
+        return;
+      }
+      if (draft.type === "stage" && !draft.stageItems.length) {
+        showError("Добавьте хотя бы один этап кнопкой «+ Добавить этап».");
         return;
       }
 
@@ -3713,6 +4664,8 @@
         owner: draft.owner,
         rows,
         type: draft.type,
+        flexStages: draft.type === "stage" ? (draft.stageItems || []).map(item => ({ ...item })) : null,
+        autoShiftStages: true,
         missing: [],
         created: true,
         columnMap: templateTask?.columnMap || { done: "Выполнено", comment: "Комментарий" },
@@ -3721,7 +4674,86 @@
       };
     }
 
+    function parseISODate(value) {
+      const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+    }
+
+    function toISODate(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+
+    function formatRuDate(date) {
+      return date.toLocaleDateString("ru-RU");
+    }
+
+    function shiftDateByFrequency(date, frequency, count = 1) {
+      const result = new Date(date);
+      if (frequency === "weekly") result.setDate(result.getDate() + 7 * count);
+      else if (frequency === "biweekly") result.setDate(result.getDate() + 14 * count);
+      else if (frequency === "monthly") result.setMonth(result.getMonth() + count);
+      else if (frequency === "quarterly") result.setMonth(result.getMonth() + 3 * count);
+      return result;
+    }
+
+    function stageOccurrenceDates(stage) {
+      const start = parseISODate(stage.startDate);
+      if (!start) return [];
+      const occurrenceCount = stage.frequency === "once" ? 1 : clamp(Math.round(cleanNumber(stage.repeatCount) || 1), 1, 260);
+      const duration = clamp(Math.round(cleanNumber(stage.duration) || 1), 1, 3650);
+      return Array.from({ length: occurrenceCount }, (_, index) => {
+        const occurrenceStart = shiftDateByFrequency(start, stage.frequency, index);
+        const end = new Date(occurrenceStart);
+        if (stage.durationUnit === "weeks") end.setDate(end.getDate() + duration * 7 - 1);
+        else if (stage.durationUnit === "months") {
+          end.setMonth(end.getMonth() + duration);
+          end.setDate(end.getDate() - 1);
+        } else end.setDate(end.getDate() + duration - 1);
+        return { start: occurrenceStart, end, occurrenceIndex: index + 1 };
+      });
+    }
+
+    function flexibleStageOccurrences(stageItems) {
+      return stageItems.flatMap((stage, stageIndex) => stageOccurrenceDates(stage).map(dates => ({
+        ...dates, stage, stageOrder: stageIndex
+      }))).sort((left, right) => left.start - right.start || left.stageOrder - right.stageOrder || left.occurrenceIndex - right.occurrenceIndex)
+        .map((item, index) => ({ ...item, stageNumber: index + 1 }));
+    }
+
+    function generateFlexibleStageRows(draft, previousRows = []) {
+      const occurrences = flexibleStageOccurrences(draft.stageItems || []);
+      const prior = new Map(previousRows.map(row => [`${row.flexStage?.id}:${row.flexStage?.occurrenceIndex}`, row]));
+      return occurrences.map((item, index) => {
+        const start = item.start;
+        const end = item.end;
+        const quarterNumber = Math.floor(start.getMonth() / 3) + 1;
+        const weeks = generateWeeks(start.getFullYear());
+        const week = weeks.find(candidate => candidate.start <= start && candidate.end >= start)
+          || weeks.reduce((best, candidate) => Math.abs(candidate.start - start) < Math.abs(best.start - start) ? candidate : best, weeks[0]);
+        const sourceRow = index + 4;
+        const previous = prior.get(`${item.stage.id}:${item.occurrenceIndex}`);
+        const stageNumber = item.stageNumber;
+        const occurrenceLabel = item.stage.frequency === "once" ? "" : ` · повтор ${item.occurrenceIndex}`;
+        return {
+          index: index + 1, sourceRow,
+          quarter: `Q${quarterNumber} ${start.getFullYear()}`,
+          week: week?.week || 1,
+          weekStart: formatRuDate(start), weekEnd: formatRuDate(end),
+          quarterPlan: 0, yearPlan: 0, quarterProgress: 0, yearProgress: 0,
+          done: previous?.done || 0, hasDone: Boolean(previous?.hasDone),
+          doneDisplay: previous?.doneDisplay || "", doneText: "",
+          planText: `${stageNumber}. ${item.stage.name}${occurrenceLabel}`,
+          progressText: "", comment: previous?.comment || "",
+          hasNumericQuarterPlan: false, hasNumericYearPlan: false,
+          hasNumericQuarterProgress: false, hasNumericYearProgress: false,
+          flexStage: { id: item.stage.id, occurrenceIndex: item.occurrenceIndex, stageNumber, name: item.stage.name },
+          edited: false
+        };
+      });
+    }
+
     function generateRoadmapRows(draft) {
+      if (draft.type === "stage" && draft.stageItems?.length) return generateFlexibleStageRows(draft);
       const weeks = generateWeeks(draft.year);
       const cumulativePlan = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
       const quarterCounts = BASE_QUARTERS.reduce((result, quarter) => {
@@ -3823,8 +4855,8 @@
     }
 
     function updateExportButton() {
-      exportWorkbookButton.disabled = !state.tasks.length;
-      emailReportButton.disabled = !state.tasks.length;
+      exportWorkbookButton.disabled = !state.tasks.some(task => !isCustomTask(task));
+      emailReportButton.disabled = !state.tasks.some(task => !isCustomTask(task));
       const editGroups = new Set();
       state.tasks.forEach(task => task.rows.filter(row => row.edited).forEach(row => {
         editGroups.add(row.editGroup || `${task.id}:${row.sourceRow}`);
@@ -3832,7 +4864,8 @@
       const updatedRows = editGroups.size;
       const changes = [
         state.createdTasks.length ? `новых: ${state.createdTasks.length}` : "",
-        updatedRows ? `правок: ${updatedRows}` : ""
+        updatedRows ? `правок: ${updatedRows}` : "",
+        state.tasks.some(task => task.stagePlanEdited) ? "этапы перенесены" : ""
       ].filter(Boolean);
       exportWorkbookButton.textContent = changes.length
         ? `Скачать Excel (${changes.join(", ")})`
@@ -3856,14 +4889,16 @@
         const baseName = (state.fileName || "roadmaps.xlsx").replace(/\.[^.]+$/, "");
         const fileName = `${baseName}_updated.xlsx`;
         const hasProgressUpdates = state.tasks.some(task => task.rows.some(row => row.edited));
+        const hasStagePlanUpdates = state.tasks.some(task => !task.created && task.stagePlanEdited && task.flexStages);
 
         if (state.sourceBuffer) {
-          if (!state.createdTasks.length && !hasProgressUpdates) {
+          if (!state.createdTasks.length && !hasProgressUpdates && !hasStagePlanUpdates) {
             downloadWorkbook(state.sourceBuffer, fileName);
             return;
           }
           const archive = readXlsxArchive(state.sourceBuffer);
           if (hasProgressUpdates) applyProgressUpdatesToArchive(archive);
+          if (hasStagePlanUpdates) applyFlexibleStageUpdatesToArchive(archive);
           if (state.createdTasks.length) appendCreatedSheetsToArchive(archive, state.createdTasks);
           downloadWorkbook(XLSX.CFB.write(archive, { type: "array", fileType: "zip" }), fileName);
           return;
@@ -4115,6 +5150,22 @@
       });
     }
 
+    function applyFlexibleStageUpdatesToArchive(archive) {
+      const workbookXml = archiveText(archive, "xl/workbook.xml");
+      const relationshipsXml = archiveText(archive, "xl/_rels/workbook.xml.rels");
+      const targets = new Map([...relationshipsXml.matchAll(/<Relationship\b([^>]*)\/>/g)].map(match => [
+        xmlAttribute(match[1], "Id"), xmlAttribute(match[1], "Target")
+      ]));
+      const sheetPaths = new Map([...workbookXml.matchAll(/<sheet\b([^>]*)\/>/g)].map(match => [
+        xmlUnescape(xmlAttribute(match[1], "name")),
+        `xl/${(targets.get(xmlAttribute(match[1], "r:id")) || "").replace(/^\//, "")}`
+      ]));
+      state.tasks.filter(task => !task.created && task.stagePlanEdited && task.flexStages).forEach(task => {
+        const path = sheetPaths.get(task.name);
+        if (path) setArchiveText(archive, path, worksheetXml(task));
+      });
+    }
+
     function xmlAttribute(attributes, name) {
       const match = String(attributes).match(new RegExp(`(?:^|\\s)${name.replace(":", "\\:")}="([^"]*)"`));
       return match ? match[1] : "";
@@ -4148,14 +5199,14 @@
       const aoa = [
         [task.description || task.name],
         [task.owner || ""],
-        Object.values(COLUMN_LABELS)
+        [...Object.values(COLUMN_LABELS), ...(task.flexStages ? ["ID этапа", "Название этапа", "Номер повтора", "Длительность", "Единица длительности", "Частота", "Число повторов", "Дата начала серии", "Порядок", "Автосмещение"] : [])]
       ];
       let lastQuarter = "";
 
       task.rows.forEach(row => {
         const quarter = row.quarter === lastQuarter ? "" : row.quarter;
         lastQuarter = row.quarter;
-        aoa.push([
+        const outputRow = [
           quarter,
           row.week,
           row.weekStart,
@@ -4166,7 +5217,18 @@
           row.hasNumericYearProgress ? row.yearProgress / 100 : "",
           row.hasDone ? row.done : "",
           row.comment || ""
-        ]);
+        ];
+        if (task.flexStages) {
+          const stage = task.flexStages.find(item => item.id === row.flexStage?.id);
+          outputRow.push(
+            stage?.id || "", stage?.name || "", row.flexStage?.occurrenceIndex || "",
+            stage?.duration || "", stage?.durationUnit || "", stage?.frequency || "",
+            stage?.repeatCount || 1, stage?.startDate || "",
+            (task.flexStages.findIndex(item => item.id === stage?.id) + 1) || "",
+            task.autoShiftStages === false ? "false" : "true"
+          );
+        }
+        aoa.push(outputRow);
       });
 
       const worksheet = XLSX.utils.aoa_to_sheet(aoa);
@@ -4307,6 +5369,10 @@
         return task.rows.filter(row => quarterSortKey(row.quarter).year === year);
       }
       return task.rows.filter(row => String(row.quarter).trim() === state.quarter);
+    }
+
+    function isCustomTask(task) {
+      return task?.type === "custom" && Array.isArray(task.customSchema?.fields);
     }
 
     function isStageTask(task) {
@@ -4831,6 +5897,7 @@
     }
 
     function displayStatus(summary) {
+      if (summary.custom) return summary.customStatus;
       if (summary.stage) return summary.stageStatus;
 
       if (summary.completedEarlier) {
@@ -4864,6 +5931,7 @@
 
     function taskSummary(task) {
       const rows = filteredRows(task);
+      if (isCustomTask(task)) return summarizeCustomMap(task, rows);
       return isStageTask(task)
         ? summarizeStageRows(rows, task.rows)
         : summarizeRows(rows, task.rows);
@@ -4933,7 +6001,7 @@
 
     function renderOverview() {
       const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
-      const quantitativeSummaries = summaries.filter(item => !isStageTask(item.task));
+      const quantitativeSummaries = summaries.filter(item => !isStageTask(item.task) && !isCustomTask(item.task));
       const stageSummaries = summaries.filter(item => isStageTask(item.task));
       const showYearProgress = isAggregatePeriod();
       const showYearPlan = isAggregatePeriod();
@@ -5055,6 +6123,10 @@
     }
 
     function renderTask(task) {
+      if (isCustomTask(task)) {
+        renderCustomTask(task);
+        return;
+      }
       if (isStageTask(task)) {
         renderStageTask(task);
         return;
@@ -5192,7 +6264,7 @@
       const end = rowDate(row.weekEnd);
       if (end && end < today) return { key: "overdue", label: "Просрочено" };
       const span = row.stageSpan || stageMergeSpan(row, "plan");
-      const spansMultipleRows = span.endRow > span.startRow;
+      const spansMultipleRows = span.endRow > span.startRow || Boolean(start && end && end - start >= 7 * 86400000);
       if (done > 0 && spansMultipleRows) return { key: "partial", label: "Частично" };
       if (start && end && start <= today && today <= end) return { key: "active", label: "В работе" };
       if (done > 0) return { key: "active", label: "В работе" };
@@ -5251,6 +6323,12 @@
       const editAction = !task.columnMap?.done ? "" : `
         <button id="updateProgressButton" class="plan-edit-action" type="button" aria-label="Внести отметку выполнения" title="Внести отметку выполнения">✎</button>
       `;
+      const stagePlanMarkup = task.flexStages
+        ? renderFlexibleStageCalendar(task)
+        : `<section class="panel stage-panel">
+          <div class="stage-panel-header"><div><h3>План и выполнение</h3><p>Этапы и числовые отметки выполнения по неделям.</p></div><span class="badge">${escapeHtml(activeQuarterBadge())}</span></div>
+          <div class="stage-list">${summary.displayRows.length ? summary.displayRows.map(stageItem).join("") : `<div class="stage-empty">В выбранном периоде нет этапов или отметок выполнения.</div>`}</div>
+        </section>`;
 
       pageTitle.textContent = task.name;
       pageSubtitle.textContent = [missingText, invalidText, "Этапная дорожная карта.", activePeriodDescription()].filter(Boolean).join(" ");
@@ -5262,20 +6340,7 @@
           ${metric("Прогресс этапов", formatPercent(summary.quarterProgress))}
         </div>
 
-        <section class="panel stage-panel">
-          <div class="stage-panel-header">
-            <div>
-              <h3>План и выполнение</h3>
-              <p>Этапы и числовые отметки выполнения по неделям.</p>
-            </div>
-            <span class="badge">${escapeHtml(activeQuarterBadge())}</span>
-          </div>
-          <div class="stage-list">
-            ${summary.displayRows.length
-              ? summary.displayRows.map(stageItem).join("")
-              : `<div class="stage-empty">В выбранном периоде нет этапов или отметок выполнения.</div>`}
-          </div>
-        </section>
+        ${stagePlanMarkup}
 
         <details class="panel sheet-data">
           <summary>
@@ -5295,6 +6360,45 @@
       if (updateProgressButton) {
         updateProgressButton.addEventListener("click", () => openProgressModal(task));
       }
+      const stageManagerButton = document.getElementById("stageManagerButton");
+      if (stageManagerButton) stageManagerButton.addEventListener("click", () => openStageManagerModal(task));
+    }
+
+    function renderFlexibleStageCalendar(task) {
+      const occurrences = flexibleStageOccurrences(task.flexStages || []);
+      if (!occurrences.length) return `<section class="panel stage-panel"><div class="stage-calendar-tools"><div><h3>Календарь этапов</h3><p>Добавьте этап, чтобы начать планирование.</p></div><button id="stageManagerButton" class="button" type="button">Управление этапами</button></div><p class="stage-empty">Этапов пока нет.</p></section>`;
+      const minYear = Math.min(...occurrences.map(item => item.start.getFullYear()));
+      const maxYear = Math.max(...occurrences.map(item => item.end.getFullYear()));
+      const weeks = [];
+      for (let year = minYear; year <= maxYear; year += 1) weeks.push(...generateWeeks(year).map(item => ({ ...item, year })));
+      const visibleWeeks = weeks.filter(week => {
+        const quarter = `${week.quarter} ${week.year}`;
+        if (isYearPeriod()) return week.year === selectedYear();
+        if (isQuarterPeriod()) return quarter === state.quarter;
+        return true;
+      });
+      const quarterGroups = new Map();
+      visibleWeeks.forEach(week => {
+        const key = `${week.quarter} ${week.year}`;
+        if (!quarterGroups.has(key)) quarterGroups.set(key, []);
+        quarterGroups.get(key).push(week);
+      });
+      const rowsByFlexKey = new Map(task.rows.map(row => [`${row.flexStage?.id}:${row.flexStage?.occurrenceIndex}`, row]));
+      const groupsMarkup = [...quarterGroups.entries()].map(([quarter, quarterWeeks]) => `
+        <section class="flex-stage-quarter"><h4>${escapeHtml(quarter)}</h4><div class="flex-stage-weeks">
+          ${quarterWeeks.map(week => {
+            const weekStart = week.start;
+            const weekEnd = week.end;
+            const weekKey = `${week.quarter} ${week.year}`;
+            const items = occurrences.filter(item => item.start >= weekStart && item.start <= weekEnd);
+            return `<div class="stage-week-cell" data-drop-date="${toISODate(weekStart)}"><div class="stage-week-label">Неделя ${week.week}<br>${formatRuDate(weekStart)}</div>${items.map(item => {
+              const row = rowsByFlexKey.get(`${item.stage.id}:${item.occurrenceIndex}`);
+              const progress = row?.hasDone ? cleanNumber(row.done) * 100 : 0;
+              return `<div class="stage-week-task" draggable="true" data-flex-stage-id="${escapeHtml(item.stage.id)}" data-flex-occurrence="${item.occurrenceIndex}" title="Перетащите на другую неделю"><strong>${item.stageNumber}. ${escapeHtml(item.stage.name)}</strong><small>${formatRuDate(item.start)}–${formatRuDate(item.end)} · ${formatPercent(progress)}</small></div>`;
+            }).join("")}</div>`;
+          }).join("")}
+        </div></section>`).join("");
+      return `<section class="panel stage-panel"><div class="stage-calendar-tools"><div><h3>Календарь этапов</h3><p>Перетащите этап на нужную неделю, чтобы изменить дату начала.</p></div><div><label><input id="flexStageAutoShift" type="checkbox" ${task.autoShiftStages === false ? "" : "checked"}> Автосмещать следующие этапы</label><button id="stageManagerButton" class="button" type="button">Управление этапами</button></div></div><div class="flex-stage-calendar">${groupsMarkup || `<div class="stage-empty">В этом периоде нет недель.</div>`}</div></section>`;
     }
 
     function renderCompletedEarlierTask(task, summary, status) {
@@ -5375,6 +6479,7 @@
     }
 
     function taskCard(task, summary) {
+      if (isCustomTask(task)) return customTaskCard(task, summary);
       if (isStageTask(task)) return stageTaskCard(task, summary);
 
       const showYearProgress = isAggregatePeriod();
@@ -5836,10 +6941,10 @@
       }));
     }
 
-    function makeLineChart(id, data, percentScale = false, showDoneScale = false, tooltipTitles = []) {
+    function makeLineChart(id, data, percentScale = false, showDoneScale = false, tooltipTitles = [], weekAxis = true) {
       const ctx = document.getElementById(id);
       if (!ctx) return;
-      const options = chartOptions(percentScale, showDoneScale, false, true, tooltipTitles);
+      const options = chartOptions(percentScale, showDoneScale, false, weekAxis, tooltipTitles);
       state.charts.push(new Chart(ctx, {
         type: "line",
         data,
@@ -5870,6 +6975,15 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    if (state.customMaps.length) {
+      state.tasks = [...state.customMaps];
+      updateSidebarMode();
+      buildQuarterFilter();
+      buildTabs();
+      updateExportButton();
+      render();
     }
   </script>
 </body>
