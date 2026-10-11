@@ -180,6 +180,24 @@
       padding-block: 11px;
     }
 
+    .empty-workspace {
+      max-width: 940px;
+      margin: clamp(24px, 7vh, 72px) auto;
+      padding: clamp(24px, 5vw, 52px);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(145deg, #ffffff 0%, #f7f9fd 100%);
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+    }
+
+    .empty-workspace h3 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+    .empty-workspace > p { max-width: 650px; margin: 10px 0 24px; color: var(--muted); line-height: 1.6; }
+    .empty-workspace-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .empty-workspace-action { display: grid; gap: 6px; min-height: 92px; padding: 16px; text-align: left; }
+    .empty-workspace-action span { color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.4; }
+    .empty-workspace-action.primary span { color: rgba(255, 255, 255, 0.88); }
+    @media (max-width: 700px) { .empty-workspace { margin: 16px auto; padding: 22px; } .empty-workspace-actions { grid-template-columns: 1fr; } }
+
     .settings-backdrop {
       position: fixed;
       inset: 0;
@@ -2301,6 +2319,7 @@
     const content = document.getElementById("content");
     const pageTitle = document.getElementById("pageTitle");
     const pageSubtitle = document.getElementById("pageSubtitle");
+    const statusBox = document.getElementById("statusBox");
     const errorBox = document.getElementById("errorBox");
     const newRoadmapButton = document.getElementById("newRoadmapButton");
     const emailReportButton = document.getElementById("emailReportButton");
@@ -2391,6 +2410,14 @@
     fileInput.addEventListener("change", handleFile);
     openRoadmapButton.addEventListener("click", openRoadmapFile);
     initialOpenRoadmapButton.addEventListener("click", openRoadmapFile);
+    content.addEventListener("click", event => {
+      const action = event.target.closest("[data-empty-action]")?.dataset.emptyAction;
+      if (action === "excel") openRoadmapFile();
+      else if (action === "new") openRoadmapModal();
+      else if (action === "builder") openBuilderModal();
+      else if (action === "import-excel") customExcelFileInput.click();
+      else if (action === "import-json") customMapsFileInput.click();
+    });
     initialChangeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
     changeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
     quarterFilter.addEventListener("change", () => {
@@ -2660,6 +2687,13 @@
       if (value === null || value === undefined || value === "") return false;
       const text = String(value).replace("%", "").replace(/\s+/g, "").replace(",", ".").trim();
       return text !== "" && Number.isFinite(Number.parseFloat(text));
+    }
+
+    function isPureNumericValue(value) {
+      if (typeof value === "number") return Number.isFinite(value);
+      if (value === null || value === undefined || value === "") return false;
+      const text = String(value).replace("%", "").replace(/\s+/g, "").replace(/,/g, ".").trim();
+      return text !== "" && Number.isFinite(Number(text));
     }
 
     function cleanPercent(value, displayValue = "") {
@@ -2958,18 +2992,18 @@
           week,
           weekStart: parseDate(weekStartValue),
           weekEnd: parseDate(weekEndValue),
-          quarterPlan: cleanNumber(quarterPlanRaw),
-          yearPlan: cleanNumber(yearPlanRaw),
+          quarterPlan: isPureNumericValue(quarterPlanRaw) ? cleanNumber(quarterPlanRaw) : 0,
+          yearPlan: isPureNumericValue(yearPlanRaw) ? cleanNumber(yearPlanRaw) : 0,
           quarterProgress: cleanPercent(quarterProgressRaw, quarterProgressDisplay),
           yearProgress: cleanPercent(yearProgressRaw, yearProgressDisplay),
           done: cleanNumber(doneRaw),
           doneDisplay: textCell(row, columnMap.done),
-          planText: isNumericLike(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
+          planText: isPureNumericValue(quarterPlanRaw) ? "" : textCell(row, columnMap.quarterPlan),
           progressText: isNumericLike(quarterProgressRaw) ? "" : textCell(row, columnMap.quarterProgress),
           doneText: isNumericLike(doneRaw) ? "" : textCell(row, columnMap.done),
           comment: textCell(row, columnMap.comment),
-          hasNumericQuarterPlan: isNumericLike(quarterPlanRaw),
-          hasNumericYearPlan: isNumericLike(yearPlanRaw),
+          hasNumericQuarterPlan: isPureNumericValue(quarterPlanRaw),
+          hasNumericYearPlan: isPureNumericValue(yearPlanRaw),
           hasNumericQuarterProgress: isNumericLike(quarterProgressRaw),
           hasNumericYearProgress: isNumericLike(yearProgressRaw),
           hasDone: isNumericLike(doneRaw),
@@ -3510,7 +3544,7 @@
       };
       state.customMaps.push(task);
       state.tasks = [...state.tasks.filter(item => !isCustomTask(item)), ...state.customMaps];
-      state.activeTab = task.id;
+      state.activeTab = "overview";
       state.quarter = "all";
       saveCustomMaps();
       closeCustomExcelImportWindow();
@@ -3610,7 +3644,7 @@
         state.customMaps.push(task);
       }
       state.tasks = [...state.tasks.filter(item => !isCustomTask(item)), ...state.customMaps];
-      state.activeTab = task.id;
+      state.activeTab = "overview";
       state.quarter = "all";
       saveCustomMaps();
       closeBuilderModalWindow();
@@ -4260,7 +4294,7 @@
       const task = createRoadmapTask(draft);
       state.tasks.push(task);
       state.createdTasks.push(task);
-      state.activeTab = task.id;
+      state.activeTab = "overview";
       state.quarter = "all";
       updateSidebarMode();
       buildQuarterFilter();
@@ -5251,6 +5285,7 @@
       const hasTasks = state.tasks.length > 0;
       emptySidebarState.hidden = hasTasks;
       taskNavigation.hidden = !hasTasks;
+      statusBox.hidden = !hasTasks;
       sidebarSettings.hidden = false;
       settingsButton.hidden = !hasTasks;
       if (!hasTasks) closeSettingsDrawerWindow();
@@ -5975,17 +6010,38 @@
 
     function render() {
       destroyCharts();
+      if (state.activeTab !== "overview" && !state.tasks.some(item => item.id === state.activeTab)) {
+        state.activeTab = "overview";
+      }
       markActiveTab();
 
-      if (!state.tasks.length) return;
+      if (!state.tasks.length) {
+        state.activeTab = "overview";
+        pageTitle.textContent = "Дорожных карт пока нет";
+        pageSubtitle.textContent = "Загрузите существующую карту или создайте новую — здесь появятся план, ход выполнения и графики.";
+        statusBox.hidden = true;
+        content.innerHTML = `
+          <section class="empty-workspace" aria-labelledby="emptyWorkspaceTitle">
+            <h3 id="emptyWorkspaceTitle">Начните с дорожной карты</h3>
+            <p>Пока нет открытых карт. Выберите Excel-файл, соберите план в конструкторе или импортируйте готовую таблицу. Примерные данные не используются.</p>
+            <div class="empty-workspace-actions">
+              <button class="button primary empty-workspace-action" type="button" data-empty-action="excel">Открыть Excel-файл<span>Загрузить книгу с дорожными картами</span></button>
+              <button class="button empty-workspace-action" type="button" data-empty-action="new">Новая дорожная карта<span>Создать количественный или этапный план</span></button>
+              <button class="button empty-workspace-action" type="button" data-empty-action="builder">Конструктор карт<span>Задать собственные поля и периоды</span></button>
+              <button class="button empty-workspace-action" type="button" data-empty-action="import-excel">Импортировать таблицу Excel<span>Преобразовать готовую таблицу в карту</span></button>
+              <button class="button empty-workspace-action" type="button" data-empty-action="import-json">Загрузить файл конструктора<span>Открыть ранее сохранённые универсальные карты</span></button>
+            </div>
+          </section>`;
+        return;
+      }
 
       if (state.activeTab === "overview") {
         renderOverview();
         return;
       }
 
-      const task = state.tasks.find(item => item.id === state.activeTab) || state.tasks[0];
-      renderTask(task);
+      const task = state.tasks.find(item => item.id === state.activeTab);
+      if (task) renderTask(task);
     }
 
     function markActiveTab() {
@@ -6977,14 +7033,12 @@
         .replace(/'/g, "&#039;");
     }
 
-    if (state.customMaps.length) {
-      state.tasks = [...state.customMaps];
-      updateSidebarMode();
-      buildQuarterFilter();
-      buildTabs();
-      updateExportButton();
-      render();
-    }
+    state.tasks = [...state.customMaps];
+    updateSidebarMode();
+    buildQuarterFilter();
+    buildTabs();
+    updateExportButton();
+    render();
   </script>
 </body>
 </html>
