@@ -1591,6 +1591,16 @@
       line-height: 1.4;
     }
 
+    .builder-form-error {
+      padding: 10px 12px;
+      border: 1px solid #fecdca;
+      border-radius: 8px;
+      background: #fef3f2;
+      color: #b42318;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
     .button {
       border: 1px solid var(--line);
       border-radius: 7px;
@@ -1887,7 +1897,8 @@
             <h3>Универсальные карты</h3>
             <ul>
               <li>В конструкторе задаются собственные поля разных типов и временная шкала по неделям, месяцам или кварталам.</li>
-              <li>Числовые поля отображаются на графике динамики. Роль «План» и «Факт» позволяет автоматически считать прогресс; либо задайте поле «Прогресс» в процентах.</li>
+              <li>Числовые поля отображаются на отдельных графиках. Для общего расчёта прогресса назначьте не более одного поля каждой роли: «План», «Факт» или «Прогресс, %». Остальные поля оставьте «Без роли».</li>
+              <li>Если на старте у вас только план, назначьте основному числовому полю роль «План», а остальным — «Без роли». Карта получит статус «Запланировано»; роль «Факт» можно добавить позже.</li>
               <li>Значения редактируются в таблице карты и сохраняются в этом браузере. Для переноса на другой компьютер используйте «Сохранить файл конструктора» и затем «Загрузить файл конструктора».</li>
               <li>Готовую таблицу можно импортировать кнопкой «Импортировать таблицу Excel»: выберите лист, строку заголовков, поле периода и назначьте типы и роли столбцов.</li>
               <li>Для переноса универсальных карт между браузерами сохраните JSON-файл и загрузите его на другом компьютере. Excel-книга исходных карт не изменяется.</li>
@@ -2040,14 +2051,20 @@
       <div class="modal-header"><div><h2 id="builderTitle">Конструктор дорожной карты</h2><p>Опишите структуру и правила расчёта. Поля и значения можно будет менять в самой карте.</p></div><button id="closeBuilderModal" class="modal-close" type="button" aria-label="Закрыть">×</button></div>
       <form id="builderForm" class="roadmap-form">
         <div class="modal-body">
+          <div id="builderFormError" class="builder-form-error" role="alert" aria-live="polite" hidden></div>
           <div class="form-grid">
             <div class="form-field"><label for="builderName">Название карты</label><input id="builderName" required maxlength="100" placeholder="Например, Запуск продукта"></div>
             <div class="form-field"><label for="builderOwner">Ответственный</label><input id="builderOwner" maxlength="120" placeholder="Фамилия И. О."></div>
-            <div class="form-field"><label for="builderGranularity">Шаг временной шкалы</label><select id="builderGranularity"><option value="week">Неделя</option><option value="month" selected>Месяц</option><option value="quarter">Квартал</option></select></div>
-            <div class="form-field"><label for="builderYear">Год начала</label><input id="builderYear" type="number" min="2000" max="2100" required></div>
-            <div class="form-field"><label for="builderEndYear">Год окончания</label><input id="builderEndYear" type="number" min="2000" max="2100" required></div>
+            <div class="form-field" id="builderTypeField"><label for="builderMapType">Тип конструктора</label><select id="builderMapType"><option value="quantitative">Количественный</option><option value="stage">Этапный</option></select></div>
+            <div id="builderQuantitativeFields" class="form-field full"><div class="form-grid">
+              <div class="form-field"><label for="builderGranularity">Шаг временной шкалы</label><select id="builderGranularity"><option value="week">Неделя</option><option value="month" selected>Месяц</option><option value="quarter">Квартал</option></select></div>
+              <div class="form-field"><label for="builderStartDate">Начало периода</label><input id="builderStartDate" type="date"></div>
+              <div class="form-field"><label for="builderEndDate">Окончание периода</label><input id="builderEndDate" type="date"></div>
+              <div class="form-field" id="builderInitialPlanField"><label for="builderInitialPlan">Общий план на период</label><input id="builderInitialPlan" type="number" min="0" step="any" placeholder="Например, 1200"></div>
+              <div class="form-field full form-help" id="builderPlanHelp">План автоматически распределится по всем неделям, месяцам или кварталам выбранного диапазона. Факт можно заполнять позже.</div>
+            </div></div>
             <div class="form-field full"><label for="builderDescription">Описание / цель</label><textarea id="builderDescription" placeholder="Цель и ожидаемый результат"></textarea></div>
-            <div class="form-field full"><div class="builder-fields-heading"><strong>Поля данных</strong><button id="addBuilderField" class="button" type="button">Добавить поле</button></div><div id="builderFields" class="builder-fields"></div><div class="form-help">Для прогресса назначьте числовым полям роли «План» и «Факт» или добавьте поле «Прогресс, %». Другие числовые поля тоже попадут в график.</div></div>
+            <div class="form-field full" id="builderDataFields"><div class="builder-fields-heading"><strong>Поля данных</strong><button id="addBuilderField" class="button" type="button">Добавить поле</button></div><div id="builderFields" class="builder-fields"></div><div class="form-help">Роли нужны только для общего расчёта прогресса: назначьте не более одного поля «План», одного «Факт» или одного «Прогресс, %». Остальные числовые поля оставьте «Без роли» — они всё равно появятся на отдельных графиках. Если пока есть только план, назначьте одно основное поле «План»; факт можно добавить позже.</div></div>
           </div>
         </div>
         <div class="modal-footer"><button id="cancelBuilderModal" class="button" type="button">Отмена</button><button class="button primary" type="submit">Создать карту</button></div>
@@ -2068,7 +2085,7 @@
           <div class="form-field"><label for="customExcelPeriodColumn">Столбец периода</label><select id="customExcelPeriodColumn" required></select></div>
           <div class="form-field"><label for="customExcelYearColumn">Столбец года, если год отдельно</label><select id="customExcelYearColumn"><option value="">Не используется</option></select></div>
           <div class="form-field full"><label for="customExcelDescription">Описание</label><textarea id="customExcelDescription"></textarea></div>
-          <div class="form-field full"><strong>Поля данных</strong><div id="customExcelMappings" class="builder-fields"></div><div class="form-help">Снимите флажки у ненужных столбцов. Для расчёта прогресса выберите роли «План» и «Факт» либо «Прогресс, %».</div></div>
+          <div class="form-field full"><strong>Поля данных</strong><div id="customExcelMappings" class="builder-fields"></div><div class="form-help">Снимите флажки у ненужных столбцов. Для общего расчёта прогресса назначьте не более одного поля каждой роли. Остальные числовые столбцы можно оставить «Без роли»: они всё равно появятся на графиках. Если факта пока нет, укажите одно основное поле «План».</div></div>
         </div></div>
         <div class="modal-footer"><button id="cancelCustomExcelImport" class="button" type="button">Отмена</button><button class="button primary" type="submit">Импортировать карту</button></div>
       </form>
@@ -2351,6 +2368,7 @@
     const builderModal = document.getElementById("builderModal");
     const builderForm = document.getElementById("builderForm");
     const builderFields = document.getElementById("builderFields");
+    const builderFormError = document.getElementById("builderFormError");
     const closeBuilderModal = document.getElementById("closeBuilderModal");
     const cancelBuilderModal = document.getElementById("cancelBuilderModal");
     const addBuilderField = document.getElementById("addBuilderField");
@@ -2519,6 +2537,7 @@
     cancelBuilderModal.addEventListener("click", closeBuilderModalWindow);
     addBuilderField.addEventListener("click", () => addBuilderFieldRow());
     builderForm.addEventListener("submit", handleBuilderSubmit);
+    builderForm.addEventListener("input", () => { builderFormError.hidden = true; });
     exportCustomMapsButton.addEventListener("click", exportCustomMaps);
     importCustomMapsButton.addEventListener("click", () => customMapsFileInput.click());
     initialImportCustomMapsButton.addEventListener("click", () => customMapsFileInput.click());
@@ -3303,7 +3322,7 @@
       row.className = "builder-field-row";
       row.dataset.fieldId = field.id || "";
       row.innerHTML = `
-        <input data-field-name required maxlength="60" placeholder="Название поля" value="${escapeHtml(field.name || "")}">
+        <input data-field-name maxlength="60" placeholder="Название поля" value="${escapeHtml(field.name || "")}">
         <select data-field-type aria-label="Тип поля">
           <option value="number" ${field.type === "number" ? "selected" : ""}>Число</option>
           <option value="percent" ${field.type === "percent" ? "selected" : ""}>Процент</option>
@@ -3324,16 +3343,45 @@
       row.querySelector(".builder-remove-field").addEventListener("click", () => {
         if (builderFields.children.length <= 1) return;
         row.remove();
+        builderFormError.hidden = true;
       });
       builderFields.appendChild(row);
+      if (!field.name) row.querySelector("[data-field-name]").focus();
       return row;
+    }
+
+    function setBuilderFormError(message) {
+      builderFormError.textContent = message;
+      builderFormError.hidden = !message;
     }
 
     function openBuilderModal(editTask = null) {
       builderForm.reset();
       builderForm.dataset.taskId = editTask?.id || "";
-      document.getElementById("builderYear").value = editTask?.customSchema?.year || new Date().getFullYear();
-      document.getElementById("builderEndYear").value = editTask?.customSchema?.endYear || editTask?.customSchema?.year || new Date().getFullYear();
+      setBuilderFormError("");
+      const builderYear = editTask?.customSchema?.year || new Date().getFullYear();
+      document.getElementById("builderStartDate").value = editTask?.customSchema?.startDate || `${builderYear}-01-01`;
+      document.getElementById("builderEndDate").value = editTask?.customSchema?.endDate || `${editTask?.customSchema?.endYear || builderYear}-12-31`;
+      document.getElementById("builderMapType").value = "quantitative";
+      document.getElementById("builderMapType").disabled = Boolean(editTask);
+      document.getElementById("builderTypeField").hidden = Boolean(editTask);
+      document.getElementById("builderQuantitativeFields").hidden = false;
+      document.getElementById("builderMapType").onchange = () => {
+        const stageMode = document.getElementById("builderMapType").value === "stage";
+        document.getElementById("builderQuantitativeFields").hidden = stageMode;
+        document.getElementById("builderStartDate").required = !stageMode;
+        document.getElementById("builderEndDate").required = !stageMode;
+        document.getElementById("builderDataFields").hidden = stageMode;
+        document.getElementById("builderInitialPlanField").hidden = stageMode;
+        document.getElementById("builderPlanHelp").hidden = stageMode;
+      };
+      const initialStageMode = document.getElementById("builderMapType").value === "stage";
+      document.getElementById("builderStartDate").required = !initialStageMode;
+      document.getElementById("builderEndDate").required = !initialStageMode;
+      document.getElementById("builderDataFields").hidden = false;
+      document.getElementById("builderInitialPlan").value = editTask?.customSchema?.initialPlan ?? "";
+      document.getElementById("builderInitialPlanField").hidden = Boolean(editTask);
+      document.getElementById("builderPlanHelp").hidden = Boolean(editTask);
       document.getElementById("builderName").value = editTask?.name || "";
       document.getElementById("builderOwner").value = editTask?.owner || "";
       document.getElementById("builderDescription").value = editTask?.description || "";
@@ -3508,7 +3556,7 @@
       }
       const roles = fields.map(field => field.role).filter(role => role !== "none");
       if (new Set(roles).size !== roles.length) {
-        showError("В импорте можно назначить каждую роль только одному полю.");
+        showError("Назначьте роль не более чем одному полю. Для остальных числовых столбцов выберите «Без роли» — они всё равно попадут в графики.");
         return;
       }
       if (fields.some(field => ["plan", "actual"].includes(field.role) && field.type !== "number")) {
@@ -3555,18 +3603,27 @@
       render();
     }
 
-    function createCustomPeriods(year, granularity, endYear = year) {
+    function createCustomPeriods(year, granularity, endYear = year, startDate = `${year}-01-01`, endDate = `${endYear}-12-31`) {
       const rows = [];
       const months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+      const rangeStart = parseISODate(startDate) || new Date(year, 0, 1);
+      const rangeEnd = parseISODate(endDate) || new Date(endYear, 11, 31);
       for (let currentYear = year; currentYear <= endYear; currentYear += 1) {
         if (granularity === "quarter") {
-          BASE_QUARTERS.forEach((quarter, index) => rows.push({ quarter: `${quarter} ${currentYear}`, week: index + 1, period: `${quarter} ${currentYear}`, values: {} }));
+          BASE_QUARTERS.forEach((quarter, index) => {
+            const from = new Date(currentYear, index * 3, 1), to = new Date(currentYear, index * 3 + 3, 0);
+            if (to >= rangeStart && from <= rangeEnd) rows.push({ quarter: `${quarter} ${currentYear}`, week: index + 1, period: `${quarter} ${currentYear}`, values: {} });
+          });
         } else if (granularity === "month") {
-          months.forEach((month, index) => rows.push({ quarter: `Q${Math.floor(index / 3) + 1} ${currentYear}`, week: index + 1, period: `${month} ${currentYear}`, values: {} }));
+          months.forEach((month, index) => {
+            const from = new Date(currentYear, index, 1), to = new Date(currentYear, index + 1, 0);
+            if (to >= rangeStart && from <= rangeEnd) rows.push({ quarter: `Q${Math.floor(index / 3) + 1} ${currentYear}`, week: index + 1, period: `${month} ${currentYear}`, values: {} });
+          });
         } else {
-          generateWeeks(currentYear).forEach(item => rows.push({
+          generateWeeks(currentYear).filter(item => item.end >= rangeStart && item.start <= rangeEnd).forEach(item => rows.push({
             quarter: `${item.quarter} ${currentYear}`, week: item.week,
-            period: `Неделя ${item.week} · ${item.start.toLocaleDateString("ru-RU")}–${item.end.toLocaleDateString("ru-RU")}`,
+            period: `Неделя ${item.week}`,
+            tooltipLabel: `${item.start.toLocaleDateString("ru-RU")}–${item.end.toLocaleDateString("ru-RU")}`,
             values: {}
           }));
         }
@@ -3576,30 +3633,56 @@
 
     function handleBuilderSubmit(event) {
       event.preventDefault();
-      const fields = [...builderFields.querySelectorAll(".builder-field-row")].map(row => ({
+      const fieldRows = [...builderFields.querySelectorAll(".builder-field-row")];
+      const emptyFieldRow = fieldRows.find(row => !row.querySelector("[data-field-name]").value.trim());
+      if (emptyFieldRow) {
+        setBuilderFormError("Укажите название добавленного поля или удалите его, прежде чем создавать карту.");
+        emptyFieldRow.querySelector("[data-field-name]").focus();
+        return;
+      }
+      const fields = fieldRows.map(row => ({
         id: row.dataset.fieldId || `f-${Math.random().toString(36).slice(2, 10)}`,
         name: row.querySelector("[data-field-name]").value.trim(),
         type: row.querySelector("[data-field-type]").value,
         role: row.querySelector("[data-field-role]").value
-      })).filter(field => field.name);
-      if (!fields.length) return;
+      }));
+      if (!fields.length) {
+        setBuilderFormError("Добавьте хотя бы одно поле с названием.");
+        return;
+      }
       const roles = fields.map(field => field.role).filter(role => role !== "none");
       if (new Set(roles).size !== roles.length) {
-        showError("Для каждой роли (План, Факт, Прогресс) можно назначить только одно поле.");
+        setBuilderFormError("Назначьте каждую роль не более чем одному полю. Для остальных числовых полей выберите «Без роли» — они всё равно попадут в графики.");
         return;
       }
       for (const field of fields) {
         if (field.role === "progress") field.type = "percent";
         if (["plan", "actual"].includes(field.role) && field.type !== "number") {
-          showError("Роли «План» и «Факт» назначаются числовым полям. Проценты задаются ролью «Прогресс, %».");
+          setBuilderFormError("Роли «План» и «Факт» назначаются числовым полям. Проценты задаются ролью «Прогресс, %».");
           return;
         }
       }
-      const year = Number(document.getElementById("builderYear").value);
-      const endYear = Number(document.getElementById("builderEndYear").value);
+      const startDate = document.getElementById("builderStartDate").value;
+      const endDate = document.getElementById("builderEndDate").value;
+      const year = Number(startDate.slice(0, 4));
+      const endYear = Number(endDate.slice(0, 4));
       const granularity = document.getElementById("builderGranularity").value;
-      if (endYear < year || endYear - year > 20) {
-        showError("Год окончания должен быть не раньше начала; диапазон карты — не более 21 года.");
+      if (!parseISODate(startDate) || !parseISODate(endDate) || endDate < startDate || endYear - year > 20) {
+        setBuilderFormError("Укажите корректный диапазон дат продолжительностью не более 21 года.");
+        return;
+      }
+      if (!createCustomPeriods(year, granularity, endYear, startDate, endDate).length) {
+        setBuilderFormError("В выбранном диапазоне не найдено ни одного периода для выбранного шага.");
+        return;
+      }
+      const initialPlanValue = cleanNumber(document.getElementById("builderInitialPlan").value);
+      if (initialPlanValue > 0 && !fields.some(field => field.role === "plan")) {
+        setBuilderFormError("Чтобы автоматически распределить общий план, назначьте одному числовому полю роль «План».");
+        return;
+      }
+      if (document.getElementById("builderMapType").value === "stage") {
+        closeBuilderModalWindow();
+        openRoadmapModal("stage", { name: document.getElementById("builderName").value.trim(), owner: document.getElementById("builderOwner").value.trim(), year });
         return;
       }
       const name = document.getElementById("builderName").value.trim();
@@ -3610,14 +3693,14 @@
         if (existing) field.id = existing.id;
       });
       const retainedFieldIds = new Set(fields.map(field => field.id));
-      const newPeriodLabels = new Set(createCustomPeriods(year, granularity, endYear).map(row => row.period));
+      const newPeriodLabels = new Set(createCustomPeriods(year, granularity, endYear, startDate, endDate).map(row => row.period));
       const removesData = editTask && (
         editTask.customSchema.fields.some(field => !retainedFieldIds.has(field.id)) ||
         (granularity !== editTask.customSchema.granularity && editTask.rows.some(row => Object.values(row.values || {}).some(value => value !== "" && value !== null && value !== undefined))) ||
         editTask.rows.some(row => !newPeriodLabels.has(row.period) && Object.values(row.values || {}).some(value => value !== "" && value !== null && value !== undefined))
       );
       if (removesData && !confirm("Изменение структуры удалит часть введённых значений. Продолжить?")) return;
-      const newPeriods = createCustomPeriods(year, granularity, endYear);
+      const newPeriods = createCustomPeriods(year, granularity, endYear, startDate, endDate);
       const priorRows = new Map((editTask?.rows || []).map(row => [row.period, row]));
       const periodRows = newPeriods.map((row, index) => {
         const old = priorRows.get(row.period) || (editTask?.customSchema?.granularity === granularity && editTask.customSchema.year === year ? editTask.rows[index] : null);
@@ -3627,13 +3710,22 @@
         });
         return row;
       });
+      const planField = fields.find(field => field.role === "plan");
+      const initialPlan = initialPlanValue;
+      if (!editTask && planField && initialPlan > 0 && periodRows.length) {
+        const currencyLikeStep = granularity === "week" ? 1 : 0.01;
+        const scale = currencyLikeStep === 1 ? 1 : 100;
+        const scaled = Math.round(initialPlan * scale);
+        const share = Math.floor(scaled / periodRows.length);
+        periodRows.forEach((row, index) => { row.values[planField.id] = (index < scaled % periodRows.length ? share + 1 : share) / scale; });
+      }
       const task = {
         ...(editTask || {}),
         id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         type: "custom", name,
         owner: document.getElementById("builderOwner").value.trim(),
         description: document.getElementById("builderDescription").value.trim(),
-        customSchema: { version: 1, granularity, year, endYear, fields },
+        customSchema: { version: 1, granularity, year, endYear, startDate, endDate, initialPlan: !editTask && initialPlan > 0 ? initialPlan : editTask?.customSchema?.initialPlan || null, fields },
         rows: periodRows,
         missing: [], created: true
       };
@@ -3647,6 +3739,7 @@
       state.activeTab = "overview";
       state.quarter = "all";
       saveCustomMaps();
+      setBuilderFormError("");
       closeBuilderModalWindow();
       updateSidebarMode();
       buildQuarterFilter();
@@ -3711,17 +3804,29 @@
       const actual = actualField ? rows.reduce((sum, row) => sum + cleanNumber(row.values?.[actualField.id]), 0) : null;
       const valid = Boolean(progressField || (planField && actualField));
       const delta = actual !== null && plan !== null ? actual - plan : null;
-      const customStatus = !valid || !rows.length
-        ? { key: "no-data", label: "Нет данных", detail: "Добавьте значения в поля прогресса." }
-        : progress >= 100
-          ? { key: "complete", label: "Выполнено", detail: `Прогресс: ${formatPercent(progress)}.` }
-          : progress === 0
-            ? { key: "no-data", label: "Нет данных", detail: "Прогресс пока не указан." }
-            : delta !== null && delta > 0
-              ? { key: "ahead", label: "Выше плана", detail: `${formatNumber(delta)} сверх плана.` }
-              : delta !== null && delta < 0
-                ? { key: "behind", label: "Ниже плана", detail: `${formatNumber(Math.abs(delta))} до плана.` }
-                : { key: "on-track", label: "В работе", detail: `Прогресс: ${formatPercent(progress)}.` };
+      const hasValues = field => Boolean(field && rows.some(row => {
+        const value = row.values?.[field.id];
+        return value !== "" && value !== null && value !== undefined;
+      }));
+      const planOnly = Boolean(hasValues(planField) && !hasValues(actualField) && !hasValues(progressField));
+      let customStatus;
+      if (!rows.length) {
+        customStatus = { key: "no-data", label: "Нет данных", detail: "Добавьте значения в поля прогресса." };
+      } else if (planOnly) {
+        customStatus = { key: "no-data", label: "Запланировано", detail: "План задан; фактические значения ещё не добавлены." };
+      } else if (!valid) {
+        customStatus = { key: "no-data", label: "Нет данных", detail: "Добавьте значения в поля прогресса." };
+      } else if (progress >= 100) {
+        customStatus = { key: "complete", label: "Выполнено", detail: `Прогресс: ${formatPercent(progress)}.` };
+      } else if (progress === 0) {
+        customStatus = { key: "no-data", label: "Нет данных", detail: "Прогресс пока не указан." };
+      } else if (delta !== null && delta > 0) {
+        customStatus = { key: "ahead", label: "Выше плана", detail: `${formatNumber(delta)} сверх плана.` };
+      } else if (delta !== null && delta < 0) {
+        customStatus = { key: "behind", label: "Ниже плана", detail: `${formatNumber(Math.abs(delta))} до плана.` };
+      } else {
+        customStatus = { key: "on-track", label: "В работе", detail: `Прогресс: ${formatPercent(progress)}.` };
+      }
       return {
         custom: true, customStatus, isComplete: progress >= 100 && valid,
         quarterProgress: progress, yearProgress: progress, customPlan: plan,
@@ -3778,7 +3883,7 @@
         makeLineChart(`customChart${index}`, { labels: rows.map(row => row.period), datasets: [{
           label: field.name, data: values, borderColor: ["#2563eb", "#16a34a", "#f97316", "#9333ea", "#0891b2"][index % 5],
           backgroundColor: "rgba(37, 99, 235, 0.12)", pointBackgroundColor: ["#2563eb", "#16a34a", "#f97316", "#9333ea", "#0891b2"][index % 5], tension: 0.25, fill: false, spanGaps: true
-        }] }, field.type === "percent", false, [], false);
+        }] }, field.type === "percent", false, rows.map(row => row.tooltipLabel || row.period), false);
       });
     }
 
@@ -3971,11 +4076,13 @@
       return compareQuarterPeriods(selection, quarter);
     }
 
-    function openRoadmapModal() {
+    function openRoadmapModal(preferredType = "", initial = {}) {
       roadmapForm.reset();
       roadmapStageDraftItems = [];
       stageEditingTaskId = "";
-      document.getElementById("roadmapYear").value = new Date().getFullYear();
+      document.getElementById("roadmapYear").value = initial.year || new Date().getFullYear();
+      document.getElementById("roadmapName").value = initial.name || "";
+      document.getElementById("roadmapOwner").value = initial.owner || "";
       const templateTypes = [
         { type: "quantitative", label: "Количественная" },
         { type: "stage", label: "Этапная" }
@@ -3984,18 +4091,20 @@
         ...template,
         task: state.tasks.find(task => !task.created && task.name && task.type === template.type)
       })).filter(template => template.task);
+      const matchingTemplate = templates.find(template => template.type === preferredType);
       const activeTask = state.tasks.find(task => task.id === state.activeTab);
-      const activeType = activeTask?.type || templates[0]?.type || "quantitative";
-      const activeTemplate = templates.find(template => template.type === activeType) || templates[0];
+      const activeType = preferredType || activeTask?.type || templates[0]?.type || "quantitative";
+      const activeTemplate = matchingTemplate || templates.find(template => template.type === activeType) || templates[0];
       roadmapTemplateField.hidden = templates.length === 0;
       roadmapTypeField.hidden = templates.length === templateTypes.length;
       roadmapTemplate.innerHTML = templates.map(template => {
         const selected = template.task.name === activeTemplate?.task.name ? " selected" : "";
         return `<option value="${escapeHtml(template.task.name)}" data-type="${template.type}"${selected}>${template.label}</option>`;
       }).join("");
-      roadmapType.value = activeTemplate?.type || activeType;
+      roadmapType.value = preferredType || activeTemplate?.type || activeType;
       renderStageDraftList(roadmapStageDraftList);
       updateRoadmapTypeFields();
+      if (preferredType && !activeTemplate) roadmapTypeField.hidden = false;
       roadmapModal.hidden = false;
       document.getElementById("roadmapName").focus();
     }
@@ -4047,7 +4156,8 @@
       const targetYear = stageEditingTaskId
         ? state.tasks.find(task => task.id === stageEditingTaskId)?.draft?.year || new Date().getFullYear()
         : Number(document.getElementById("roadmapYear").value) || new Date().getFullYear();
-      document.getElementById("stageItemStart").value = stage?.startDate || currentQuarterFirstWeekDate(targetYear);
+      const seededStart = document.getElementById("builderStartDate").value;
+      document.getElementById("stageItemStart").value = stage?.startDate || (seededStart.startsWith(String(targetYear)) ? seededStart : currentQuarterFirstWeekDate(targetYear));
       document.getElementById("stageItemDuration").value = stage?.duration || 1;
       document.getElementById("stageItemDurationUnit").value = stage?.durationUnit || "weeks";
       document.getElementById("stageItemFrequency").value = stage?.frequency || "once";
@@ -4259,7 +4369,7 @@
 
       const formData = new FormData(roadmapForm);
       const selectedTemplate = roadmapTemplateField.hidden ? null : roadmapTemplate.selectedOptions[0];
-      const selectedType = selectedTemplate?.dataset.type || (formData.get("type") === "stage" ? "stage" : "quantitative");
+      const selectedType = formData.get("type") === "stage" ? "stage" : selectedTemplate?.dataset.type || "quantitative";
       const draft = {
         name: uniqueSheetName(formData.get("name")),
         owner: String(formData.get("owner") || "").trim(),
@@ -4269,6 +4379,7 @@
           : "",
         type: selectedType,
         year: clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035),
+        startDate: selectedType === "stage" ? roadmapStageDraftItems.map(item => item.startDate).filter(Boolean).sort()[0] || `${clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035)}-01-01` : "",
         plans: {
           Q1: Math.max(cleanNumber(formData.get("q1")), 0),
           Q2: Math.max(cleanNumber(formData.get("q2")), 0),
@@ -5293,12 +5404,16 @@
 
     function buildTabs() {
       tabs.innerHTML = "";
-      state.tasks.forEach(task => {
+      const visibleTasks = state.tasks.filter(task => !taskCompletedBeforeSelection(task));
+      visibleTasks.forEach(task => {
         tabs.appendChild(createTabButton(task.id, task.name));
       });
-      const hasTasks = state.tasks.length > 0;
+      const hasTasks = visibleTasks.length > 0;
       dashboardOverviewButton.disabled = !hasTasks;
       taskPickerButton.disabled = !hasTasks;
+      statusBox.hidden = !hasTasks;
+      settingsButton.hidden = !hasTasks;
+      if (!hasTasks) closeSettingsDrawerWindow();
       filterTaskOptions();
       updateTaskPickerStatuses();
     }
@@ -5389,6 +5504,7 @@
         const task = state.tasks.find(item => item.id === button.dataset.tab);
         const dot = button.querySelector(".task-picker-status-dot");
         if (!task || !dot) return;
+        button.hidden = taskCompletedBeforeSelection(task);
         const status = displayStatus(taskSummary(task));
         dot.className = `task-picker-status-dot status-${status.key}`;
         dot.title = status.label;
@@ -5539,10 +5655,11 @@
       const allPlannedRows = allDisplayRows.filter(row => row.planText);
       const planned = plannedRows.length;
       const invalidRows = plannedRows.filter(row => row.hasDone && cleanNumber(row.done) > 1);
-      const completed = plannedRows.filter(row => {
+      const completedRows = plannedRows.filter(row => {
         const value = row.hasDone ? cleanNumber(row.done) : 0;
         return value >= 1 && value <= 1;
-      }).length;
+      });
+      const completed = completedRows.length;
       const partiallyCompleted = plannedRows.filter(row => {
         const value = row.hasDone ? cleanNumber(row.done) : 0;
         return value > 0 && value < 1;
@@ -5565,6 +5682,8 @@
         return row.planText && value >= 1 && value <= 1;
       });
       const isComplete = planned > 0 && completed >= planned;
+      const allComplete = allPlanned > 0 && allCompleted >= allPlanned;
+      const completionPeriod = allComplete ? [...allPlannedRows].sort((left, right) => compareQuarters(left.quarter, right.quarter)).at(-1)?.quarter || "" : "";
       const remaining = Math.max(planned - completed, 0);
       const progress = planned > 0 ? Math.max((done / planned) * 100, 0) : 0;
       let stageStatus;
@@ -5643,7 +5762,7 @@
         yearProgress: progress,
         isComplete,
         completedEarlier: false,
-        completionQuarter: completionRow?.quarter || "",
+        completionQuarter: completionPeriod || completionRow?.quarter || "",
         completionDate: completionRow?.weekEnd || completionRow?.weekStart || "",
         completionDone: allCompleted,
         completionYearPlan: allPlanned,
@@ -5967,9 +6086,21 @@
     function taskSummary(task) {
       const rows = filteredRows(task);
       if (isCustomTask(task)) return summarizeCustomMap(task, rows);
-      return isStageTask(task)
-        ? summarizeStageRows(rows, task.rows)
+      const summary = isStageTask(task)
+        ? summarizeStageRows(task.rows, task.rows)
         : summarizeRows(rows, task.rows);
+      return summary;
+    }
+
+    function taskCompletedBeforeSelection(task) {
+      if (isAllPeriods()) return false;
+      if (isCustomTask(task)) return false;
+      const summary = isStageTask(task)
+        ? summarizeStageRows(task.rows, task.rows)
+        : summarizeRows(filteredRows(task), task.rows);
+      if (isStageTask(task) && !summary.isComplete) return false;
+      if (!summary.completionQuarter) return false;
+      return compareSelectionToQuarter(state.quarter, summary.completionQuarter) > 0;
     }
 
     function activeQuarterText() {
@@ -6010,7 +6141,8 @@
 
     function render() {
       destroyCharts();
-      if (state.activeTab !== "overview" && !state.tasks.some(item => item.id === state.activeTab)) {
+      const visibleTasks = state.tasks.filter(item => !taskCompletedBeforeSelection(item));
+      if (state.activeTab !== "overview" && !visibleTasks.some(item => item.id === state.activeTab)) {
         state.activeTab = "overview";
       }
       markActiveTab();
@@ -6045,7 +6177,7 @@
     }
 
     function markActiveTab() {
-      const activeTask = state.tasks.find(task => task.id === state.activeTab);
+      const activeTask = state.tasks.find(task => task.id === state.activeTab && !taskCompletedBeforeSelection(task));
       dashboardOverviewButton.classList.toggle("active", state.activeTab === "overview");
       taskPickerButton.classList.toggle("active", Boolean(activeTask));
       taskPickerLabel.textContent = activeTask?.name || "Выберите карту";
@@ -6056,7 +6188,7 @@
     }
 
     function renderOverview() {
-      const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) }));
+      const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) })).filter(item => !taskCompletedBeforeSelection(item.task));
       const quantitativeSummaries = summaries.filter(item => !isStageTask(item.task) && !isCustomTask(item.task));
       const stageSummaries = summaries.filter(item => isStageTask(item.task));
       const showYearProgress = isAggregatePeriod();
@@ -6179,6 +6311,11 @@
     }
 
     function renderTask(task) {
+      if (taskCompletedBeforeSelection(task)) {
+        state.activeTab = "overview";
+        renderOverview();
+        return;
+      }
       if (isCustomTask(task)) {
         renderCustomTask(task);
         return;
