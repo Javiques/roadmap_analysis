@@ -675,6 +675,14 @@
       margin-top: 16px;
     }
 
+    .charts.single-task-overview {
+      grid-template-columns: minmax(0, 980px);
+    }
+
+    .charts.single-custom-chart {
+      grid-template-columns: minmax(0, 980px);
+    }
+
     .quarter-charts {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -935,7 +943,7 @@
     }
 
     .task-list {
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       margin-top: 16px;
     }
 
@@ -1986,6 +1994,19 @@
               <input id="roadmapYear" name="year" type="number" min="2020" max="2035" value="2026" required>
             </div>
             <div class="form-field" data-quantitative-only>
+              <label for="roadmapStartDate">Начало срока</label>
+              <input id="roadmapStartDate" name="startDate" type="date">
+            </div>
+            <div class="form-field" data-quantitative-only>
+              <label for="roadmapEndDate">Окончание срока</label>
+              <input id="roadmapEndDate" name="endDate" type="date">
+            </div>
+            <div class="form-field" data-quantitative-only>
+              <label for="roadmapAnnualPlan">Общий план на срок</label>
+              <input id="roadmapAnnualPlan" name="annualPlan" type="number" min="0" step="1" placeholder="Например, 5000">
+              <div class="form-help">Укажите срок и период плана, чтобы распределить общий план. Без срока можно задать планы по кварталам.</div>
+            </div>
+            <div class="form-field" data-quantitative-only>
               <label for="roadmapQ1">План Q1</label>
               <input id="roadmapQ1" name="q1" type="number" min="0" step="1">
             </div>
@@ -2440,6 +2461,7 @@
     changeRoadmapFileButton.addEventListener("click", chooseRoadmapFile);
     quarterFilter.addEventListener("change", () => {
       state.quarter = quarterFilter.value;
+      buildTabs();
       render();
     });
     dashboardOverviewButton.addEventListener("click", () => {
@@ -2499,6 +2521,12 @@
       const option = [...roadmapTemplate.options].find(item => item.dataset.type === roadmapType.value);
       if (option) roadmapTemplate.value = option.value;
       updateRoadmapTypeFields();
+    });
+    document.getElementById("roadmapStartDate").addEventListener("change", () => {
+      document.getElementById("roadmapEndDate").required = Boolean(document.getElementById("roadmapStartDate").value);
+    });
+    document.getElementById("roadmapEndDate").addEventListener("change", () => {
+      document.getElementById("roadmapStartDate").required = Boolean(document.getElementById("roadmapEndDate").value);
     });
     addRoadmapStageButton.addEventListener("click", () => openStageItemModal());
     roadmapStageDraftList.addEventListener("click", handleStageDraftListClick);
@@ -3873,7 +3901,7 @@
       content.innerHTML = `
         <div class="custom-map-actions"><button id="editCustomMapButton" class="button" type="button">Изменить структуру</button><button id="deleteCustomMapButton" class="button" type="button">Удалить карту</button></div>
         <div class="grid cards">${metric("Статус", status.label, status.detail, `status-${status.key}`)}${metric("Прогресс", formatPercent(summary.quarterProgress))}${summary.customPlan !== null ? metric("План", formatNumber(summary.customPlan)) : ""}${summary.customActual !== null ? metric("Факт", formatNumber(summary.customActual)) : ""}</div>
-        ${numericFields.length ? `<div class="grid charts">${numericFields.map((field, index) => `<section class="panel"><h3>${escapeHtml(field.name)} · ${task.customSchema.granularity === "week" ? "по неделям" : task.customSchema.granularity === "month" ? "по месяцам" : "по кварталам"}</h3><div class="chart-frame"><canvas id="customChart${index}"></canvas></div></section>`).join("")}</div>` : `<section class="panel"><p>Добавьте числовые поля, чтобы строить графики по ним.</p></section>`}
+        ${numericFields.length ? `<div class="grid charts${numericFields.length === 1 ? " single-custom-chart" : ""}">${numericFields.map((field, index) => `<section class="panel"><h3>${escapeHtml(field.name)} · ${task.customSchema.granularity === "week" ? "по неделям" : task.customSchema.granularity === "month" ? "по месяцам" : "по кварталам"}</h3><div class="chart-frame"><canvas id="customChart${index}"></canvas></div></section>`).join("")}</div>` : `<section class="panel"><p>Добавьте числовые поля, чтобы строить графики по ним.</p></section>`}
         <section class="panel"><h3>Данные карты</h3><div class="custom-data-table-wrap"><table class="custom-data-table"><thead><tr><th>Период</th>${fields.map(field => `<th>${escapeHtml(field.name)}${field.role !== "none" ? ` · ${escapeHtml(field.role === "plan" ? "план" : field.role === "actual" ? "факт" : "прогресс")}` : ""}</th>`).join("")}</tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
       numericFields.forEach((field, index) => {
         const values = rows.map(row => {
@@ -4081,6 +4109,8 @@
       roadmapStageDraftItems = [];
       stageEditingTaskId = "";
       document.getElementById("roadmapYear").value = initial.year || new Date().getFullYear();
+      document.getElementById("roadmapStartDate").value = "";
+      document.getElementById("roadmapEndDate").value = "";
       document.getElementById("roadmapName").value = initial.name || "";
       document.getElementById("roadmapOwner").value = initial.owner || "";
       const templateTypes = [
@@ -4117,6 +4147,8 @@
       const stageMode = roadmapType.value === "stage";
       document.querySelectorAll("[data-quantitative-only]").forEach(element => { element.hidden = stageMode; });
       roadmapStageBuilderField.hidden = !stageMode;
+      document.getElementById("roadmapStartDate").required = !stageMode && Boolean(document.getElementById("roadmapEndDate").value);
+      document.getElementById("roadmapEndDate").required = !stageMode && Boolean(document.getElementById("roadmapStartDate").value);
     }
 
     function currentQuarterFirstWeekDate(year = new Date().getFullYear()) {
@@ -4380,6 +4412,9 @@
         type: selectedType,
         year: clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035),
         startDate: selectedType === "stage" ? roadmapStageDraftItems.map(item => item.startDate).filter(Boolean).sort()[0] || `${clamp(cleanNumber(formData.get("year")) || new Date().getFullYear(), 2020, 2035)}-01-01` : "",
+        endDate: selectedType === "quantitative" ? String(formData.get("endDate") || "") : "",
+        quantitativeStartDate: selectedType === "quantitative" ? String(formData.get("startDate") || "") : "",
+        annualPlan: selectedType === "quantitative" ? Math.max(Math.round(cleanNumber(formData.get("annualPlan")) || 0), 0) : 0,
         plans: {
           Q1: Math.max(cleanNumber(formData.get("q1")), 0),
           Q2: Math.max(cleanNumber(formData.get("q2")), 0),
@@ -4392,6 +4427,32 @@
           .filter(Boolean),
         stageItems: selectedType === "stage" ? roadmapStageDraftItems.map(item => ({ ...item })) : []
       };
+
+      const quarterlyPlansEntered = Object.values(draft.plans).some(value => value > 0);
+      if (draft.type === "quantitative" && draft.annualPlan > 0 && quarterlyPlansEntered) {
+        showError("Укажите либо общий годовой план, либо планы по кварталам. Очистите один из вариантов.");
+        return;
+      }
+      if (draft.type === "quantitative" && Boolean(draft.quantitativeStartDate) !== Boolean(draft.endDate)) {
+        showError("Укажите обе даты срока или очистите их и задайте планы по кварталам.");
+        return;
+      }
+      if (draft.type === "quantitative" && draft.endDate && draft.endDate < draft.quantitativeStartDate) {
+        showError("Окончание срока должно быть не раньше его начала.");
+        return;
+      }
+      if (draft.type === "quantitative" && draft.endDate && (Number(draft.quantitativeStartDate.slice(0, 4)) !== draft.year || Number(draft.endDate.slice(0, 4)) !== draft.year)) {
+        showError("В обычной дорожной карте срок должен находиться внутри выбранного года. Для срока на несколько лет используйте универсальный конструктор.");
+        return;
+      }
+      if (draft.type === "quantitative" && draft.endDate && draft.annualPlan <= 0) {
+        showError("Для распределения плана по выбранному сроку укажите общий план на срок.");
+        return;
+      }
+      if (draft.type === "quantitative" && draft.endDate && !generateWeeks(draft.year).some(week => week.end >= parseISODate(draft.quantitativeStartDate) && week.start <= parseISODate(draft.endDate))) {
+        showError("Выбранный срок не попадает ни в одну неделю плана. Проверьте даты.");
+        return;
+      }
 
       if (!draft.name) {
         showError("Укажите название дорожной карты.");
@@ -4899,8 +4960,17 @@
 
     function generateRoadmapRows(draft) {
       if (draft.type === "stage" && draft.stageItems?.length) return generateFlexibleStageRows(draft);
-      const weeks = generateWeeks(draft.year);
+      const allWeeks = generateWeeks(draft.year);
+      const rangeStart = draft.quantitativeStartDate ? parseISODate(draft.quantitativeStartDate) : null;
+      const rangeEnd = draft.endDate ? parseISODate(draft.endDate) : null;
+      const inRange = week => !rangeStart || !rangeEnd || (week.end >= rangeStart && week.start <= rangeEnd);
+      const weeks = draft.type === "quantitative" && draft.endDate
+        ? allWeeks.filter(week => inRange(week))
+        : allWeeks;
       const cumulativePlan = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+      const annualPlanUnits = Math.max(Math.round(cleanNumber(draft.annualPlan) || 0), 0);
+      const annualWeeklyBase = annualPlanUnits ? Math.floor(annualPlanUnits / weeks.length) : 0;
+      const annualRemainder = annualPlanUnits ? annualPlanUnits % weeks.length : 0;
       const quarterCounts = BASE_QUARTERS.reduce((result, quarter) => {
         result[quarter] = weeks.filter(week => week.quarter === quarter).length;
         return result;
@@ -4910,7 +4980,9 @@
       const generatedRows = weeks.map((week, index) => {
         const isLastQuarterWeek = index === weeks.length - 1 || weeks[index + 1].quarter !== week.quarter;
         const quarterPlan = draft.type === "quantitative"
-          ? plannedValueForWeek(draft.plans[week.quarter], week.weekInQuarter, quarterCounts[week.quarter], isLastQuarterWeek)
+          ? annualPlanUnits
+            ? annualWeeklyBase + (index < annualRemainder ? 1 : 0)
+            : plannedValueForWeek(draft.plans[week.quarter], week.weekInQuarter, quarterCounts[week.quarter], isLastQuarterWeek)
           : 0;
         cumulativePlan[week.quarter] = quarterPlan;
         const yearPlan = BASE_QUARTERS.reduce((sum, quarter) => {
@@ -4977,6 +5049,7 @@
       for (let week = 1; week <= 52; week += 1) {
         const end = new Date(start);
         end.setDate(start.getDate() + Math.max(5 - start.getDay(), 0));
+        if (week === 52 && end < new Date(year, 11, 31)) end.setTime(new Date(year, 11, 31).getTime());
         const quarter = week <= 13 ? "Q1" : week <= 26 ? "Q2" : week <= 39 ? "Q3" : "Q4";
         const quarterStartWeek = quarter === "Q1" ? 1 : quarter === "Q2" ? 14 : quarter === "Q3" ? 27 : 40;
         weeks.push({
@@ -5404,7 +5477,7 @@
 
     function buildTabs() {
       tabs.innerHTML = "";
-      const visibleTasks = state.tasks.filter(task => !taskCompletedBeforeSelection(task));
+      const visibleTasks = state.tasks.filter(task => taskVisibleInSelectedPeriod(task));
       visibleTasks.forEach(task => {
         tabs.appendChild(createTabButton(task.id, task.name));
       });
@@ -5474,7 +5547,8 @@
       const query = normalizeHeader(taskPickerSearch.value);
       let visibleCount = 0;
       tabs.querySelectorAll(".tab-button").forEach(button => {
-        const isVisible = !query || normalizeHeader(button.textContent).includes(query);
+        const task = state.tasks.find(item => item.id === button.dataset.tab);
+        const isVisible = Boolean(task && taskVisibleInSelectedPeriod(task) && (!query || normalizeHeader(button.textContent).includes(query)));
         button.hidden = !isVisible;
         if (isVisible) visibleCount += 1;
       });
@@ -5504,7 +5578,7 @@
         const task = state.tasks.find(item => item.id === button.dataset.tab);
         const dot = button.querySelector(".task-picker-status-dot");
         if (!task || !dot) return;
-        button.hidden = taskCompletedBeforeSelection(task);
+        button.hidden = !taskVisibleInSelectedPeriod(task);
         const status = displayStatus(taskSummary(task));
         dot.className = `task-picker-status-dot status-${status.key}`;
         dot.title = status.label;
@@ -6103,6 +6177,32 @@
       return compareSelectionToQuarter(state.quarter, summary.completionQuarter) > 0;
     }
 
+    function taskHasContentInSelectedPeriod(task) {
+      if (isAllPeriods()) return true;
+      const rows = filteredRows(task);
+      if (!rows.length) return false;
+      if (isCustomTask(task)) {
+        // Пустые периоды универсальной карты должны оставаться доступными для ввода плана.
+        return true;
+      }
+      if (isStageTask(task)) {
+        return stageRowsForDisplay(rows).some(row => row.planText || (row.hasDone && cleanNumber(row.done) > 0) || String(row.comment || "").trim());
+      }
+      return rows.some(row => Boolean(
+        String(row.planText || "").trim()
+        || String(row.comment || "").trim()
+        || (row.hasDone && cleanNumber(row.done) !== 0)
+        || (row.hasNumericQuarterPlan && cleanNumber(row.quarterPlan) !== 0)
+        || (row.hasNumericYearPlan && cleanNumber(row.yearPlan) !== 0)
+        || (row.hasNumericQuarterProgress && cleanNumber(row.quarterProgress) !== 0)
+        || (row.hasNumericYearProgress && cleanNumber(row.yearProgress) !== 0)
+      ));
+    }
+
+    function taskVisibleInSelectedPeriod(task) {
+      return !taskCompletedBeforeSelection(task) && taskHasContentInSelectedPeriod(task);
+    }
+
     function activeQuarterText() {
       return periodLabel().toLowerCase();
     }
@@ -6141,7 +6241,7 @@
 
     function render() {
       destroyCharts();
-      const visibleTasks = state.tasks.filter(item => !taskCompletedBeforeSelection(item));
+      const visibleTasks = state.tasks.filter(item => taskVisibleInSelectedPeriod(item));
       if (state.activeTab !== "overview" && !visibleTasks.some(item => item.id === state.activeTab)) {
         state.activeTab = "overview";
       }
@@ -6177,7 +6277,7 @@
     }
 
     function markActiveTab() {
-      const activeTask = state.tasks.find(task => task.id === state.activeTab && !taskCompletedBeforeSelection(task));
+      const activeTask = state.tasks.find(task => task.id === state.activeTab && taskVisibleInSelectedPeriod(task));
       dashboardOverviewButton.classList.toggle("active", state.activeTab === "overview");
       taskPickerButton.classList.toggle("active", Boolean(activeTask));
       taskPickerLabel.textContent = activeTask?.name || "Выберите карту";
@@ -6188,7 +6288,7 @@
     }
 
     function renderOverview() {
-      const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) })).filter(item => !taskCompletedBeforeSelection(item.task));
+      const summaries = state.tasks.map(task => ({ task, summary: taskSummary(task) })).filter(item => taskVisibleInSelectedPeriod(item.task));
       const quantitativeSummaries = summaries.filter(item => !isStageTask(item.task) && !isCustomTask(item.task));
       const stageSummaries = summaries.filter(item => isStageTask(item.task));
       const showYearProgress = isAggregatePeriod();
@@ -6256,7 +6356,7 @@
           ${summaries.map(({ task, summary }) => taskCard(task, summary)).join("")}
         </div>
 
-        <div class="grid charts">
+        <div class="grid charts${summaries.length === 1 ? " single-task-overview" : ""}">
           <section class="panel">
             <h3>Прогресс по задачам</h3>
             <div class="chart-scroll">
@@ -6311,7 +6411,7 @@
     }
 
     function renderTask(task) {
-      if (taskCompletedBeforeSelection(task)) {
+      if (!taskVisibleInSelectedPeriod(task)) {
         state.activeTab = "overview";
         renderOverview();
         return;
